@@ -1,3 +1,4 @@
+using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,28 +9,32 @@ public static class DbSeeder
     public static async Task SeedDevelopmentDataAsync(IServiceProvider services)
     {
         using var scope = services.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        await SeedUserAsync(userManager, "inkoper@test.nl", "Password123!", "Inkoper");
-        await SeedUserAsync(userManager, "beoordelaar@test.nl", "Password123!", "Beoordelaar");
-        await SeedUserAsync(userManager, "beheerder@test.nl", "Password123!", "Beheerder");
-        await SeedUserAsync(userManager, "leverancier@test.nl", "Password123!", "Leverancier");
+        await SeedUserAsync(userManager, "inkoper@test.nl", "Password123!", "Inkoper", "Jan", "de Vries");
+        await SeedUserAsync(userManager, "beoordelaar@test.nl", "Password123!", "Beoordelaar", "Pieter", "Bakker");
+        await SeedUserAsync(userManager, "beheerder@test.nl", "Password123!", "Beheerder", "Anna", "Jansen");
+        await SeedUserAsync(userManager, "leverancier@test.nl", "Password123!", "Leverancier", "Maria", "Visser");
     }
 
     private static async Task SeedUserAsync(
-        UserManager<IdentityUser> userManager,
+        UserManager<ApplicationUser> userManager,
         string email,
         string password,
-        string role)
+        string role,
+        string firstName,
+        string lastName)
     {
         if (await userManager.FindByEmailAsync(email) is not null)
             return;
 
-        var user = new IdentityUser
+        var user = new ApplicationUser
         {
             UserName = email,
             Email = email,
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            FirstName = firstName,
+            LastName = lastName
         };
 
         var result = await userManager.CreateAsync(user, password);
