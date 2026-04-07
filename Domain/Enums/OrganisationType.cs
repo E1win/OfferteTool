@@ -1,8 +1,7 @@
-﻿namespace Domain.Enums
+﻿namespace Domain.Enums;
+
+public enum OrganisationType
 {
-    public enum OrganisationType
-    {
-        Supplier,
-        Client
-    }
+    Supplier,
+    Client
 }

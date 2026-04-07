@@ -1,3 +1,4 @@
+using Domain.Constants;
 using Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 
@@ -7,9 +8,9 @@ public class ApplicationUser : IdentityUser
 {
     private static readonly Dictionary<string, OrganisationType> AllowedOrganisationTypes = new()
     {
-        { "Inkoper", OrganisationType.Client },
-        { "Beoordelaar", OrganisationType.Client },
-        { "Leverancier", OrganisationType.Supplier },
+        { Roles.Inkoper, OrganisationType.Client },
+        { Roles.Beoordelaar, OrganisationType.Client },
+        { Roles.Leverancier, OrganisationType.Supplier },
     };
 
     public string FirstName { get; set; } = string.Empty;
