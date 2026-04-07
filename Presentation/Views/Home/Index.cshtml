@@ -29,7 +29,7 @@
                 <tbody>
                     @foreach (var tender in Model)
                     {
-                        <tr>
+                        <tr style="cursor: pointer;" onclick="window.location='@Url.Action("Details", "Tender", new { id = tender.Id })'">
                             <td>@tender.Title</td>
                             <td>
                                 <span class="badge bg-@(tender.Status switch
