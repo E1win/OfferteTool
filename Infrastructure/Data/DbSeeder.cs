@@ -1,3 +1,4 @@
+using Domain.Constants;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.AspNetCore.Identity;
@@ -20,10 +21,10 @@ public static class DbSeeder
         var supplierOrg = await SeedOrganisationAsync(dbContext,
             "supplier-one-id", "Leverancier B.V.", "87654321", OrganisationType.Supplier);
 
-        await SeedUserAsync(userManager, "inkoper@test.nl", "Password123!", "Inkoper", "Jan", "de Vries", clientOrg.Id);
-        await SeedUserAsync(userManager, "beoordelaar@test.nl", "Password123!", "Beoordelaar", "Pieter", "Bakker", clientOrg.Id);
-        await SeedUserAsync(userManager, "beheerder@test.nl", "Password123!", "Beheerder", "Anna", "Jansen");
-        await SeedUserAsync(userManager, "leverancier@test.nl", "Password123!", "Leverancier", "Maria", "Visser", supplierOrg.Id);
+        await SeedUserAsync(userManager, "inkoper@test.nl", "Password123!", Roles.Inkoper, "Jan", "de Vries", clientOrg.Id);
+        await SeedUserAsync(userManager, "beoordelaar@test.nl", "Password123!", Roles.Beoordelaar, "Pieter", "Bakker", clientOrg.Id);
+        await SeedUserAsync(userManager, "beheerder@test.nl", "Password123!", Roles.Beheerder, "Anna", "Jansen");
+        await SeedUserAsync(userManager, "leverancier@test.nl", "Password123!", Roles.Leverancier, "Maria", "Visser", supplierOrg.Id);
 
         await SeedTenderAsync(dbContext, "tender-one-id", "Kantoormeubelen 2026",
             "Levering van ergonomische bureaustoelen en sta-bureaus voor 200 werkplekken.",

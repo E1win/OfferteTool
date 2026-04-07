@@ -21,7 +21,7 @@ public class Tender
     public required Guid OrganisationId { get; set; }
     public Organisation? Organisation { get; set; }
     
-    // EndDate has to be at least one day before StartDate
+    // EndDate has to be at least one day after StartDate
     public bool HasValidDateRange() => EndDate > StartDate;
 
     public bool IsValidOrganisationType(OrganisationType type) => type == OrganisationType.Client;

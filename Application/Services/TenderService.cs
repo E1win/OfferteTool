@@ -1,5 +1,6 @@
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
+using Domain.Constants;
 using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 
@@ -18,9 +19,9 @@ public class TenderService(ITenderRepository tenderRepository, UserManager<Appli
 
         return role switch
         {
-            "Inkoper" or "Beoordelaar" when user.OrganisationId is not null
+            Roles.Inkoper or Roles.Beoordelaar when user.OrganisationId is not null
                 => await tenderRepository.GetByOrganisationAsync(user.OrganisationId.Value),
-            "Leverancier"
+            Roles.Leverancier
                 => await tenderRepository.GetPublicOpenAsync(),
             _ => []
         };

@@ -1,10 +1,9 @@
-﻿namespace Domain.Enums
+﻿namespace Domain.Enums;
+
+public enum TenderStatus
 {
-    public enum TenderStatus
-    {
-        Design,
-        Open,
-        Closed,
-        Completed
-    }
+    Design,
+    Open,
+    Closed,
+    Completed
 }

@@ -2,6 +2,7 @@ using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using AppRoles = Domain.Constants.Roles;
 
 namespace Infrastructure.Data;
 
@@ -20,10 +21,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<IdentityRole>().HasData(
-            new IdentityRole { Id = "1", Name = "Inkoper", NormalizedName = "INKOPER", ConcurrencyStamp = "1" },
-            new IdentityRole { Id = "2", Name = "Beoordelaar", NormalizedName = "BEOORDELAAR", ConcurrencyStamp = "2" },
-            new IdentityRole { Id = "3", Name = "Beheerder", NormalizedName = "BEHEERDER", ConcurrencyStamp = "3" },
-            new IdentityRole { Id = "4", Name = "Leverancier", NormalizedName = "LEVERANCIER", ConcurrencyStamp = "4" }
+            new IdentityRole { Id = "1", Name = AppRoles.Inkoper, NormalizedName = AppRoles.Inkoper.ToUpper(), ConcurrencyStamp = "1" },
+            new IdentityRole { Id = "2", Name = AppRoles.Beoordelaar, NormalizedName = AppRoles.Beoordelaar.ToUpper(), ConcurrencyStamp = "2" },
+            new IdentityRole { Id = "3", Name = AppRoles.Beheerder, NormalizedName = AppRoles.Beheerder.ToUpper(), ConcurrencyStamp = "3" },
+            new IdentityRole { Id = "4", Name = AppRoles.Leverancier, NormalizedName = AppRoles.Leverancier.ToUpper(), ConcurrencyStamp = "4" }
         );
     }
 }
