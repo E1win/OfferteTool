@@ -6,7 +6,7 @@ namespace Domain.Entities;
 
 public class Tender
 {
-    public required Guid Id { get; set; }
+    public Guid Id { get; set; }
 
     [MaxLength(256)]
     public required string Title { get; set; }

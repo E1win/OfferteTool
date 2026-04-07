@@ -5,7 +5,7 @@ namespace Domain.Entities;
 
 public class Organisation
 {
-    public required Guid Id { get; set; }
+    public Guid Id { get; set; }
 
     [MaxLength(256)]
     public required string Name { get; set; }
