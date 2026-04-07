@@ -8,6 +8,7 @@ namespace Infrastructure.Data;
 public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
     public DbSet<Organisation> Organisations => Set<Organisation>();
+    public DbSet<Tender> Tenders => Set<Tender>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)

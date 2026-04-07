@@ -1,0 +1,10 @@
+using Domain.Entities;
+
+namespace Application.Interfaces.Repositories;
+
+public interface ITenderRepository
+{
+    Task<Tender?> GetByIdAsync(Guid id);
+    Task<List<Tender>> GetByOrganisationAsync(Guid organisationId);
+    Task<List<Tender>> GetPublicOpenAsync();
+}
