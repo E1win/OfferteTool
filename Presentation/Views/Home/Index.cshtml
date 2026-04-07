@@ -1,8 +1,62 @@
-﻿@{
+﻿@model List<Domain.Entities.Tender>
+@using Domain.Enums
+
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <h1 class="mb-4">Tenders</h1>
+
+    @if (Model.Count == 0)
+    {
+        <p class="text-muted">Er zijn geen tenders beschikbaar.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Titel</th>
+                        <th>Status</th>
+                        <th>Startdatum</th>
+                        <th>Einddatum</th>
+                        <th>Openbaar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tender in Model)
+                    {
+                        <tr>
+                            <td>@tender.Title</td>
+                            <td>
+                                <span class="badge bg-@(tender.Status switch
+                                {
+                                    TenderStatus.Design => "secondary",
+                                    TenderStatus.Open => "success",
+                                    TenderStatus.Closed => "warning",
+                                    TenderStatus.Completed => "info",
+                                    _ => "secondary"
+                                })">
+                                    @tender.Status
+                                </span>
+                            </td>
+                            <td>@tender.StartDate.ToString("dd-MM-yyyy")</td>
+                            <td>@tender.EndDate.ToString("dd-MM-yyyy")</td>
+                            <td>@(tender.IsPublic ? "Ja" : "Nee")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else
+{
+    <div class="text-center">
+        <h1 class="display-4">Welkom</h1>
+        <p>Log in om uw tenders te bekijken.</p>
+    </div>
+}

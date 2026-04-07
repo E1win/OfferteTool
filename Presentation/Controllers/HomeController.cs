@@ -1,14 +1,28 @@
+using System.Security.Claims;
+using Application.Interfaces.Services;
+using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.Models;
 using System.Diagnostics;
 
 namespace Presentation.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController(ITenderService tenderService) : Controller
     {
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var tenders = new List<Tender>();
+
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId is not null)
+                {
+                    tenders = await tenderService.GetAccessibleTendersAsync(userId);
+                }
+            }
+
+            return View(tenders);
         }
 
         public IActionResult Privacy()
