@@ -2,7 +2,6 @@ using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Domain.Constants;
 using Domain.Entities;
-using Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace Application.Services;
@@ -30,16 +29,7 @@ public class TenderService(ITenderRepository tenderRepository, UserManager<Appli
 
         var (user, role) = await GetUserWithRoleAsync(userId);
 
-        var hasAccess = role switch
-        {
-            Roles.Inkoper or Roles.Beoordelaar
-                => user.OrganisationId is not null && tender.OrganisationId == user.OrganisationId.Value,
-            Roles.Leverancier
-                => tender.IsPublic && tender.Status == TenderStatus.Open,
-            _ => false
-        };
-
-        return hasAccess
+        return tender.IsAccessibleBy(user, role)
             ? tender
             : throw new UnauthorizedAccessException("You do not have access to this tender.");
     }

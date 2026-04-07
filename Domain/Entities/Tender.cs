@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Domain.Constants;
 using Domain.Enums;
 
 namespace Domain.Entities;
@@ -20,9 +21,19 @@ public class Tender
 
     public required Guid OrganisationId { get; set; }
     public Organisation? Organisation { get; set; }
-    
+
     // EndDate has to be at least one day after StartDate
     public bool HasValidDateRange() => EndDate > StartDate;
 
     public bool IsValidOrganisationType(OrganisationType type) => type == OrganisationType.Client;
+
+    public bool IsAccessibleBy(ApplicationUser user, string role) =>
+        role switch
+        {
+            Roles.Inkoper or Roles.Beoordelaar
+                => user.OrganisationId is not null && OrganisationId == user.OrganisationId.Value,
+            Roles.Leverancier
+                => IsPublic && Status == TenderStatus.Open,
+            _ => false
+        };
 }
