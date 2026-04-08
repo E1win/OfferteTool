@@ -27,13 +27,13 @@ public class NumberQuestion : TenderQuestion
         if (answer is not NumberAnswer numberAnswer)
             throw new InvalidOperationException("Answer type does not match question type.");
 
-        if (!numberAnswer.Value.HasValue)
+        if (!numberAnswer.NumericValue.HasValue)
             throw new InvalidOperationException("A numeric value is required.");
 
-        if (MinValue.HasValue && numberAnswer.Value.Value < MinValue.Value)
+        if (MinValue.HasValue && numberAnswer.NumericValue.Value < MinValue.Value)
             throw new InvalidOperationException($"Value must be at least {MinValue.Value}.");
 
-        if (MaxValue.HasValue && numberAnswer.Value.Value > MaxValue.Value)
+        if (MaxValue.HasValue && numberAnswer.NumericValue.Value > MaxValue.Value)
             throw new InvalidOperationException($"Value must be at most {MaxValue.Value}.");
     }
 }

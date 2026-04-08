@@ -6,7 +6,7 @@ namespace Domain.Entities.TenderAnswers;
 public class TextAnswer : TenderAnswer
 {
     [MaxLength(4096)]
-    public string? Value { get; set; }
+    public string? TextValue { get; set; }
 
     public TextAnswer()
     {

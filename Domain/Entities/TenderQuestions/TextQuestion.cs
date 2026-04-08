@@ -32,7 +32,7 @@ public class TextQuestion : TenderQuestion
         if (answer is not TextAnswer textAnswer)
             throw new InvalidOperationException("Answer type does not match question type.");
 
-        var value = textAnswer.Value;
+        var value = textAnswer.TextValue;
 
         if (string.IsNullOrWhiteSpace(value))
             throw new InvalidOperationException("Answer cannot be empty.");
