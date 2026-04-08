@@ -1,4 +1,5 @@
-﻿using Domain.Enums;
+﻿using Domain.Entities.TenderAnswers;
+using Domain.Enums;
 
 namespace Domain.Entities.TenderQuestions;
 
@@ -26,8 +27,25 @@ public class ChoiceQuestion : TenderQuestion
             throw new InvalidOperationException("Duplicate option values are not allowed.");
     }
 
-    public override void ValidateAnswer(object? answer)
+    public override void ValidateAnswer(TenderAnswer answer)
     {
-        throw new NotImplementedException();
+        if (answer == null)
+            throw new InvalidOperationException("Answer is required.");
+
+        if (answer is not ChoiceAnswer choiceAnswer)
+            throw new InvalidOperationException("Answer type does not match question type.");
+        
+        var selectedOptionIds = choiceAnswer.Selections.Select(s => s.OptionId).ToHashSet();
+
+        if (selectedOptionIds.Count == 0)
+            throw new InvalidOperationException("At least one option must be selected.");
+
+        if (!AllowMultipleSelection && selectedOptionIds.Count > 1)
+            throw new InvalidOperationException("Multiple selections are not allowed for this question.");
+
+        var validOptionIds = Options.Select(o => o.Id).ToHashSet();
+
+        if (selectedOptionIds.Any(id => !validOptionIds.Contains(id)))
+            throw new InvalidOperationException("One or more selected options are invalid.");
     }
 }

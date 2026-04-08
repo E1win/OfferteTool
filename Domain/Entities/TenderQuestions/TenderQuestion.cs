@@ -1,4 +1,5 @@
-﻿using Domain.Enums;
+﻿using Domain.Entities.TenderAnswers;
+using Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace Domain.Entities.TenderQuestions;
@@ -20,5 +21,5 @@ public abstract class TenderQuestion
     // Check if the question is valid (e.g. for numeric, check if minimal number is not less than maximum)
     public abstract void Validate();
 
-    public abstract void ValidateAnswer(object? answer); // TODO: Change this to TenderAnswer 
+    public abstract void ValidateAnswer(TenderAnswer answer);
 }

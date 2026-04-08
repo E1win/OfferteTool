@@ -1,4 +1,5 @@
-﻿using Domain.Enums;
+﻿using Domain.Entities.TenderAnswers;
+using Domain.Enums;
 
 namespace Domain.Entities.TenderQuestions;
 
@@ -23,18 +24,20 @@ public class TextQuestion : TenderQuestion
         }
     }
 
-    public override void ValidateAnswer(object? answer)
+    public override void ValidateAnswer(TenderAnswer answer)
     {
         if (answer == null)
             throw new InvalidOperationException("Answer is required.");
 
-        if (answer is not string text)
-            throw new InvalidOperationException("Answer must be a string.");
+        if (answer is not TextAnswer textAnswer)
+            throw new InvalidOperationException("Answer type does not match question type.");
 
-        if (string.IsNullOrWhiteSpace(text))
+        var value = textAnswer.Value;
+
+        if (string.IsNullOrWhiteSpace(value))
             throw new InvalidOperationException("Answer cannot be empty.");
 
-        if (MaxLength.HasValue && text.Length > MaxLength.Value)
+        if (MaxLength.HasValue && value.Length > MaxLength.Value)
             throw new InvalidOperationException($"Answer exceeds max length of {MaxLength.Value}.");
     }
 }
