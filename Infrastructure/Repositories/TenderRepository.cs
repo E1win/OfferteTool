@@ -3,6 +3,7 @@ using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Infrastructure.Repositories;
 
@@ -22,4 +23,16 @@ public class TenderRepository(AppDbContext dbContext) : ITenderRepository
         await dbContext.Tenders
             .Where(t => t.IsPublic && t.Status == TenderStatus.Open)
             .ToListAsync();
+
+    public async Task<Tender> AddAsync(Tender tender)
+    {
+        await dbContext.Tenders.AddAsync(tender);
+        await dbContext.SaveChangesAsync();
+        return tender;
+    }
+
+    public async Task UpdateAsync()
+    {
+        await dbContext.SaveChangesAsync();
+    }
 }
