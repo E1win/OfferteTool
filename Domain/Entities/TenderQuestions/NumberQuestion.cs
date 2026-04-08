@@ -1,4 +1,5 @@
-﻿using Domain.Enums;
+﻿using Domain.Entities.TenderAnswers;
+using Domain.Enums;
 
 namespace Domain.Entities.TenderQuestions;
 
@@ -18,8 +19,21 @@ public class NumberQuestion : TenderQuestion
             throw new InvalidOperationException("MinValue cannot be greater than MaxValue.");
     }
 
-    public override void ValidateAnswer(object? answer)
+    public override void ValidateAnswer(TenderAnswer answer)
     {
-        throw new NotImplementedException();
+        if (answer == null)
+            throw new InvalidOperationException("Answer is required.");
+
+        if (answer is not NumberAnswer numberAnswer)
+            throw new InvalidOperationException("Answer type does not match question type.");
+
+        if (!numberAnswer.NumericValue.HasValue)
+            throw new InvalidOperationException("A numeric value is required.");
+
+        if (MinValue.HasValue && numberAnswer.NumericValue.Value < MinValue.Value)
+            throw new InvalidOperationException($"Value must be at least {MinValue.Value}.");
+
+        if (MaxValue.HasValue && numberAnswer.NumericValue.Value > MaxValue.Value)
+            throw new InvalidOperationException($"Value must be at most {MaxValue.Value}.");
     }
 }
