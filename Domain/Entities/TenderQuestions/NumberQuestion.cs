@@ -28,7 +28,7 @@ public class NumberQuestion : TenderQuestion
             throw new InvalidOperationException("Answer type does not match question type.");
 
         if (!numberAnswer.Value.HasValue)
-            throw new InvalidOperationException("Answer is cannot be empty.");
+            throw new InvalidOperationException("A numeric value is required.");
 
         if (MinValue.HasValue && numberAnswer.Value.Value < MinValue.Value)
             throw new InvalidOperationException($"Value must be at least {MinValue.Value}.");
