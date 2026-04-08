@@ -12,6 +12,4 @@ public class TextAnswer : TenderAnswer
     {
         Type = AnswerType.Text;
     }
-
-    public override object? GetValue() => Value;
 }

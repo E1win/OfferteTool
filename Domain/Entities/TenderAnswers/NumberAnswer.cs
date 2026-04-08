@@ -11,6 +11,4 @@ public class NumberAnswer : TenderAnswer
     {
         Type = AnswerType.Numeric;
     }
-
-    public override object? GetValue() => Value;
 }

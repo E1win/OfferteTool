@@ -10,6 +10,4 @@ public class ChoiceAnswer : TenderAnswer
     {
         Type = AnswerType.Choice;
     }
-
-    public override object? GetValue() => Selections.Select(s => s.OptionId).ToList();
 }

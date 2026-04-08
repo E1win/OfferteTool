@@ -14,6 +14,4 @@ public abstract class TenderAnswer
     public TenderQuestion? Question { get; set; }
 
     public required AnswerType Type { get; set; }
-
-    public abstract object? GetValue();
 }
