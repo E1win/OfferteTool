@@ -1,6 +1,7 @@
-using System.ComponentModel.DataAnnotations;
 using Domain.Constants;
+using Domain.Entities.TenderQuestions;
 using Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Domain.Entities;
 
@@ -21,6 +22,8 @@ public class Tender
 
     public required Guid OrganisationId { get; set; }
     public Organisation? Organisation { get; set; }
+
+    public List<TenderQuestion> Questions { get; set; } = [];
 
     // EndDate has to be at least one day after StartDate
     public bool HasValidDateRange() => EndDate > StartDate;
