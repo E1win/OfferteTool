@@ -36,4 +36,6 @@ public class Tender
                 => IsPublic && Status == TenderStatus.Open,
             _ => false
         };
+
+    public bool CanBeEdited() => Status == TenderStatus.Design;
 }
