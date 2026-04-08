@@ -24,6 +24,7 @@ public class Tender
     public Organisation? Organisation { get; set; }
 
     public List<TenderQuestion> Questions { get; set; } = [];
+    public List<TenderSubmission> Submissions { get; set; } = [];
 
     // EndDate has to be at least one day after StartDate
     public bool HasValidDateRange() => EndDate > StartDate;
