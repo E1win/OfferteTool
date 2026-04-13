@@ -8,6 +8,21 @@ namespace Application.Services;
 
 public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentUserService currentUserService, ITenderQuestionRepository tenderQuestionRepository) : ITenderQuestionService
 {
+    public async Task<List<TenderQuestion>> GetQuestionsAsync(Guid tenderId, string userId)
+    {
+        Tender tender = await tenderRepository.GetByIdWithQuestionsAndOptionsAsync(tenderId)
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        if (!tender.IsAccessibleBy(user, role))
+            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
+
+        return tender.Questions
+            .OrderBy(q => q.Order)
+            .ToList();
+    }
+
     public async Task<TenderQuestion> CreateQuestionAsync(Guid tenderId, TenderQuestion question, string userId)
     {
         Tender tender = await tenderRepository.GetByIdAsync(tenderId)
@@ -36,10 +51,13 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         return await tenderQuestionRepository.AddAsync(question);
     }
 
-    public async Task<TenderQuestion> UpdateQuestionAsync(Guid questionId, TenderQuestion updatedQuestion, string userId)
+    public async Task<TenderQuestion> UpdateQuestionAsync(Guid tenderId, Guid questionId, TenderQuestion updatedQuestion, string userId)
     {
         TenderQuestion existingQuestion = await tenderQuestionRepository.GetByIdAsync(questionId)
             ?? throw new KeyNotFoundException("Vraag niet gevonden.");
+
+        if (existingQuestion.TenderId != tenderId)
+            throw new KeyNotFoundException("Vraag niet gevonden.");
 
         Tender tender = await tenderRepository.GetByIdAsync(existingQuestion.TenderId)
             ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
@@ -92,10 +110,13 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         }
     }
 
-    public async Task DeleteQuestionAsync(Guid questionId, string userId)
+    public async Task DeleteQuestionAsync(Guid tenderId, Guid questionId, string userId)
     {
         TenderQuestion existingQuestion = await tenderQuestionRepository.GetByIdAsync(questionId)
             ?? throw new KeyNotFoundException("Vraag niet gevonden.");
+
+        if (existingQuestion.TenderId != tenderId)
+            throw new KeyNotFoundException("Vraag niet gevonden.");
 
         Tender tender = await tenderRepository.GetByIdAsync(existingQuestion.TenderId)
             ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
