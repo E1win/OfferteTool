@@ -37,12 +37,11 @@ public class TenderController(ITenderService tenderService) : Controller
         }
         catch (InvalidOperationException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.Message);
-            return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true));
+            return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true, ex.Message));
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
-            return Forbid();
+            return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true, ex.Message));
         }
     }
 
@@ -68,12 +67,11 @@ public class TenderController(ITenderService tenderService) : Controller
         }
         catch (InvalidOperationException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.Message);
-            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true));
+            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true, ex.Message));
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
-            return Forbid();
+            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true, ex.Message));
         }
     }
 
@@ -98,7 +96,8 @@ public class TenderController(ITenderService tenderService) : Controller
     private async Task<TenderIndexViewModel> BuildTenderIndexViewModelAsync(
         string userId,
         TenderFormViewModel? createTender = null,
-        bool openCreateTenderModal = false)
+        bool openCreateTenderModal = false,
+        string? errorMessage = null)
     {
         return new TenderIndexViewModel
         {
@@ -109,6 +108,7 @@ public class TenderController(ITenderService tenderService) : Controller
                 ModalTitle = "Nieuwe tender aanmaken",
                 SubmitAction = nameof(Create),
                 SubmitButtonText = "Tender aanmaken",
+                ErrorMessage = errorMessage,
                 ShowOnLoad = openCreateTenderModal,
                 Form = createTender ?? new TenderFormViewModel()
             }
@@ -119,7 +119,8 @@ public class TenderController(ITenderService tenderService) : Controller
         Guid id,
         string userId,
         TenderFormViewModel? editTender = null,
-        bool openEditTenderModal = false)
+        bool openEditTenderModal = false,
+        string? errorMessage = null)
     {
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
 
@@ -133,6 +134,7 @@ public class TenderController(ITenderService tenderService) : Controller
                     ModalTitle = "Tender wijzigen",
                     SubmitAction = nameof(Edit),
                     SubmitButtonText = "Wijzigingen opslaan",
+                    ErrorMessage = errorMessage,
                     ShowOnLoad = openEditTenderModal,
                     TenderId = tender.Id,
                     Form = editTender ?? MapToTenderForm(tender)

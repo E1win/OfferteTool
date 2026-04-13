@@ -15,6 +15,12 @@
                     <p id="@(Model.ModalId)Description" class="visually-hidden">
                         Vul de gegevens van het offertetraject in en kies daarna @Model.SubmitButtonText.ToLowerInvariant().
                     </p>
+                    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert" aria-live="assertive">
+                            @Model.ErrorMessage
+                        </div>
+                    }
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert" aria-live="assertive"></div>
 
                     <fieldset>
