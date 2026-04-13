@@ -20,7 +20,11 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.R
     .AddEntityFrameworkStores<AppDbContext>();
 
 builder.Services.AddScoped<ITenderRepository, TenderRepository>();
+builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>();
+
 builder.Services.AddScoped<ITenderService, TenderService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
 
 builder.Services.AddControllersWithViews();
 

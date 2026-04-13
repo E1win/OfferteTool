@@ -13,6 +13,54 @@ public class ChoiceQuestion : TenderQuestion
         Type = QuestionType.Choice;
     }
 
+    public void SetOptions(List<TenderQuestionOption> incomingOptions)
+    {
+        // Check if any incoming option has an Id that doesn't match an existing option (and is not a new option with Guid.Empty)
+        var existingOptionIds = Options
+            .Select(o => o.Id)
+            .ToHashSet();
+
+        var invalidIncomingOption = incomingOptions
+            .FirstOrDefault(o => o.Id != Guid.Empty && !existingOptionIds.Contains(o.Id));
+
+        if (invalidIncomingOption != null)
+            throw new InvalidOperationException("Incoming option contains an invalid Id for this question.");
+
+        // Remove options that are no longer in the incoming list
+        var incomingIds = incomingOptions
+            .Where(o => o.Id != Guid.Empty)
+            .Select(o => o.Id)
+            .ToHashSet();
+
+        var toRemove = Options
+            .Where(o => !incomingIds.Contains(o.Id))
+            .ToList();
+
+        foreach (var option in toRemove)
+            Options.Remove(option);
+
+        // Update existing and add new
+        for (var i = 0; i < incomingOptions.Count; i++)
+        {
+            var incoming = incomingOptions[i];
+            var existing = Options.FirstOrDefault(o => o.Id == incoming.Id && incoming.Id != Guid.Empty);
+
+            if (existing is not null)
+            {
+                existing.Text = incoming.Text;
+                existing.Order = i;
+            }
+            else
+            {
+                Options.Add(new TenderQuestionOption
+                {
+                    Text = incoming.Text,
+                    Order = i
+                });
+            }
+        }
+    }
+
     public override void Validate()
     {
         if (Options.Count == 0)
@@ -25,6 +73,9 @@ public class ChoiceQuestion : TenderQuestion
 
         if (duplicateValues.Any())
             throw new InvalidOperationException("Duplicate option values are not allowed.");
+
+        if (Options.Any(option => string.IsNullOrEmpty(option.Text)))
+            throw new InvalidOperationException("All options must have text");
     }
 
     public override void ValidateAnswer(TenderAnswer answer)

@@ -3,15 +3,14 @@ using Application.Interfaces.Services;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Enums;
-using Microsoft.AspNetCore.Identity;
 
 namespace Application.Services;
 
-public class TenderService(ITenderRepository tenderRepository, UserManager<ApplicationUser> userManager) : ITenderService
+public class TenderService(ITenderRepository tenderRepository, ICurrentUserService currentUserService) : ITenderService
 {
     public async Task<List<Tender>> GetAccessibleTendersAsync(string userId)
     {
-        var (user, role) = await GetUserWithRoleAsync(userId);
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         return role switch
         {
@@ -28,7 +27,7 @@ public class TenderService(ITenderRepository tenderRepository, UserManager<Appli
         var tender = await tenderRepository.GetByIdAsync(tenderId)
             ?? throw new KeyNotFoundException("Tender not found.");
 
-        var (user, role) = await GetUserWithRoleAsync(userId);
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         return tender.IsAccessibleBy(user, role)
             ? tender
@@ -37,7 +36,7 @@ public class TenderService(ITenderRepository tenderRepository, UserManager<Appli
 
     public async Task<Tender> CreateTenderAsync(Tender tender, string userId)
     {
-        var (user, role) = await GetUserWithRoleAsync(userId);
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         if (role != Roles.Inkoper)
             throw new UnauthorizedAccessException("Only inkopers can create tenders.");
@@ -60,7 +59,7 @@ public class TenderService(ITenderRepository tenderRepository, UserManager<Appli
         var existingTender = await tenderRepository.GetByIdAsync(tenderId)
             ?? throw new KeyNotFoundException("Tender not found.");
 
-        var (user, role) = await GetUserWithRoleAsync(userId);
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         if (!existingTender.IsAccessibleBy(user, role))
             throw new UnauthorizedAccessException("You do not have access to this tender.");
@@ -81,17 +80,5 @@ public class TenderService(ITenderRepository tenderRepository, UserManager<Appli
         await tenderRepository.UpdateAsync();
 
         return existingTender;
-    }
-
-    private async Task<(ApplicationUser User, string Role)> GetUserWithRoleAsync(string userId)
-    {
-        var user = await userManager.FindByIdAsync(userId)
-            ?? throw new InvalidOperationException("User not found.");
-
-        var roles = await userManager.GetRolesAsync(user);
-        var role = roles.FirstOrDefault()
-            ?? throw new InvalidOperationException("User has no role assigned.");
-
-        return (user, role);
     }
 }

@@ -1,5 +1,6 @@
 using Application.Interfaces.Repositories;
 using Domain.Entities;
+using Domain.Entities.TenderQuestions;
 using Domain.Enums;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,13 @@ public class TenderRepository(AppDbContext dbContext) : ITenderRepository
     public async Task<Tender?> GetByIdAsync(Guid id) =>
         await dbContext.Tenders
             .Include(t => t.Organisation)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+    public async Task<Tender?> GetByIdWithQuestionsAndOptionsAsync(Guid id) =>
+        await dbContext.Tenders
+            .Include(t => t.Organisation)
+            .Include(t => t.Questions)
+            .ThenInclude(q => ((ChoiceQuestion)q).Options)
             .FirstOrDefaultAsync(t => t.Id == id);
 
     public async Task<List<Tender>> GetByOrganisationAsync(Guid organisationId) =>
