@@ -103,7 +103,7 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
             throw new UnauthorizedAccessException("Only inkopers can reorder questions.");
 
         if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Questions can only be reorderd while the tender is in Design.");
+            throw new InvalidOperationException("Questions can only be reordered while the tender is in Design.");
 
         var questions = tender.Questions.ToList();
 
