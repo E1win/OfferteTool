@@ -60,11 +60,35 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         {
             existingChoice.SetOptions([.. updatedChoice.Options]);
         }
+
+        CopyTypeSpecificProperties(existingQuestion, updatedQuestion);
         existingQuestion.Validate();
 
         await tenderQuestionRepository.SaveChangesAsync();
 
         return existingQuestion;
+    }
+
+    private static void CopyTypeSpecificProperties(TenderQuestion existingQuestion, TenderQuestion updatedQuestion)
+    {
+        Type existingType = existingQuestion.GetType();
+        Type updatedType = updatedQuestion.GetType();
+
+        if (existingType != updatedType)
+            return;
+
+        var properties = existingType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly);
+
+        foreach (var property in properties)
+        {
+            if (!property.CanRead || !property.CanWrite)
+                continue;
+            if (property.GetIndexParameters().Length > 0)
+                continue;
+            if (property.Name == nameof(ChoiceQuestion.Options))
+                continue;
+            property.SetValue(existingQuestion, property.GetValue(updatedQuestion));
+        }
     }
 
     public async Task DeleteQuestionAsync(Guid questionId, string userId)
