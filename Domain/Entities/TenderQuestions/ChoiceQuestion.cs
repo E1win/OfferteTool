@@ -24,7 +24,7 @@ public class ChoiceQuestion : TenderQuestion
             .FirstOrDefault(o => o.Id != Guid.Empty && !existingOptionIds.Contains(o.Id));
 
         if (invalidIncomingOption != null)
-                throw new InvalidOperationException("Een van de opties hoort niet bij deze vraag.");
+            throw new InvalidOperationException("Een van de opties hoort niet bij deze vraag.");
 
         // Remove options that are no longer in the incoming list
         var incomingIds = incomingOptions
