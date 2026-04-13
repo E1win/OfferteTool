@@ -26,8 +26,15 @@ public class Tender
     public List<TenderQuestion> Questions { get; set; } = [];
     public List<TenderSubmission> Submissions { get; set; } = [];
 
-    // EndDate has to be at least one day after StartDate
-    public bool HasValidDateRange() => EndDate > StartDate;
+    public bool HasValidDateRange() {
+        if (EndDate <= StartDate)
+            return false;
+
+        if (StartDate < DateOnly.FromDateTime(DateTime.Today))
+            return false;
+
+        return true;
+    }
 
     public bool IsValidOrganisationType(OrganisationType type) => type == OrganisationType.Client;
 
