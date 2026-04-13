@@ -16,24 +16,24 @@ public class NumberQuestion : TenderQuestion
     public override void Validate()
     {
         if (MinValue.HasValue && MaxValue.HasValue && MinValue > MaxValue)
-            throw new InvalidOperationException("MinValue cannot be greater than MaxValue.");
+            throw new InvalidOperationException("De minimale waarde mag niet hoger zijn dan de maximale waarde.");
     }
 
     public override void ValidateAnswer(TenderAnswer answer)
     {
         if (answer == null)
-            throw new InvalidOperationException("Answer is required.");
+            throw new InvalidOperationException("Vul een antwoord in.");
 
         if (answer is not NumberAnswer numberAnswer)
-            throw new InvalidOperationException("Answer type does not match question type.");
+            throw new InvalidOperationException("Het ingevulde antwoord past niet bij deze vraag.");
 
         if (!numberAnswer.NumericValue.HasValue)
-            throw new InvalidOperationException("A numeric value is required.");
+            throw new InvalidOperationException("Vul een getal in.");
 
         if (MinValue.HasValue && numberAnswer.NumericValue.Value < MinValue.Value)
-            throw new InvalidOperationException($"Value must be at least {MinValue.Value}.");
+            throw new InvalidOperationException($"De waarde moet minimaal {MinValue.Value} zijn.");
 
         if (MaxValue.HasValue && numberAnswer.NumericValue.Value > MaxValue.Value)
-            throw new InvalidOperationException($"Value must be at most {MaxValue.Value}.");
+            throw new InvalidOperationException($"De waarde mag maximaal {MaxValue.Value} zijn.");
     }
 }

@@ -11,18 +11,18 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
     public async Task<TenderQuestion> CreateQuestionAsync(Guid tenderId, TenderQuestion question, string userId)
     {
         Tender tender = await tenderRepository.GetByIdAsync(tenderId)
-            ?? throw new KeyNotFoundException("Tender not found.");
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("User does not have access to this tender.");
+            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
 
         if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Only inkopers can create questions.");
+            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen aanmaken.");
 
         if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Questions can only be changed while the tender is in Design.");
+            throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
 
         question.TenderId = tender.Id;
         question.Order = await tenderQuestionRepository.GetNextOrderForTenderAsync(tender.Id);
@@ -39,21 +39,21 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
     public async Task<TenderQuestion> UpdateQuestionAsync(Guid questionId, TenderQuestion updatedQuestion, string userId)
     {
         TenderQuestion existingQuestion = await tenderQuestionRepository.GetByIdAsync(questionId)
-            ?? throw new KeyNotFoundException("Question not found.");
+            ?? throw new KeyNotFoundException("Vraag niet gevonden.");
 
         Tender tender = await tenderRepository.GetByIdAsync(existingQuestion.TenderId)
-            ?? throw new KeyNotFoundException("Tender not found.");
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("User does not have access to this tender.");
+            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
 
         if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Only inkopers can update questions.");
+            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen wijzigen.");
 
         if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Questions can only be changed while the tender is in Design.");
+            throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
 
         existingQuestion.Text = updatedQuestion.Text;
         existingQuestion.Score = updatedQuestion.Score;
@@ -95,21 +95,21 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
     public async Task DeleteQuestionAsync(Guid questionId, string userId)
     {
         TenderQuestion existingQuestion = await tenderQuestionRepository.GetByIdAsync(questionId)
-            ?? throw new KeyNotFoundException("Question not found.");
+            ?? throw new KeyNotFoundException("Vraag niet gevonden.");
 
         Tender tender = await tenderRepository.GetByIdAsync(existingQuestion.TenderId)
-            ?? throw new KeyNotFoundException("Tender not found.");
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("User does not have access to this tender.");
+            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
         
         if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Only inkopers can delete questions.");
+            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen verwijderen.");
 
         if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Questions can only be deleted while the tender is in Design.");
+            throw new InvalidOperationException("Vragen kunnen alleen worden verwijderd zolang het offertetraject de status Ontwerp heeft.");
 
         await tenderQuestionRepository.DeleteAsync(existingQuestion);
     }
@@ -117,30 +117,30 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
     public async Task ReorderQuestionsAsync(Guid tenderId, List<Guid> orderedQuestionIds, string userId)
     {
         Tender tender = await tenderRepository.GetByIdWithQuestionsAndOptionsAsync(tenderId)
-            ?? throw new KeyNotFoundException("Tender not found.");
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("User does not have access to this tender.");
+            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
 
         if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Only inkopers can reorder questions.");
+            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen herordenen.");
 
         if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Questions can only be reordered while the tender is in Design.");
+            throw new InvalidOperationException("Vragen kunnen alleen worden herordend zolang het offertetraject de status Ontwerp heeft.");
 
         var questions = tender.Questions.ToList();
 
         var existingIds = questions.Select(q => q.Id).ToHashSet();
 
         if (orderedQuestionIds.Count != existingIds.Count)
-            throw new InvalidOperationException("The reordered list must contain all questions exactly once.");
+            throw new InvalidOperationException("De nieuwe volgorde moet alle vragen precies één keer bevatten.");
 
         var incomingIds = orderedQuestionIds.ToHashSet();
 
         if (!existingIds.SetEquals(incomingIds))
-            throw new InvalidOperationException("The reordered list must contain all questions exactly once.");
+            throw new InvalidOperationException("De nieuwe volgorde moet alle vragen precies één keer bevatten.");
 
         var orderMap = orderedQuestionIds
             .Select((id, index) => new { id, index })

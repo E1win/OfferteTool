@@ -24,7 +24,7 @@ public class ChoiceQuestion : TenderQuestion
             .FirstOrDefault(o => o.Id != Guid.Empty && !existingOptionIds.Contains(o.Id));
 
         if (invalidIncomingOption != null)
-            throw new InvalidOperationException("Incoming option contains an invalid Id for this question.");
+                throw new InvalidOperationException("Een van de opties hoort niet bij deze vraag.");
 
         // Remove options that are no longer in the incoming list
         var incomingIds = incomingOptions
@@ -64,7 +64,7 @@ public class ChoiceQuestion : TenderQuestion
     public override void Validate()
     {
         if (Options.Count == 0)
-            throw new InvalidOperationException("Choice questions must have at least one option.");
+            throw new InvalidOperationException("Voeg minimaal één keuze toe.");
 
         var duplicateValues = Options
             .GroupBy(o => o.Text)
@@ -72,31 +72,31 @@ public class ChoiceQuestion : TenderQuestion
             .Select(g => g.Key);
 
         if (duplicateValues.Any())
-            throw new InvalidOperationException("Duplicate option values are not allowed.");
+            throw new InvalidOperationException("Gebruik voor elke keuze een unieke tekst.");
 
         if (Options.Any(option => string.IsNullOrEmpty(option.Text)))
-            throw new InvalidOperationException("All options must have text");
+            throw new InvalidOperationException("Elke keuze moet een tekst hebben.");
     }
 
     public override void ValidateAnswer(TenderAnswer answer)
     {
         if (answer == null)
-            throw new InvalidOperationException("Answer is required.");
+            throw new InvalidOperationException("Vul een antwoord in.");
 
         if (answer is not ChoiceAnswer choiceAnswer)
-            throw new InvalidOperationException("Answer type does not match question type.");
+            throw new InvalidOperationException("Het ingevulde antwoord past niet bij deze vraag.");
         
         var selectedOptionIds = choiceAnswer.Selections.Select(s => s.OptionId).ToHashSet();
 
         if (selectedOptionIds.Count == 0)
-            throw new InvalidOperationException("At least one option must be selected.");
+            throw new InvalidOperationException("Selecteer minimaal één optie.");
 
         if (!AllowMultipleSelection && selectedOptionIds.Count > 1)
-            throw new InvalidOperationException("Multiple selections are not allowed for this question.");
+            throw new InvalidOperationException("U kunt bij deze vraag maar één optie kiezen.");
 
         var validOptionIds = Options.Select(o => o.Id).ToHashSet();
 
         if (selectedOptionIds.Any(id => !validOptionIds.Contains(id)))
-            throw new InvalidOperationException("One or more selected options are invalid.");
+            throw new InvalidOperationException("Een of meer gekozen opties zijn ongeldig.");
     }
 }

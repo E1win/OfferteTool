@@ -26,14 +26,12 @@ public class Tender
     public List<TenderQuestion> Questions { get; set; } = [];
     public List<TenderSubmission> Submissions { get; set; } = [];
 
-    public bool HasValidDateRange() {
+    public void ValidateDates() {
         if (EndDate <= StartDate)
-            return false;
+            throw new InvalidOperationException("De einddatum moet na de begindatum liggen.");
 
         if (StartDate < DateOnly.FromDateTime(DateTime.Today))
-            return false;
-
-        return true;
+            throw new InvalidOperationException("De begindatum mag niet voor vandaag liggen.");
     }
 
     public bool IsValidOrganisationType(OrganisationType type) => type == OrganisationType.Client;

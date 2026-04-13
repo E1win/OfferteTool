@@ -16,28 +16,28 @@ public class TextQuestion : TenderQuestion
     {
         if (Rows < 1)
         {
-            throw new ArgumentException("Rows must be at least 1.");
+            throw new ArgumentException("Een tekstveld moet minimaal uit één regel bestaan.");
         }
         if (MaxLength.HasValue && MaxLength.Value <= 0)
         {
-            throw new ArgumentException("MaxLength must be greater than 0.");
+            throw new ArgumentException("De maximale lengte moet groter zijn dan nul.");
         }
     }
 
     public override void ValidateAnswer(TenderAnswer answer)
     {
         if (answer == null)
-            throw new InvalidOperationException("Answer is required.");
+            throw new InvalidOperationException("Vul een antwoord in.");
 
         if (answer is not TextAnswer textAnswer)
-            throw new InvalidOperationException("Answer type does not match question type.");
+            throw new InvalidOperationException("Het ingevulde antwoord past niet bij deze vraag.");
 
         var value = textAnswer.TextValue;
 
         if (string.IsNullOrWhiteSpace(value))
-            throw new InvalidOperationException("Answer cannot be empty.");
+            throw new InvalidOperationException("Het antwoord mag niet leeg zijn.");
 
         if (MaxLength.HasValue && value.Length > MaxLength.Value)
-            throw new InvalidOperationException($"Answer exceeds max length of {MaxLength.Value}.");
+            throw new InvalidOperationException($"Het antwoord is te lang. Gebruik maximaal {MaxLength.Value} tekens.");
     }
 }
