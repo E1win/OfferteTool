@@ -39,6 +39,8 @@
             <div class="card-body">
                 <h3 class="h5 card-title">Details</h3>
                 <dl class="mb-0">
+                    <dt>Opdrachtgever</dt>
+                    <dd>@(Model.Tender.Organisation?.Name ?? "Onbekend")</dd>
                     <dt>Status</dt>
                     <dd>@(Model.Tender.Status switch
                     {
