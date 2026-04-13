@@ -16,7 +16,7 @@ public abstract class TenderQuestion
     [MaxLength(512)]
     public required string Text { get; set; }
     public int? Score { get; set; }
-    public required QuestionType Type { get; set; }
+    public QuestionType Type { get; protected init; }
 
     // Check if the question is valid (e.g. for numeric, check if minimal number is not less than maximum)
     public abstract void Validate();
