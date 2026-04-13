@@ -79,7 +79,7 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
 
         if (!tender.IsAccessibleBy(user, role))
             throw new UnauthorizedAccessException("User does not have access to this tender.");
-
+        
         if (role != Roles.Inkoper)
             throw new UnauthorizedAccessException("Only inkopers can delete questions.");
 
@@ -87,5 +87,43 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
             throw new InvalidOperationException("Questions can only be deleted while the tender is in Design.");
 
         await tenderQuestionRepository.DeleteAsync(existingQuestion);
+    }
+
+    public async Task ReorderQuestionsAsync(Guid tenderId, List<Guid> orderedQuestionIds, string userId)
+    {
+        Tender tender = await tenderRepository.GetByIdWithQuestionsAndOptionsAsync(tenderId)
+            ?? throw new KeyNotFoundException("Tender not found.");
+
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        if (!tender.IsAccessibleBy(user, role))
+            throw new UnauthorizedAccessException("User does not have access to this tender.");
+
+        if (role != Roles.Inkoper)
+            throw new UnauthorizedAccessException("Only inkopers can reorder questions.");
+
+        if (!tender.CanBeEdited())
+            throw new InvalidOperationException("Questions can only be reorderd while the tender is in Design.");
+
+        var questions = tender.Questions.ToList();
+
+        var existingIds = questions.Select(q => q.Id).ToHashSet();
+
+        if (orderedQuestionIds.Count != existingIds.Count)
+            throw new InvalidOperationException("The reordered list must contain all questions exactly once.");
+
+        var incomingIds = orderedQuestionIds.ToHashSet();
+
+        if (!existingIds.SetEquals(incomingIds))
+            throw new InvalidOperationException("The reordered list must contain all questions exactly once.");
+
+        var orderMap = orderedQuestionIds
+            .Select((id, index) => new { id, index })
+            .ToDictionary(x => x.id, x => x.index);
+
+        foreach (var question in questions)
+            question.Order = orderMap[question.Id];
+
+        await tenderQuestionRepository.SaveChangesAsync();
     }
 }

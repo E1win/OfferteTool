@@ -7,4 +7,5 @@ public interface ITenderQuestionService
     Task<TenderQuestion> CreateQuestionAsync(Guid tenderId, TenderQuestion question, string userId);
     Task<TenderQuestion> UpdateQuestionAsync(Guid questionId, TenderQuestion updatedQuestion, string userId);
     Task DeleteQuestionAsync(Guid questionId, string userId);
+    Task ReorderQuestionsAsync(Guid tenderId, List<Guid> orderedQuestionIds, string userId);
 }

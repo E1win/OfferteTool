@@ -42,7 +42,6 @@ public class ChoiceQuestion : TenderQuestion
             else
             {
                 incoming.Order = i;
-                incoming.QuestionId = Id;
                 Options.Add(incoming);
             }
         }
