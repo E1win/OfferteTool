@@ -1,0 +1,104 @@
+@model TenderIndexViewModel
+@using Domain.Constants
+@using Domain.Enums
+
+@{
+    ViewData["Title"] = "Tenders";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Tenders</h1>
+
+    @if (User.IsInRole(Roles.Inkoper))
+    {
+        <button type="button"
+                class="btn btn-dark"
+                aria-controls="@Model.CreateTenderModal.ModalId"
+                aria-haspopup="dialog"
+                data-bs-toggle="modal"
+                data-bs-target="#createTenderModal">
+            Nieuwe tender
+        </button>
+    }
+</header>
+
+@if (Model.Tenders.Count == 0)
+{
+    <section aria-labelledby="empty-tenders-heading">
+        <h2 id="empty-tenders-heading" class="visually-hidden">Geen tenders beschikbaar</h2>
+        <p class="text-muted mb-0">Er zijn geen tenders beschikbaar.</p>
+    </section>
+}
+else
+{
+    <section aria-labelledby="tenders-table-heading">
+        <h2 id="tenders-table-heading" class="visually-hidden">Tenderoverzicht</h2>
+
+        <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <caption class="visually-hidden">Overzicht van beschikbare tenders</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Titel</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Startdatum</th>
+                    <th scope="col">Einddatum</th>
+                    <th scope="col">Openbaar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tender in Model.Tenders)
+                {
+                    <tr>
+                        <th scope="row" class="position-relative fw-normal">
+                            <a class="stretched-link text-decoration-none text-reset"
+                               asp-controller="Tender"
+                               asp-action="Details"
+                               asp-route-id="@tender.Id">
+                                @tender.Title
+                            </a>
+                        </th>
+                        <td>
+                            <span class="badge bg-@(tender.Status switch
+                            {
+                                TenderStatus.Design => "secondary",
+                                TenderStatus.Open => "success",
+                                TenderStatus.Closed => "warning",
+                                TenderStatus.Completed => "info",
+                                _ => "secondary"
+                            })">
+                                <span class="visually-hidden">Status: </span>
+                                @tender.Status
+                            </span>
+                        </td>
+                        <td>@tender.StartDate.ToString("dd-MM-yyyy")</td>
+                        <td>@tender.EndDate.ToString("dd-MM-yyyy")</td>
+                        <td>@(tender.IsPublic ? "Ja" : "Nee")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+    </section>
+}
+
+@if (User.IsInRole(Roles.Inkoper))
+{
+    <partial name="_TenderFormModal" model="Model.CreateTenderModal" />
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    @if (Model.CreateTenderModal.ShowOnLoad)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const modalElement = document.getElementById("@Model.CreateTenderModal.ModalId");
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+}
