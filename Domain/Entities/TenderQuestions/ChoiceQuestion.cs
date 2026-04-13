@@ -15,6 +15,16 @@ public class ChoiceQuestion : TenderQuestion
 
     public void SetOptions(List<TenderQuestionOption> incomingOptions)
     {
+        var existingOptionIds = Options
+            .Select(o => o.Id)
+            .ToHashSet();
+
+        var invalidIncomingOption = incomingOptions
+            .FirstOrDefault(o => o.Id != Guid.Empty && !existingOptionIds.Contains(o.Id));
+
+        if (invalidIncomingOption != null)
+            throw new InvalidOperationException("Incoming option contains an invalid Id for this question.");
+
         // Remove options that are no longer in the incoming list
         var incomingIds = incomingOptions
             .Where(o => o.Id != Guid.Empty)
