@@ -15,6 +15,7 @@ public class ChoiceQuestion : TenderQuestion
 
     public void SetOptions(List<TenderQuestionOption> incomingOptions)
     {
+        // Check if any incoming option has an Id that doesn't match an existing option (and is not a new option with Guid.Empty)
         var existingOptionIds = Options
             .Select(o => o.Id)
             .ToHashSet();
@@ -51,8 +52,11 @@ public class ChoiceQuestion : TenderQuestion
             }
             else
             {
-                incoming.Order = i;
-                Options.Add(incoming);
+                Options.Add(new TenderQuestionOption
+                {
+                    Text = incoming.Text,
+                    Order = i
+                });
             }
         }
     }
