@@ -26,7 +26,8 @@ public class Tender
     public List<TenderQuestion> Questions { get; set; } = [];
     public List<TenderSubmission> Submissions { get; set; } = [];
 
-    public void ValidateDates() {
+    public void ValidateDates()
+    {
         if (EndDate <= StartDate)
             throw new InvalidOperationException("De einddatum moet na de begindatum liggen.");
 
