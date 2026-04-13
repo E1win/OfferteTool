@@ -66,4 +66,26 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
 
         return existingQuestion;
     }
+
+    public async Task DeleteQuestionAsync(Guid questionId, string userId)
+    {
+        TenderQuestion existingQuestion = await tenderQuestionRepository.GetByIdAsync(questionId)
+            ?? throw new KeyNotFoundException("Question not found.");
+
+        Tender tender = await tenderRepository.GetByIdAsync(existingQuestion.TenderId)
+            ?? throw new KeyNotFoundException("Tender not found.");
+
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        if (!tender.IsAccessibleBy(user, role))
+            throw new UnauthorizedAccessException("User does not have access to this tender.");
+
+        if (role != Roles.Inkoper)
+            throw new UnauthorizedAccessException("Only inkopers can delete questions.");
+
+        if (!tender.CanBeEdited())
+            throw new InvalidOperationException("Questions can only be deleted while the tender is in Design.");
+
+        await tenderQuestionRepository.DeleteAsync(existingQuestion);
+    }
 }
