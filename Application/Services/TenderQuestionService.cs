@@ -25,6 +25,7 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
             throw new InvalidOperationException("Questions can only be changed while the tender is in Design.");
 
         question.TenderId = tender.Id;
+        question.Order = await tenderQuestionRepository.GetNextOrderForTenderAsync(tender.Id);
 
         // Sets Order of options
         if (question is ChoiceQuestion choice)

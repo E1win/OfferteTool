@@ -8,4 +8,5 @@ public interface ITenderQuestionRepository
     Task<TenderQuestion> AddAsync(TenderQuestion question);
     Task DeleteAsync(TenderQuestion question);
     Task SaveChangesAsync();
+    Task<int> GetNextOrderForTenderAsync(Guid tenderId);
 }

@@ -29,4 +29,13 @@ public class TenderQuestionRepository(AppDbContext dbContext) : ITenderQuestionR
     {
         await dbContext.SaveChangesAsync();
     }
+
+    public async Task<int> GetNextOrderForTenderAsync(Guid tenderId)
+    {
+        int? maxOrder = await dbContext.TenderQuestions
+            .Where(q => q.TenderId == tenderId)
+            .MaxAsync(q => (int?)q.Order);
+
+        return (maxOrder ?? -1) + 1;
+    }
 }
