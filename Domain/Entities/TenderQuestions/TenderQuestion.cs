@@ -11,7 +11,7 @@ public abstract class TenderQuestion
     public required Guid TenderId { get; set; }
     public Tender? Tender { get; set; }
 
-    public required int Order { get; set; }
+    public int Order { get; set; }
 
     [MaxLength(512)]
     public required string Text { get; set; }
