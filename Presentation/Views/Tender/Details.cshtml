@@ -1,52 +1,98 @@
-@model Domain.Entities.Tender
+@model TenderDetailsViewModel
 @using Domain.Enums
 
 @{
-    ViewData["Title"] = Model.Title;
+    ViewData["Title"] = Model.Tender.Title;
 }
 
-<div class="mb-3">
-    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+<nav aria-label="Terug navigatie" class="mb-3">
+    <a asp-controller="Tender" asp-action="Index" class="btn btn-outline-secondary btn-sm">
         &larr; Terug naar overzicht
     </a>
+</nav>
+
+<div class="row">
+    <article class="col-lg-8">
+        <header class="mb-4">
+            <h1 class="mb-0">@Model.Tender.Title</h1>
+        </header>
+
+        <section aria-labelledby="description-heading">
+            <h2 id="description-heading" class="h4">Beschrijving</h2>
+            <p class="mb-0">@Model.Tender.Description</p>
+        </section>
+
+        @* Vragenlijst section will be added later *@
+    </article>
+
+    <aside class="col-lg-4" aria-labelledby="tender-sidebar-heading">
+        <h2 id="tender-sidebar-heading" class="visually-hidden">Tenderacties en details</h2>
+
+        @if (Model.Tender.CanBeEdited())
+        {
+            <div class="d-grid mb-3">
+                <button type="button" class="btn btn-dark">Offertetraject publiceren</button>
+            </div>
+        }
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="h5 card-title">Details</h3>
+                <dl class="mb-0">
+                    <dt>Opdrachtgever</dt>
+                    <dd>@(Model.Tender.Organisation?.Name ?? "Onbekend")</dd>
+                    <dt>Status</dt>
+                    <dd>@(Model.Tender.Status switch
+                    {
+                        TenderStatus.Design => "Ontwerp",
+                        TenderStatus.Open => "Open",
+                        TenderStatus.Closed => "Gesloten",
+                        TenderStatus.Completed => "Afgerond",
+                        _ => Model.Tender.Status.ToString()
+                    })</dd>
+
+                    <dt>Publiek</dt>
+                    <dd>@(Model.Tender.IsPublic ? "Ja" : "Nee")</dd>
+
+                    <dt>Begindatum</dt>
+                    <dd>@Model.Tender.StartDate.ToString("dd/MM/yyyy")</dd>
+
+                    <dt>Einddatum</dt>
+                    <dd>@Model.Tender.EndDate.ToString("dd/MM/yyyy")</dd>
+                </dl>
+            </div>
+        </div>
+
+        @if (Model.EditTenderModal is not null)
+        {
+            <div class="d-grid mb-3">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        aria-controls="@Model.EditTenderModal.ModalId"
+                        aria-haspopup="dialog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#@Model.EditTenderModal.ModalId">
+                    Offertetraject wijzigen
+                </button>
+            </div>
+
+            <partial name="_TenderFormModal" for="EditTenderModal" />
+        }
+    </aside>
 </div>
 
-<h1 class="mb-4">@Model.Title</h1>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 
-<div class="card">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Status</dt>
-            <dd class="col-sm-9">
-                <span class="badge bg-@(Model.Status switch
-                {
-                    TenderStatus.Design => "secondary",
-                    TenderStatus.Open => "success",
-                    TenderStatus.Closed => "warning",
-                    TenderStatus.Completed => "info",
-                    _ => "secondary"
-                })">
-                    @Model.Status
-                </span>
-            </dd>
-
-            <dt class="col-sm-3">Omschrijving</dt>
-            <dd class="col-sm-9">@Model.Description</dd>
-
-            <dt class="col-sm-3">Startdatum</dt>
-            <dd class="col-sm-9">@Model.StartDate.ToString("dd-MM-yyyy")</dd>
-
-            <dt class="col-sm-3">Einddatum</dt>
-            <dd class="col-sm-9">@Model.EndDate.ToString("dd-MM-yyyy")</dd>
-
-            <dt class="col-sm-3">Openbaar</dt>
-            <dd class="col-sm-9">@(Model.IsPublic ? "Ja" : "Nee")</dd>
-
-            @if (Model.Organisation is not null)
-            {
-                <dt class="col-sm-3">Organisatie</dt>
-                <dd class="col-sm-9">@Model.Organisation.Name</dd>
-            }
-        </dl>
-    </div>
-</div>
+    @if (Model.EditTenderModal?.ShowOnLoad == true)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const modalElement = document.getElementById("@Model.EditTenderModal.ModalId");
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+}

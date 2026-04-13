@@ -25,13 +25,13 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
     public async Task<Tender> GetAccessibleTenderByIdAsync(Guid tenderId, string userId)
     {
         var tender = await tenderRepository.GetByIdAsync(tenderId)
-            ?? throw new KeyNotFoundException("Tender not found.");
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         return tender.IsAccessibleBy(user, role)
             ? tender
-            : throw new UnauthorizedAccessException("You do not have access to this tender.");
+            : throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
     }
 
     public async Task<Tender> CreateTenderAsync(Tender tender, string userId)
@@ -39,13 +39,12 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Only inkopers can create tenders.");
+            throw new UnauthorizedAccessException("Alleen inkopers kunnen offertetrajecten aanmaken.");
 
         if (user.OrganisationId is null)
-            throw new InvalidOperationException("User has no organisation.");
+            throw new InvalidOperationException("Uw account is nog niet gekoppeld aan een organisatie.");
 
-        if (!tender.HasValidDateRange())
-            throw new InvalidOperationException("EndDate must be later than StartDate.");
+        tender.ValidateDates();
 
         // For security, these values are set by the system, not the client
         tender.OrganisationId = user.OrganisationId.Value;
@@ -57,18 +56,17 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
     public async Task<Tender> UpdateTenderAsync(Guid tenderId, Tender updatedTender, string userId)
     {
         var existingTender = await tenderRepository.GetByIdAsync(tenderId)
-            ?? throw new KeyNotFoundException("Tender not found.");
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
         if (!existingTender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("You do not have access to this tender.");
+            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
 
         if (!existingTender.CanBeEdited())
-            throw new InvalidOperationException("Only tenders with the Design status can be updated.");
+            throw new InvalidOperationException("Alleen offertetrajecten met de status Ontwerp kunnen worden gewijzigd.");
 
-        if (!updatedTender.HasValidDateRange())
-            throw new InvalidOperationException("EndDate must be later than StartDate.");
+        updatedTender.ValidateDates();
 
         // Update only allowed fields
         existingTender.Title = updatedTender.Title;
