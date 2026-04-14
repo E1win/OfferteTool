@@ -63,8 +63,8 @@ public class ChoiceQuestion : TenderQuestion
 
     public override void Validate()
     {
-        if (Options.Count == 0)
-            throw new InvalidOperationException("Voeg minimaal één keuze toe.");
+        if (Options.Count < 2)
+            throw new InvalidOperationException("Voeg minimaal twee keuzes toe.");
 
         var duplicateValues = Options
             .GroupBy(o => o.Text)

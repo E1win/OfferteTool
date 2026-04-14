@@ -52,31 +52,5 @@ public class QuestionnaireQuestionInputModel : IValidatableObject
             }
         }
 
-        if (Type == QuestionType.Text)
-        {
-            if (Rows is < 1)
-            {
-                yield return new ValidationResult(
-                    "Een tekstvraag moet minimaal 1 regel hoog zijn.",
-                    [nameof(Rows)]);
-            }
-
-            if (MaxLength is < 1)
-            {
-                yield return new ValidationResult(
-                    "Het maximale aantal tekens moet minimaal 1 zijn.",
-                    [nameof(MaxLength)]);
-            }
-        }
-
-        if (Type == QuestionType.Numeric
-            && MinValue.HasValue
-            && MaxValue.HasValue
-            && MinValue > MaxValue)
-        {
-            yield return new ValidationResult(
-                "De minimumwaarde mag niet hoger zijn dan de maximumwaarde.",
-                [nameof(MinValue), nameof(MaxValue)]);
-        }
     }
 }
