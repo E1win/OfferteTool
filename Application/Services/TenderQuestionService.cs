@@ -72,7 +72,7 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
 
     public async Task ReorderQuestionsAsync(Guid tenderId, List<Guid> orderedQuestionIds, string userId)
     {
-        var (tender, _, _) = await AuthorizeQuestionManagementAsync(tenderId, userId);
+        var (tender, _, _) = await AuthorizeQuestionManagementAsync(tenderId, userId, includeQuestions: true);
 
         var questions = tender.Questions.ToList();
 
@@ -90,16 +90,34 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
             .Select((id, index) => new { id, index })
             .ToDictionary(x => x.id, x => x.index);
 
+        var temporaryOrderOffset = questions
+            .Select(question => question.Order)
+            .DefaultIfEmpty(-1)
+            .Max() + questions.Count + 1;
+
+        // Apply temporary unique orders first to avoid unique-index collisions while swapping positions.
+        foreach (var question in questions)
+            question.Order = temporaryOrderOffset + orderMap[question.Id];
+
+        await tenderQuestionRepository.SaveChangesAsync();
+
         foreach (var question in questions)
             question.Order = orderMap[question.Id];
 
         await tenderQuestionRepository.SaveChangesAsync();
     }
 
-    private async Task<(Tender Tender, ApplicationUser User, string Role)> AuthorizeQuestionManagementAsync(Guid tenderId, string userId)
+    private async Task<(Tender Tender, ApplicationUser User, string Role)> AuthorizeQuestionManagementAsync(
+        Guid tenderId,
+        string userId,
+        bool includeQuestions = false)
     {
-        var tender = await tenderRepository.GetByIdAsync(tenderId)
-            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+        Tender? tender = includeQuestions
+            ? await tenderRepository.GetByIdWithQuestionsAndOptionsAsync(tenderId)
+            : await tenderRepository.GetByIdAsync(tenderId);
+
+        if (tender is null)
+            throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
