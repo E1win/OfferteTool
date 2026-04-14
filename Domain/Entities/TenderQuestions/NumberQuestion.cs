@@ -36,4 +36,15 @@ public class NumberQuestion : TenderQuestion
         if (MaxValue.HasValue && numberAnswer.NumericValue.Value > MaxValue.Value)
             throw new InvalidOperationException($"De waarde mag maximaal {MaxValue.Value} zijn.");
     }
+
+    public override void UpdateFrom(TenderQuestion source)
+    {
+        if (source is not NumberQuestion numberSource)
+            return;
+
+        Text = numberSource.Text;
+        Score = numberSource.Score;
+        MinValue = numberSource.MinValue;
+        MaxValue = numberSource.MaxValue;
+    }
 }

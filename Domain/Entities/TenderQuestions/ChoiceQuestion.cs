@@ -99,4 +99,15 @@ public class ChoiceQuestion : TenderQuestion
         if (selectedOptionIds.Any(id => !validOptionIds.Contains(id)))
             throw new InvalidOperationException("Een of meer gekozen opties zijn ongeldig.");
     }
+
+    public override void UpdateFrom(TenderQuestion source)
+    {
+        if (source is not ChoiceQuestion choiceSource)
+            return;
+
+        Text = choiceSource.Text;
+        Score = choiceSource.Score;
+        AllowMultipleSelection = choiceSource.AllowMultipleSelection;
+        SetOptions([.. choiceSource.Options]);
+    }
 }

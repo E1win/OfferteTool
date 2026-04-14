@@ -22,4 +22,6 @@ public abstract class TenderQuestion
     public abstract void Validate();
 
     public abstract void ValidateAnswer(TenderAnswer answer);
+
+    public abstract void UpdateFrom(TenderQuestion source);
 }
