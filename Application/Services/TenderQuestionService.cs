@@ -1,6 +1,5 @@
 ﻿using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
-using Domain.Constants;
 using Domain.Entities;
 using Domain.Entities.TenderQuestions;
 
@@ -104,11 +103,8 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
-        if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
-
-        if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen beheren.");
+        if (!tender.CanBeManagedBy(user, role))
+            throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
 
         if (!tender.CanBeEdited())
             throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
