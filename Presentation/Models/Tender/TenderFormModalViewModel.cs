@@ -1,4 +1,4 @@
-namespace Presentation.Models;
+namespace Presentation.Models.Tender;
 
 public class TenderFormModalViewModel
 {

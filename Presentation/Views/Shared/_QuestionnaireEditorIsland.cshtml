@@ -1,0 +1,197 @@
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@model QuestionnaireEditorBootstrapViewModel
+
+@{
+    var questionnaireBootstrapJson = JsonSerializer.Serialize(
+        Model,
+        new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+        });
+}
+
+<section class="questionnaire-editor mt-5" aria-labelledby="questionnaire-heading">
+    <h2 id="questionnaire-heading" class="mb-3">Vragenlijst</h2>
+
+    <div id="questionnaire-antiforgery" class="d-none">
+        @Html.AntiForgeryToken()
+    </div>
+    <script id="questionnaire-editor-bootstrap" type="application/json">
+        @Html.Raw(questionnaireBootstrapJson)
+    </script>
+
+    <div id="questionnaire-editor" v-cloak>
+        <div v-if="questionnaire.isLoading" class="questionnaire-editor__empty">
+            Vragen worden geladen...
+        </div>
+
+        <div v-else>
+            <div v-if="questionnaire.errorMessage" class="alert alert-danger" role="alert">
+                <p class="mb-0">[[ questionnaire.errorMessage ]]</p>
+                <ul v-if="questionnaire.errorDetails.length > 1" class="mb-0 mt-2 ps-3">
+                    <li v-for="(error, index) in questionnaire.errorDetails" :key="`questionnaire-error-${index}`">
+                        [[ error ]]
+                    </li>
+                </ul>
+            </div>
+
+            <ol v-if="questionnaire.questions.length" class="questionnaire-editor__list">
+                <li v-for="(question, index) in questionnaire.questions" :key="question.id" class="questionnaire-editor__card">
+                    <div class="questionnaire-editor__card-top">
+                        <div class="questionnaire-editor__card-order">
+                            <button type="button"
+                                    class="btn btn-link btn-sm"
+                                    :disabled="!questionnaire.canManageQuestions || questionnaire.isSaving || index === 0"
+                                    v-on:click="moveQuestion(index, -1)"
+                                    aria-label="Vraag omhoog verplaatsen">
+                                &uarr;
+                            </button>
+                            <button type="button"
+                                    class="btn btn-link btn-sm"
+                                    :disabled="!questionnaire.canManageQuestions || questionnaire.isSaving || index === questionnaire.questions.length - 1"
+                                    v-on:click="moveQuestion(index, 1)"
+                                    aria-label="Vraag omlaag verplaatsen">
+                                &darr;
+                            </button>
+                        </div>
+
+                        <div class="questionnaire-editor__card-body">
+                            <p class="questionnaire-editor__question-text mb-2">[[ question.text ]]</p>
+                            <div class="questionnaire-editor__meta">
+                                <span class="badge text-bg-dark">[[ question.typeLabel ]]</span>
+                                <span class="badge text-bg-secondary">Punten: [[ scoreLabel(question.score) ]]</span>
+                            </div>
+                        </div>
+
+                        <div v-if="questionnaire.canManageQuestions" class="questionnaire-editor__card-actions">
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    :disabled="questionnaire.isSaving"
+                                    v-on:click="openEditDialog(question)"
+                                    aria-label="Vraag wijzigen">
+                                Wijzig
+                            </button>
+                            <button type="button"
+                                    class="btn btn-outline-danger btn-sm"
+                                    :disabled="questionnaire.isSaving"
+                                    v-on:click="deleteQuestion(question.id)"
+                                    aria-label="Vraag verwijderen">
+                                Verwijder
+                            </button>
+                        </div>
+                    </div>
+                </li>
+            </ol>
+
+            <div v-else class="questionnaire-editor__empty">
+                Er zijn nog geen vragen toegevoegd.
+            </div>
+
+            <div v-if="questionnaire.canManageQuestions" class="mt-4">
+                <button type="button"
+                        class="btn btn-dark"
+                        :disabled="questionnaire.isSaving"
+                        v-on:click="openCreateDialog">
+                    Vraag toevoegen
+                </button>
+            </div>
+        </div>
+
+        <div v-if="dialog.isOpen" class="questionnaire-editor__modal-backdrop" role="presentation">
+            <div class="questionnaire-editor__modal" role="dialog" aria-modal="true" aria-labelledby="questionnaire-dialog-title" aria-describedby="questionnaire-dialog-description">
+                <div class="questionnaire-editor__modal-header">
+                    <h3 id="questionnaire-dialog-title" class="mb-0">[[ dialog.title ]]</h3>
+                    <button type="button" class="btn-close" aria-label="Sluiten" v-on:click="closeDialog"></button>
+                </div>
+
+                <div class="questionnaire-editor__modal-body">
+                    <p id="questionnaire-dialog-description" class="text-muted">
+                        Voeg een vraag toe of pas de eigenschappen van een bestaande vraag aan.
+                    </p>
+
+                    <div v-if="dialog.errorMessage" class="alert alert-danger" role="alert">
+                        <p class="mb-0">[[ dialog.errorMessage ]]</p>
+                        <ul v-if="dialog.errorDetails.length > 1" class="mb-0 mt-2 ps-3">
+                            <li v-for="(error, index) in dialog.errorDetails" :key="`dialog-error-${index}`">
+                                [[ error ]]
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="questionnaire-text">Vraag</label>
+                        <input id="questionnaire-text" v-model="dialog.form.text" type="text" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="questionnaire-score">Score</label>
+                        <input id="questionnaire-score" v-model="dialog.form.score" type="number" min="0" class="form-control" placeholder="Optioneel" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="questionnaire-type">Vraagtype</label>
+                        <select id="questionnaire-type" v-model="dialog.form.type" class="form-select">
+                            <option :value="questionTypes.choice">Keuzevraag</option>
+                            <option :value="questionTypes.text">Tekstvraag</option>
+                            <option :value="questionTypes.numeric">Numerieke vraag</option>
+                        </select>
+                    </div>
+
+                    <div v-if="dialog.form.type === questionTypes.choice" class="mb-3">
+                        <div class="form-check mb-3">
+                            <input id="questionnaire-multiple" v-model="dialog.form.allowMultipleSelection" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label" for="questionnaire-multiple">Meerdere antwoorden toestaan</label>
+                        </div>
+
+                        <h4 class="h6">Opties</h4>
+                        <div v-for="(option, index) in dialog.form.options" :key="`${index}-${option.id || 'new'}`" class="questionnaire-editor__option-row">
+                            <div class="d-flex gap-2 align-items-start">
+                                <input v-model="option.text" type="text" class="form-control" :placeholder="`Optie ${index + 1}`" />
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="index === 0" v-on:click="moveOption(index, -1)" :aria-label="`Optie ${index + 1} omhoog verplaatsen`">&uarr;</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="index === dialog.form.options.length - 1" v-on:click="moveOption(index, 1)" :aria-label="`Optie ${index + 1} omlaag verplaatsen`">&darr;</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" :disabled="dialog.form.options.length <= 1" v-on:click="removeOption(index)" :aria-label="`Optie ${index + 1} verwijderen`">&times;</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-outline-dark btn-sm mt-2" v-on:click="addOption">
+                            Optie toevoegen
+                        </button>
+                    </div>
+
+                    <div v-else-if="dialog.form.type === questionTypes.text" class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label" for="questionnaire-rows">Aantal regels</label>
+                            <input id="questionnaire-rows" v-model="dialog.form.rows" type="number" min="1" class="form-control" />
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label" for="questionnaire-max-length">Maximaal aantal tekens</label>
+                            <input id="questionnaire-max-length" v-model="dialog.form.maxLength" type="number" min="1" class="form-control" placeholder="Optioneel" />
+                        </div>
+                    </div>
+
+                    <div v-else class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label" for="questionnaire-min-value">Minimumwaarde</label>
+                            <input id="questionnaire-min-value" v-model="dialog.form.minValue" type="number" step="any" class="form-control" placeholder="Optioneel" />
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label" for="questionnaire-max-value">Maximumwaarde</label>
+                            <input id="questionnaire-max-value" v-model="dialog.form.maxValue" type="number" step="any" class="form-control" placeholder="Optioneel" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="questionnaire-editor__modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" :disabled="questionnaire.isSaving" v-on:click="closeDialog">Annuleren</button>
+                    <button type="button" class="btn btn-dark" :disabled="questionnaire.isSaving" v-on:click="submitDialog">
+                        [[ questionnaire.isSaving ? 'Opslaan...' : dialog.submitLabel ]]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
