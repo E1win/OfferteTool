@@ -25,19 +25,7 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
 
     public async Task<TenderQuestion> CreateQuestionAsync(Guid tenderId, TenderQuestion question, string userId)
     {
-        Tender tender = await tenderRepository.GetByIdAsync(tenderId)
-            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
-
-        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
-
-        if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
-
-        if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen aanmaken.");
-
-        if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
+        var (tender, _, _) = await AuthorizeQuestionManagementAsync(tenderId, userId);
 
         question.TenderId = tender.Id;
         question.Order = await tenderQuestionRepository.GetNextOrderForTenderAsync(tender.Id);
@@ -59,19 +47,7 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         if (existingQuestion.TenderId != tenderId)
             throw new KeyNotFoundException("Vraag niet gevonden.");
 
-        Tender tender = await tenderRepository.GetByIdAsync(existingQuestion.TenderId)
-            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
-
-        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
-
-        if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
-
-        if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen wijzigen.");
-
-        if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
+        await AuthorizeQuestionManagementAsync(tenderId, userId);
 
         existingQuestion.Text = updatedQuestion.Text;
         existingQuestion.Score = updatedQuestion.Score;
@@ -118,38 +94,14 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         if (existingQuestion.TenderId != tenderId)
             throw new KeyNotFoundException("Vraag niet gevonden.");
 
-        Tender tender = await tenderRepository.GetByIdAsync(existingQuestion.TenderId)
-            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
-
-        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
-
-        if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
-        
-        if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen verwijderen.");
-
-        if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Vragen kunnen alleen worden verwijderd zolang het offertetraject de status Ontwerp heeft.");
+        await AuthorizeQuestionManagementAsync(tenderId, userId);
 
         await tenderQuestionRepository.DeleteAsync(existingQuestion);
     }
 
     public async Task ReorderQuestionsAsync(Guid tenderId, List<Guid> orderedQuestionIds, string userId)
     {
-        Tender tender = await tenderRepository.GetByIdWithQuestionsAndOptionsAsync(tenderId)
-            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
-
-        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
-
-        if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
-
-        if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen herordenen.");
-
-        if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Vragen kunnen alleen worden herordend zolang het offertetraject de status Ontwerp heeft.");
+        var (tender, _, _) = await AuthorizeQuestionManagementAsync(tenderId, userId);
 
         var questions = tender.Questions.ToList();
 
@@ -171,5 +123,24 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
             question.Order = orderMap[question.Id];
 
         await tenderQuestionRepository.SaveChangesAsync();
+    }
+
+    private async Task<(Tender Tender, ApplicationUser User, string Role)> AuthorizeQuestionManagementAsync(Guid tenderId, string userId)
+    {
+        var tender = await tenderRepository.GetByIdAsync(tenderId)
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        if (!tender.IsAccessibleBy(user, role))
+            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
+
+        if (role != Roles.Inkoper)
+            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen beheren.");
+
+        if (!tender.CanBeEdited())
+            throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
+
+        return (tender, user, role);
     }
 }
