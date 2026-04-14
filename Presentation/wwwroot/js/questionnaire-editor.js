@@ -7,6 +7,11 @@
         return;
     }
 
+    const defaultErrorMessage = "Er ging iets mis bij het verwerken van uw verzoek.";
+    const csrfErrorMessage = "Uw formulier kon niet veilig worden verwerkt. Vernieuw de pagina en probeer het opnieuw.";
+    const unauthorizedErrorMessage = "U heeft geen toestemming om deze actie uit te voeren.";
+    const sessionExpiredErrorMessage = "Uw sessie is verlopen. Meld u opnieuw aan en probeer het daarna nog eens.";
+
     const rawBootstrap = JSON.parse(bootstrapElement.textContent);
     const bootstrap = {
         apiBaseUrl: rawBootstrap.apiBaseUrl ?? "",
@@ -25,28 +30,115 @@
         return;
     }
 
-    const createEmptyForm = () => ({
-        text: "",
-        score: "",
-        type: bootstrap.questionTypes.choice,
-        allowMultipleSelection: true,
-        rows: 1,
-        maxLength: "",
-        minValue: "",
-        maxValue: "",
-        options: [
-            { id: null, text: "" },
-            { id: null, text: "" }
-        ]
-    });
-
     const createErrorState = (message, errors = []) => ({
         message,
         errors
     });
 
+    const createEmptyOptions = () => [
+        { id: null, text: "" },
+        { id: null, text: "" }
+    ];
+
+    const createEmptyForm = (questionTypes) => ({
+        text: "",
+        score: "",
+        type: questionTypes.choice,
+        allowMultipleSelection: true,
+        rows: 1,
+        maxLength: "",
+        minValue: "",
+        maxValue: "",
+        options: createEmptyOptions()
+    });
+
+    const createQuestionnaireState = (canManageQuestions) => ({
+        isLoading: true,
+        isSaving: false,
+        errorMessage: "",
+        errorDetails: [],
+        canManageQuestions,
+        questions: []
+    });
+
+    const createDialogState = (questionTypes) => ({
+        isOpen: false,
+        mode: "create",
+        title: "Vraag toevoegen",
+        submitLabel: "Toevoegen",
+        errorMessage: "",
+        errorDetails: [],
+        questionId: null,
+        form: createEmptyForm(questionTypes)
+    });
+
+    const resetErrors = (target) => {
+        target.errorMessage = "";
+        target.errorDetails = [];
+    };
+
+    const applyError = (target, error) => {
+        target.errorMessage = error.message;
+        target.errorDetails = error.errors ?? [];
+    };
+
+    const createDialogStateFromQuestion = (question, questionTypes) => ({
+        isOpen: true,
+        mode: "edit",
+        title: "Vraag wijzigen",
+        submitLabel: "Opslaan",
+        errorMessage: "",
+        errorDetails: [],
+        questionId: question.id,
+        form: {
+            text: question.text,
+            score: question.score ?? "",
+            type: question.type,
+            allowMultipleSelection: question.allowMultipleSelection,
+            rows: question.rows ?? 1,
+            maxLength: question.maxLength ?? "",
+            minValue: question.minValue ?? "",
+            maxValue: question.maxValue ?? "",
+            options: question.options.length > 0
+                ? question.options.map(option => ({ id: option.id, text: option.text }))
+                : createEmptyOptions(questionTypes)
+        }
+    });
+
+    const moveListItem = (items, index, direction) => {
+        const targetIndex = index + direction;
+
+        if (targetIndex < 0 || targetIndex >= items.length) {
+            return false;
+        }
+
+        const [item] = items.splice(index, 1);
+        items.splice(targetIndex, 0, item);
+        return true;
+    };
+
+    const buildRequestOptions = (method, antiforgeryHeaderName, antiforgeryValue, body) => {
+        const headers = {
+            "Accept": "application/json"
+        };
+
+        if (method !== "GET") {
+            headers[antiforgeryHeaderName] = antiforgeryValue;
+        }
+
+        if (body !== undefined) {
+            headers["Content-Type"] = "application/json";
+        }
+
+        return {
+            method,
+            credentials: "same-origin",
+            headers,
+            body: body === undefined ? undefined : JSON.stringify(body)
+        };
+    };
+
     const extractErrorState = async (response) => {
-        const fallbackMessage = "Er ging iets mis bij het verwerken van uw verzoek.";
         const contentType = response.headers.get("content-type") ?? "";
 
         try {
@@ -71,25 +163,35 @@
             }
 
             if (response.status === 401) {
-                return createErrorState("Uw sessie is verlopen. Meld u opnieuw aan en probeer het daarna nog eens.");
+                return createErrorState(sessionExpiredErrorMessage);
             }
 
             if (response.status === 403) {
-                return createErrorState("U heeft geen toestemming om deze actie uit te voeren.");
+                return createErrorState(unauthorizedErrorMessage);
             }
 
             if (response.status === 400 && responseText.toLowerCase().includes("antiforg")) {
-                return createErrorState("Uw formulier kon niet veilig worden verwerkt. Vernieuw de pagina en probeer het opnieuw.");
+                return createErrorState(csrfErrorMessage);
             }
 
             if (!contentType.includes("text/html") && responseText.trim().length > 0) {
                 return createErrorState(responseText.trim());
             }
         } catch {
-            return createErrorState(fallbackMessage);
+            return createErrorState(defaultErrorMessage);
         }
 
-        return createErrorState(fallbackMessage);
+        return createErrorState(defaultErrorMessage);
+    };
+
+    const fetchApi = async (url, options) => {
+        const response = await fetch(url, options);
+
+        if (!response.ok) {
+            throw await extractErrorState(response);
+        }
+
+        return response.json();
     };
 
     const app = Vue.createApp({
@@ -98,98 +200,28 @@
                 apiBaseUrl: bootstrap.apiBaseUrl,
                 antiforgeryHeaderName: bootstrap.antiforgeryHeaderName,
                 questionTypes: bootstrap.questionTypes,
-                questionnaire: {
-                    isLoading: true,
-                    isSaving: false,
-                    errorMessage: "",
-                    errorDetails: [],
-                    canManageQuestions: bootstrap.canManageQuestions,
-                    questions: []
-                },
-                dialog: {
-                    isOpen: false,
-                    mode: "create",
-                    title: "Vraag toevoegen",
-                    submitLabel: "Toevoegen",
-                    errorMessage: "",
-                    errorDetails: [],
-                    questionId: null,
-                    form: createEmptyForm()
-                }
+                questionnaire: createQuestionnaireState(bootstrap.canManageQuestions),
+                dialog: createDialogState(bootstrap.questionTypes)
             };
         },
         mounted() {
             this.loadQuestions();
         },
         methods: {
-            async loadQuestions() {
-                this.questionnaire.isLoading = true;
-                this.questionnaire.errorMessage = "";
-                this.questionnaire.errorDetails = [];
-
-                try {
-                    const response = await fetch(this.apiBaseUrl, {
-                        credentials: "same-origin",
-                        headers: {
-                            "Accept": "application/json"
-                        }
-                    });
-
-                    if (!response.ok) {
-                        throw await extractErrorState(response);
-                    }
-
-                    const payload = await response.json();
-                    const state = payload.data ?? {};
-                    this.questionnaire.questions = state.questions ?? [];
-                } catch (error) {
-                    this.questionnaire.errorMessage = error.message;
-                    this.questionnaire.errorDetails = error.errors ?? [];
-                } finally {
-                    this.questionnaire.isLoading = false;
-                }
+            setQuestions(questionState) {
+                this.questionnaire.questions = questionState.questions ?? [];
             },
             openCreateDialog() {
-                this.dialog.isOpen = true;
-                this.dialog.mode = "create";
-                this.dialog.title = "Vraag toevoegen";
-                this.dialog.submitLabel = "Toevoegen";
-                this.dialog.errorMessage = "";
-                this.dialog.errorDetails = [];
-                this.dialog.questionId = null;
-                this.dialog.form = createEmptyForm();
-            },
-            openEditDialog(question) {
-                this.dialog.isOpen = true;
-                this.dialog.mode = "edit";
-                this.dialog.title = "Vraag wijzigen";
-                this.dialog.submitLabel = "Opslaan";
-                this.dialog.errorMessage = "";
-                this.dialog.errorDetails = [];
-                this.dialog.questionId = question.id;
-                this.dialog.form = {
-                    text: question.text,
-                    score: question.score ?? "",
-                    type: question.type,
-                    allowMultipleSelection: question.allowMultipleSelection,
-                    rows: question.rows ?? 1,
-                    maxLength: question.maxLength ?? "",
-                    minValue: question.minValue ?? "",
-                    maxValue: question.maxValue ?? "",
-                    options: question.options.length > 0
-                        ? question.options.map(option => ({ id: option.id, text: option.text }))
-                        : [{ id: null, text: "" }, { id: null, text: "" }]
+                this.dialog = {
+                    ...createDialogState(this.questionTypes),
+                    isOpen: true
                 };
             },
+            openEditDialog(question) {
+                this.dialog = createDialogStateFromQuestion(question, this.questionTypes);
+            },
             closeDialog() {
-                this.dialog.isOpen = false;
-                this.dialog.mode = "create";
-                this.dialog.title = "Vraag toevoegen";
-                this.dialog.submitLabel = "Toevoegen";
-                this.dialog.errorMessage = "";
-                this.dialog.errorDetails = [];
-                this.dialog.questionId = null;
-                this.dialog.form = createEmptyForm();
+                this.dialog = createDialogState(this.questionTypes);
             },
             addOption() {
                 this.dialog.form.options.push({ id: null, text: "" });
@@ -198,120 +230,7 @@
                 this.dialog.form.options.splice(index, 1);
             },
             moveOption(index, direction) {
-                const newIndex = index + direction;
-                if (newIndex < 0 || newIndex >= this.dialog.form.options.length) {
-                    return;
-                }
-
-                const [item] = this.dialog.form.options.splice(index, 1);
-                this.dialog.form.options.splice(newIndex, 0, item);
-            },
-            async submitDialog() {
-                this.questionnaire.isSaving = true;
-                this.dialog.errorMessage = "";
-                this.dialog.errorDetails = [];
-
-                try {
-                    const url = this.dialog.mode === "create"
-                        ? `${this.apiBaseUrl}/questions`
-                        : `${this.apiBaseUrl}/questions/${this.dialog.questionId}`;
-
-                    const response = await fetch(url, {
-                        method: this.dialog.mode === "create" ? "POST" : "PUT",
-                        credentials: "same-origin",
-                        headers: {
-                            "Accept": "application/json",
-                            "Content-Type": "application/json",
-                            [this.antiforgeryHeaderName]: antiforgeryToken
-                        },
-                        body: JSON.stringify(this.toPayload())
-                    });
-
-                    if (!response.ok) {
-                        throw await extractErrorState(response);
-                    }
-
-                    await response.json();
-                    await this.loadQuestions();
-                    this.closeDialog();
-                } catch (error) {
-                    this.dialog.errorMessage = error.message;
-                    this.dialog.errorDetails = error.errors ?? [];
-                } finally {
-                    this.questionnaire.isSaving = false;
-                }
-            },
-            async deleteQuestion(questionId) {
-                if (!window.confirm("Weet u zeker dat u deze vraag wilt verwijderen?")) {
-                    return;
-                }
-
-                this.questionnaire.isSaving = true;
-                this.questionnaire.errorMessage = "";
-                this.questionnaire.errorDetails = [];
-
-                try {
-                    const response = await fetch(`${this.apiBaseUrl}/questions/${questionId}`, {
-                        method: "DELETE",
-                        credentials: "same-origin",
-                        headers: {
-                            "Accept": "application/json",
-                            [this.antiforgeryHeaderName]: antiforgeryToken
-                        }
-                    });
-
-                    if (!response.ok) {
-                        throw await extractErrorState(response);
-                    }
-
-                    await response.json();
-                    await this.loadQuestions();
-                } catch (error) {
-                    this.questionnaire.errorMessage = error.message;
-                    this.questionnaire.errorDetails = error.errors ?? [];
-                } finally {
-                    this.questionnaire.isSaving = false;
-                }
-            },
-            async moveQuestion(index, direction) {
-                const newIndex = index + direction;
-                if (newIndex < 0 || newIndex >= this.questionnaire.questions.length) {
-                    return;
-                }
-
-                const orderedIds = this.questionnaire.questions.map(question => question.id);
-                const [movedId] = orderedIds.splice(index, 1);
-                orderedIds.splice(newIndex, 0, movedId);
-
-                this.questionnaire.isSaving = true;
-                this.questionnaire.errorMessage = "";
-                this.questionnaire.errorDetails = [];
-
-                try {
-                    const response = await fetch(`${this.apiBaseUrl}/questions/reorder`, {
-                        method: "POST",
-                        credentials: "same-origin",
-                        headers: {
-                            "Accept": "application/json",
-                            "Content-Type": "application/json",
-                            [this.antiforgeryHeaderName]: antiforgeryToken
-                        },
-                        body: JSON.stringify({ orderedQuestionIds: orderedIds })
-                    });
-
-                    if (!response.ok) {
-                        throw await extractErrorState(response);
-                    }
-
-                    const payload = await response.json();
-                    const state = payload.data ?? {};
-                    this.questionnaire.questions = state.questions ?? [];
-                } catch (error) {
-                    this.questionnaire.errorMessage = error.message;
-                    this.questionnaire.errorDetails = error.errors ?? [];
-                } finally {
-                    this.questionnaire.isSaving = false;
-                }
+                moveListItem(this.dialog.form.options, index, direction);
             },
             toPayload() {
                 const form = this.dialog.form;
@@ -332,6 +251,89 @@
                         }))
                         : []
                 };
+            },
+            createApiOptions(method, body) {
+                return buildRequestOptions(
+                    method,
+                    this.antiforgeryHeaderName,
+                    antiforgeryToken,
+                    body);
+            },
+            async loadQuestions() {
+                this.questionnaire.isLoading = true;
+                resetErrors(this.questionnaire);
+
+                try {
+                    const payload = await fetchApi(
+                        this.apiBaseUrl,
+                        this.createApiOptions("GET"));
+
+                    this.setQuestions(payload.data ?? {});
+                } catch (error) {
+                    applyError(this.questionnaire, error);
+                } finally {
+                    this.questionnaire.isLoading = false;
+                }
+            },
+            async submitDialog() {
+                this.questionnaire.isSaving = true;
+                resetErrors(this.dialog);
+
+                const url = this.dialog.mode === "create"
+                    ? `${this.apiBaseUrl}/questions`
+                    : `${this.apiBaseUrl}/questions/${this.dialog.questionId}`;
+                const method = this.dialog.mode === "create" ? "POST" : "PUT";
+
+                try {
+                    await fetchApi(url, this.createApiOptions(method, this.toPayload()));
+                    await this.loadQuestions();
+                    this.closeDialog();
+                } catch (error) {
+                    applyError(this.dialog, error);
+                } finally {
+                    this.questionnaire.isSaving = false;
+                }
+            },
+            async deleteQuestion(questionId) {
+                if (!window.confirm("Weet u zeker dat u deze vraag wilt verwijderen?")) {
+                    return;
+                }
+
+                this.questionnaire.isSaving = true;
+                resetErrors(this.questionnaire);
+
+                try {
+                    await fetchApi(
+                        `${this.apiBaseUrl}/questions/${questionId}`,
+                        this.createApiOptions("DELETE"));
+                    await this.loadQuestions();
+                } catch (error) {
+                    applyError(this.questionnaire, error);
+                } finally {
+                    this.questionnaire.isSaving = false;
+                }
+            },
+            async moveQuestion(index, direction) {
+                const orderedIds = this.questionnaire.questions.map(question => question.id);
+
+                if (!moveListItem(orderedIds, index, direction)) {
+                    return;
+                }
+
+                this.questionnaire.isSaving = true;
+                resetErrors(this.questionnaire);
+
+                try {
+                    const payload = await fetchApi(
+                        `${this.apiBaseUrl}/questions/reorder`,
+                        this.createApiOptions("POST", { orderedQuestionIds: orderedIds }));
+
+                    this.setQuestions(payload.data ?? {});
+                } catch (error) {
+                    applyError(this.questionnaire, error);
+                } finally {
+                    this.questionnaire.isSaving = false;
+                }
             },
             scoreLabel(score) {
                 return score ?? 0;
