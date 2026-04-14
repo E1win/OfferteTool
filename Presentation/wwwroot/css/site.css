@@ -81,6 +81,14 @@ body {
   text-decoration: none;
 }
 
+.questionnaire-editor__card-order .btn svg path {
+  transition: fill 0.2s ease;
+}
+
+.questionnaire-editor__card-order .btn:disabled svg path {
+  fill: #b8b8b8;
+}
+
 .questionnaire-editor__card-body {
   flex: 1;
   min-width: 0;

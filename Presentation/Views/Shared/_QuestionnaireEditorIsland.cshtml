@@ -46,14 +46,32 @@
                                     :disabled="!questionnaire.canManageQuestions || questionnaire.isSaving || index === 0"
                                     v-on:click="moveQuestion(index, -1)"
                                     aria-label="Vraag omhoog verplaatsen">
-                                &uarr;
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <g clip-path="url(#clip0_19_470)">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M10.9399 7.93999C11.2211 7.65909 11.6024 7.50131 11.9999 7.50131C12.3974 7.50131 12.7786 7.65909 13.0599 7.93999L18.7179 13.596C18.8571 13.7353 18.9676 13.9007 19.043 14.0827C19.1183 14.2648 19.1571 14.4598 19.157 14.6568C19.157 14.8538 19.1181 15.0489 19.0427 15.2309C18.9672 15.4129 18.8567 15.5782 18.7174 15.7175C18.578 15.8568 18.4126 15.9672 18.2306 16.0426C18.0486 16.1179 17.8535 16.1567 17.6565 16.1566C17.4595 16.1566 17.2645 16.1177 17.0825 16.0423C16.9005 15.9669 16.7351 15.8563 16.5959 15.717L11.9999 11.122L7.40388 15.718C7.26558 15.8613 7.10011 15.9757 6.91715 16.0544C6.73418 16.1331 6.53737 16.1745 6.3382 16.1764C6.13903 16.1782 5.9415 16.1403 5.75712 16.065C5.57274 15.9897 5.40521 15.8784 5.2643 15.7376C5.1234 15.5968 5.01194 15.4294 4.93643 15.2451C4.86092 15.0608 4.82288 14.8633 4.82451 14.6641C4.82615 14.4649 4.86744 14.2681 4.94596 14.085C5.02449 13.902 5.13868 13.7364 5.28188 13.598L10.9399 7.93999Z" fill="black"/>
+                                    </g>
+                                    <defs>
+                                    <clipPath id="clip0_19_470">
+                                    <rect width="24" height="24" fill="white"/>
+                                    </clipPath>
+                                    </defs>
+                                </svg>
                             </button>
                             <button type="button"
                                     class="btn btn-link btn-sm"
                                     :disabled="!questionnaire.canManageQuestions || questionnaire.isSaving || index === questionnaire.questions.length - 1"
                                     v-on:click="moveQuestion(index, 1)"
                                     aria-label="Vraag omlaag verplaatsen">
-                                &darr;
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <g clip-path="url(#clip0_19_474)">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M13.0599 16.06C12.7787 16.3409 12.3974 16.4987 11.9999 16.4987C11.6024 16.4987 11.2212 16.3409 10.9399 16.06L5.2819 10.404C5.00064 10.1226 4.84268 9.74102 4.84277 9.34316C4.84287 8.9453 5.00101 8.56377 5.2824 8.28251C5.56379 8.00125 5.9454 7.84329 6.34325 7.84338C6.74111 7.84348 7.12264 8.00162 7.4039 8.28301L11.9999 12.879L16.5959 8.28301C16.8787 8.00964 17.2575 7.85827 17.6508 7.8615C18.0441 7.86473 18.4204 8.0223 18.6986 8.30028C18.9769 8.57827 19.1348 8.95441 19.1384 9.34771C19.142 9.741 18.991 10.12 18.7179 10.403L13.0609 16.061L13.0599 16.06Z" fill="black"/>
+                                    </g>
+                                    <defs>
+                                    <clipPath id="clip0_19_474">
+                                    <rect width="24" height="24" fill="white"/>
+                                    </clipPath>
+                                    </defs>
+                                </svg>
                             </button>
                         </div>
 
@@ -132,11 +150,18 @@
 
                     <div class="mb-3">
                         <label class="form-label" for="questionnaire-type">Vraagtype</label>
-                        <select id="questionnaire-type" v-model="dialog.form.type" class="form-select">
+                        <select id="questionnaire-type"
+                                v-model="dialog.form.type"
+                                class="form-select"
+                                :disabled="dialog.mode === 'edit'"
+                                :aria-describedby="dialog.mode === 'edit' ? 'questionnaire-type-help' : null">
                             <option :value="questionTypes.choice">Keuzevraag</option>
                             <option :value="questionTypes.text">Tekstvraag</option>
                             <option :value="questionTypes.numeric">Numerieke vraag</option>
                         </select>
+                        <p v-if="dialog.mode === 'edit'" id="questionnaire-type-help" class="form-text mb-0">
+                            Het vraagtype kan na het aanmaken niet meer worden gewijzigd.
+                        </p>
                     </div>
 
                     <div v-if="dialog.form.type === questionTypes.choice" class="mb-3">
