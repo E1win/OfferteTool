@@ -9,14 +9,13 @@
 
     const rawBootstrap = JSON.parse(bootstrapElement.textContent);
     const bootstrap = {
-        apiBaseUrl: rawBootstrap.apiBaseUrl ?? rawBootstrap.ApiBaseUrl ?? "",
-        antiforgeryHeaderName: rawBootstrap.antiforgeryHeaderName ?? rawBootstrap.AntiforgeryHeaderName ?? "X-CSRF-TOKEN",
-        canManageQuestions: rawBootstrap.canManageQuestions ?? rawBootstrap.CanManageQuestions ?? false,
-        tenderId: rawBootstrap.tenderId ?? rawBootstrap.TenderId ?? null,
+        apiBaseUrl: rawBootstrap.apiBaseUrl ?? "",
+        antiforgeryHeaderName: rawBootstrap.antiforgeryHeaderName ?? "X-CSRF-TOKEN",
+        canManageQuestions: rawBootstrap.canManageQuestions ?? false,
         questionTypes: {
-            choice: rawBootstrap.questionTypes?.choice ?? rawBootstrap.QuestionTypes?.Choice ?? "choice",
-            text: rawBootstrap.questionTypes?.text ?? rawBootstrap.QuestionTypes?.Text ?? "text",
-            numeric: rawBootstrap.questionTypes?.numeric ?? rawBootstrap.QuestionTypes?.Numeric ?? "numeric"
+            choice: rawBootstrap.questionTypes?.choice ?? "choice",
+            text: rawBootstrap.questionTypes?.text ?? "text",
+            numeric: rawBootstrap.questionTypes?.numeric ?? "numeric"
         }
     };
     const antiforgeryToken = antiforgeryInput?.value ?? "";
@@ -143,7 +142,6 @@
                     const payload = await response.json();
                     const state = payload.data ?? {};
                     this.questionnaire.questions = state.questions ?? [];
-                    this.questionnaire.canManageQuestions = (state.canManageQuestions ?? false) && bootstrap.canManageQuestions;
                 } catch (error) {
                     this.questionnaire.errorMessage = error.message;
                     this.questionnaire.errorDetails = error.errors ?? [];
@@ -308,7 +306,6 @@
                     const payload = await response.json();
                     const state = payload.data ?? {};
                     this.questionnaire.questions = state.questions ?? [];
-                    this.questionnaire.canManageQuestions = (state.canManageQuestions ?? false) && bootstrap.canManageQuestions;
                 } catch (error) {
                     this.questionnaire.errorMessage = error.message;
                     this.questionnaire.errorDetails = error.errors ?? [];

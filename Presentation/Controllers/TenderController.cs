@@ -133,7 +133,6 @@ public class TenderController(ITenderService tenderService) : Controller
             CanManageTender = canManageTender,
             QuestionnaireEditor = new QuestionnaireEditorBootstrapViewModel
             {
-                TenderId = tender.Id,
                 ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",
                 CanManageQuestions = canEditTender,
                 AntiforgeryHeaderName = "X-CSRF-TOKEN",

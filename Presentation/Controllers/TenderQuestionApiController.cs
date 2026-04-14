@@ -258,7 +258,6 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
     {
         return new QuestionnaireStateViewModel
         {
-            CanManageQuestions = User.IsInRole(Domain.Constants.Roles.Inkoper),
             Questions = questions.Select(MapToViewModel).ToList()
         };
     }
