@@ -158,6 +158,7 @@ public class TenderController(ITenderService tenderService) : Controller
             Tender = tender,
             CanManageTender = canManageTender,
             ActionErrorMessage = actionErrorMessage,
+            OpenTenderModal = CreateOpenTenderModal(tender, canEditTender),
             QuestionnaireEditor = new QuestionnaireEditorBootstrapViewModel
             {
                 ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",
@@ -183,6 +184,22 @@ public class TenderController(ITenderService tenderService) : Controller
                     Form = editTender ?? MapToTenderForm(tender)
                 }
                 : null
+        };
+    }
+
+    private ConfirmationModalViewModel? CreateOpenTenderModal(Tender tender, bool canEditTender)
+    {
+        if (!canEditTender)
+            return null;
+
+        return new ConfirmationModalViewModel
+        {
+            ModalId = "openTenderModal",
+            ModalTitle = "Offertetraject openen",
+            Description = "Weet u zeker dat u dit offertetraject wilt openen? Zodra het traject open staat, kunnen de tendergegevens en vragenlijst niet meer worden gewijzigd.",
+            SubmitAction = nameof(Open),
+            SubmitButtonText = "Offertetraject openen",
+            TenderId = tender.Id
         };
     }
 
