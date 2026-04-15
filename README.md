@@ -16,6 +16,10 @@ Pull requests op de main-, develop- en release-branches worden pas geaccepteerd 
 
 ## Mitigatie van bedreigingen
 
+Bedreiging #18 is het risico op overbelasting van het systeem. Hiervoor heb ik
+ratelimiting toegevoegd in Program.cs. Kwetsbare endpoints, zoals die van het inloggen en toevoegen
+van offertetrajecten, krijgen een lager limiet. Zie ter illustratie regel 136 van Program.cs
+
 Bedreiging #23 is het risico op Cross Site Request Forgery bij POST-requests. Hiervoor heb ik
 het attribuut [ValidateAntiForgeryToken] toegevoegd aan controlleracties die POST-requests
 afhandelen. Zie ter illustratie regel 21 van TenderController.cs.
