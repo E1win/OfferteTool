@@ -9,4 +9,5 @@ public interface ITenderService
     Task<bool> CanManageTenderAsync(Guid tenderId, string userId);
     Task<Tender> CreateTenderAsync(Tender tender, string userId);
     Task<Tender> UpdateTenderAsync(Guid tenderId, Tender updatedTender, string userId);
+    Task<Tender> OpenTenderAsync(Guid tenderId, string userId);
 }
