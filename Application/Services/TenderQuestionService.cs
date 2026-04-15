@@ -1,7 +1,8 @@
-﻿using Application.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Domain.Entities;
 using Domain.Entities.TenderQuestions;
+using Domain.Exceptions;
 
 namespace Application.Services;
 
@@ -79,12 +80,12 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         var existingIds = questions.Select(q => q.Id).ToHashSet();
 
         if (orderedQuestionIds.Count != existingIds.Count)
-            throw new InvalidOperationException("De nieuwe volgorde moet alle vragen precies één keer bevatten.");
+            throw new BusinessRuleViolationException("De nieuwe volgorde moet alle vragen precies één keer bevatten.");
 
         var incomingIds = orderedQuestionIds.ToHashSet();
 
         if (!existingIds.SetEquals(incomingIds))
-            throw new InvalidOperationException("De nieuwe volgorde moet alle vragen precies één keer bevatten.");
+            throw new BusinessRuleViolationException("De nieuwe volgorde moet alle vragen precies één keer bevatten.");
 
         var orderMap = orderedQuestionIds
             .Select((id, index) => new { id, index })
@@ -125,7 +126,7 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
             throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
 
         if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
+            throw new BusinessRuleViolationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
 
         return (tender, user, role);
     }

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Application.Interfaces.Services;
 using Domain.Entities;
 using Domain.Enums;
+using Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.Models.Questionnaire;
@@ -25,9 +26,7 @@ public class TenderController(ITenderService tenderService) : Controller
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         if (!ModelState.IsValid)
-        {
             return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true));
-        }
 
         var tender = MapToTender(model);
 
@@ -36,7 +35,7 @@ public class TenderController(ITenderService tenderService) : Controller
             var createdTender = await tenderService.CreateTenderAsync(tender, userId);
             return RedirectToAction(nameof(Details), new { id = createdTender.Id });
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessRuleViolationException ex)
         {
             return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true, ex.Message));
         }
@@ -49,16 +48,14 @@ public class TenderController(ITenderService tenderService) : Controller
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         if (!ModelState.IsValid)
-        {
             return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true));
-        }
 
         try
         {
             await tenderService.UpdateTenderAsync(id, MapToTender(model), userId);
             return RedirectToAction(nameof(Details), new { id });
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessRuleViolationException ex)
         {
             return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true, ex.Message));
         }
@@ -75,7 +72,7 @@ public class TenderController(ITenderService tenderService) : Controller
             await tenderService.OpenTenderAsync(id, userId);
             return RedirectToAction(nameof(Details), new { id });
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessRuleViolationException ex)
         {
             return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, actionErrorMessage: ex.Message));
         }
@@ -84,7 +81,6 @@ public class TenderController(ITenderService tenderService) : Controller
     public async Task<IActionResult> Details(Guid id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         return View(await BuildTenderDetailsViewModelAsync(id, userId));
     }
 

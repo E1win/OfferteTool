@@ -1,6 +1,7 @@
 using Domain.Constants;
 using Domain.Entities.TenderQuestions;
 using Domain.Enums;
+using Domain.Exceptions;
 using System.ComponentModel.DataAnnotations;
 
 namespace Domain.Entities;
@@ -29,10 +30,10 @@ public class Tender
     public void ValidateDates()
     {
         if (EndDate <= StartDate)
-            throw new InvalidOperationException("De einddatum moet na de begindatum liggen.");
+            throw new BusinessRuleViolationException("De einddatum moet na de begindatum liggen.");
 
         if (StartDate < DateOnly.FromDateTime(DateTime.Today))
-            throw new InvalidOperationException("De begindatum mag niet voor vandaag liggen.");
+            throw new BusinessRuleViolationException("De begindatum mag niet voor vandaag liggen.");
     }
 
     public bool IsValidOrganisationType(OrganisationType type) => type == OrganisationType.Client;
@@ -61,7 +62,7 @@ public class Tender
     public void Open()
     {
         if (!CanBeOpened())
-            throw new InvalidOperationException("Alleen offertetrajecten met de status Ontwerp en minimaal een vraag kunnen worden gepubliceerd.");
+            throw new BusinessRuleViolationException("Alleen offertetrajecten met de status Ontwerp en minimaal een vraag kunnen worden gepubliceerd.");
 
         Status = TenderStatus.Open;
     }

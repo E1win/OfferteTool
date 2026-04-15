@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Domain.Exceptions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Presentation.Models.Api;
 
@@ -6,8 +7,8 @@ namespace Presentation.Filters;
 
 /// <summary>
 /// Handles infrastructural exceptions (NotFound, Unauthorized).
-/// Business validation exceptions (InvalidOperationException, ArgumentException) 
-/// should be handled by controllers for context-specific error messages.
+/// Business validation exceptions should be handled by controllers for
+/// context-specific MVC error messages, but can be mapped generically for API endpoints.
 /// </summary>
 public class ServiceExceptionFilter : IExceptionFilter
 {
@@ -17,7 +18,6 @@ public class ServiceExceptionFilter : IExceptionFilter
 
         context.Result = context.Exception switch
         {
-            // NotFound: Resource doesn't exist (generic handling)
             KeyNotFoundException ex when isApiController =>
                 new NotFoundObjectResult(new ApiResponse<object?>
                 {
@@ -28,7 +28,6 @@ public class ServiceExceptionFilter : IExceptionFilter
             KeyNotFoundException =>
                 new NotFoundResult(),
 
-            // Unauthorized: Access denied (generic handling)
             UnauthorizedAccessException ex when isApiController =>
                 new ObjectResult(new ApiResponse<object?>
                 {
@@ -42,23 +41,13 @@ public class ServiceExceptionFilter : IExceptionFilter
             UnauthorizedAccessException =>
                 new ForbidResult(),
 
-            // Business validation for API: can be handled generically
-            InvalidOperationException ex when isApiController =>
+            BusinessRuleViolationException ex when isApiController =>
                 new BadRequestObjectResult(new ApiResponse<object?>
                 {
                     Message = ex.Message,
                     Errors = []
                 }),
 
-            ArgumentException ex when isApiController =>
-                new BadRequestObjectResult(new ApiResponse<object?>
-                {
-                    Message = ex.Message,
-                    Errors = []
-                }),
-
-            // For MVC controllers: business validations need context-specific handling
-            // Let controller handle to show proper view with error message
             _ => null
         };
 

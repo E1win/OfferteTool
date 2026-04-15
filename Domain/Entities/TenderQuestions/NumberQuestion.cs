@@ -1,5 +1,6 @@
-﻿using Domain.Entities.TenderAnswers;
+using Domain.Entities.TenderAnswers;
 using Domain.Enums;
+using Domain.Exceptions;
 
 namespace Domain.Entities.TenderQuestions;
 
@@ -16,25 +17,25 @@ public class NumberQuestion : TenderQuestion
     public override void Validate()
     {
         if (MinValue.HasValue && MaxValue.HasValue && MinValue > MaxValue)
-            throw new InvalidOperationException("De minimale waarde mag niet hoger zijn dan de maximale waarde.");
+            throw new BusinessRuleViolationException("De minimale waarde mag niet hoger zijn dan de maximale waarde.");
     }
 
     public override void ValidateAnswer(TenderAnswer answer)
     {
         if (answer == null)
-            throw new InvalidOperationException("Vul een antwoord in.");
+            throw new BusinessRuleViolationException("Vul een antwoord in.");
 
         if (answer is not NumberAnswer numberAnswer)
-            throw new InvalidOperationException("Het ingevulde antwoord past niet bij deze vraag.");
+            throw new BusinessRuleViolationException("Het ingevulde antwoord past niet bij deze vraag.");
 
         if (!numberAnswer.NumericValue.HasValue)
-            throw new InvalidOperationException("Vul een getal in.");
+            throw new BusinessRuleViolationException("Vul een getal in.");
 
         if (MinValue.HasValue && numberAnswer.NumericValue.Value < MinValue.Value)
-            throw new InvalidOperationException($"De waarde moet minimaal {MinValue.Value} zijn.");
+            throw new BusinessRuleViolationException($"De waarde moet minimaal {MinValue.Value} zijn.");
 
         if (MaxValue.HasValue && numberAnswer.NumericValue.Value > MaxValue.Value)
-            throw new InvalidOperationException($"De waarde mag maximaal {MaxValue.Value} zijn.");
+            throw new BusinessRuleViolationException($"De waarde mag maximaal {MaxValue.Value} zijn.");
     }
 
     public override void UpdateFrom(TenderQuestion source)
