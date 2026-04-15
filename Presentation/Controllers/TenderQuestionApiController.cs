@@ -20,19 +20,8 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        try
-        {
-            var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, userId);
-            return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions)));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
+        var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, userId);
+        return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions)));
     }
 
     [HttpPost("questions")]
@@ -44,27 +33,9 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        try
-        {
-            var createdQuestion = await tenderQuestionService.CreateQuestionAsync(tenderId, MapToDomainQuestion(model), userId);
-            return Ok(CreateSuccessResponse(MapToViewModel(createdQuestion), "De vraag is toegevoegd."));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
+        var createdQuestion = await tenderQuestionService.CreateQuestionAsync(tenderId, MapToDomainQuestion(model), userId);
+
+        return Ok(CreateSuccessResponse(MapToViewModel(createdQuestion), "De vraag is toegevoegd."));
     }
 
     [HttpPut("questions/{questionId:guid}")]
@@ -76,27 +47,8 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        try
-        {
-            var updatedQuestion = await tenderQuestionService.UpdateQuestionAsync(tenderId, questionId, MapToDomainQuestion(model), userId);
-            return Ok(CreateSuccessResponse(MapToViewModel(updatedQuestion), "De vraag is bijgewerkt."));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
+        var updatedQuestion = await tenderQuestionService.UpdateQuestionAsync(tenderId, questionId, MapToDomainQuestion(model), userId);
+        return Ok(CreateSuccessResponse(MapToViewModel(updatedQuestion), "De vraag is bijgewerkt."));
     }
 
     [HttpDelete("questions/{questionId:guid}")]
@@ -105,23 +57,8 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        try
-        {
-            await tenderQuestionService.DeleteQuestionAsync(tenderId, questionId, userId);
-            return Ok(CreateSuccessResponse<object?>(null, "De vraag is verwijderd."));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
+        await tenderQuestionService.DeleteQuestionAsync(tenderId, questionId, userId);
+        return Ok(CreateSuccessResponse<object?>(null, "De vraag is verwijderd."));
     }
 
     [HttpPost("questions/reorder")]
@@ -133,25 +70,10 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        try
-        {
-            await tenderQuestionService.ReorderQuestionsAsync(tenderId, model.OrderedQuestionIds, userId);
-            var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, userId);
+        await tenderQuestionService.ReorderQuestionsAsync(tenderId, model.OrderedQuestionIds, userId);
+        var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, userId);
 
-            return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions), "De volgorde is bijgewerkt."));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
+        return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions), "De volgorde is bijgewerkt."));
     }
 
     private static TenderQuestion MapToDomainQuestion(QuestionnaireQuestionInputModel model)

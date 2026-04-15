@@ -40,10 +40,6 @@ public class TenderController(ITenderService tenderService) : Controller
         {
             return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true, ex.Message));
         }
-        catch (UnauthorizedAccessException ex)
-        {
-            return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true, ex.Message));
-        }
     }
 
     [HttpPost]
@@ -62,15 +58,7 @@ public class TenderController(ITenderService tenderService) : Controller
             await tenderService.UpdateTenderAsync(id, MapToTender(model), userId);
             return RedirectToAction(nameof(Details), new { id });
         }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
         catch (InvalidOperationException ex)
-        {
-            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true, ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
         {
             return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true, ex.Message));
         }
@@ -87,17 +75,9 @@ public class TenderController(ITenderService tenderService) : Controller
             await tenderService.OpenTenderAsync(id, userId);
             return RedirectToAction(nameof(Details), new { id });
         }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
         catch (InvalidOperationException ex)
         {
             return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, actionErrorMessage: ex.Message));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
         }
     }
 
@@ -105,18 +85,7 @@ public class TenderController(ITenderService tenderService) : Controller
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        try
-        {
-            return View(await BuildTenderDetailsViewModelAsync(id, userId));
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
+        return View(await BuildTenderDetailsViewModelAsync(id, userId));
     }
 
     private async Task<TenderIndexViewModel> BuildTenderIndexViewModelAsync(
