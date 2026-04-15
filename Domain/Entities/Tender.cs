@@ -53,4 +53,16 @@ public class Tender
         && OrganisationId == user.OrganisationId.Value;
 
     public bool CanBeEdited() => Status == TenderStatus.Design;
+
+    public bool CanBeOpened() =>
+        Status == TenderStatus.Design
+        && Questions.Count > 0;
+
+    public void Open()
+    {
+        if (!CanBeOpened())
+            throw new InvalidOperationException("Alleen offertetrajecten met de status Ontwerp en minimaal een vraag kunnen worden gepubliceerd.");
+
+        Status = TenderStatus.Open;
+    }
 }

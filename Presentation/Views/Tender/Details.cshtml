@@ -28,11 +28,27 @@
     <aside class="col-lg-4" aria-labelledby="tender-sidebar-heading">
         <h2 id="tender-sidebar-heading" class="visually-hidden">Tenderacties en details</h2>
 
+        @if (!string.IsNullOrWhiteSpace(Model.ActionErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">
+                @Model.ActionErrorMessage
+            </div>
+        }
+
         @if (Model.CanManageTender && Model.Tender.CanBeEdited())
         {
             <div class="d-grid mb-3">
-                <button type="button" class="btn btn-dark">Offertetraject publiceren</button>
+                <button type="button"
+                        class="btn btn-dark"
+                        aria-controls="@Model.OpenTenderModal!.ModalId"
+                        aria-haspopup="dialog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#@Model.OpenTenderModal!.ModalId">
+                    Offertetraject openen
+                </button>
             </div>
+
+            <partial name="_ConfirmationModal" for="OpenTenderModal" />
         }
 
         <div class="card mb-3">

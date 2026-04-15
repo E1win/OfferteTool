@@ -1,0 +1,25 @@
+@model ConfirmationModalViewModel
+
+<div class="modal fade" id="@Model.ModalId" tabindex="-1" aria-labelledby="@(Model.ModalId)Label" aria-describedby="@(Model.ModalId)Description" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="Tender" asp-action="@Model.SubmitAction" asp-route-id="@Model.TenderId" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="@(Model.ModalId)Label">@Model.ModalTitle</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p id="@(Model.ModalId)Description" class="mb-0">@Model.Description</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuleren</button>
+                    <button type="submit" class="btn btn-dark">@Model.SubmitButtonText</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
