@@ -100,6 +100,7 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
         if (!tender.CanBeManagedBy(user, role))
             throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
 
+        // Opens tender if valid, otherwise throws an exception with the reason
         tender.Open();
 
         await tenderRepository.UpdateAsync();
