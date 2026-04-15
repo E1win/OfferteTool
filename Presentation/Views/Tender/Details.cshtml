@@ -28,10 +28,23 @@
     <aside class="col-lg-4" aria-labelledby="tender-sidebar-heading">
         <h2 id="tender-sidebar-heading" class="visually-hidden">Tenderacties en details</h2>
 
+        @if (!string.IsNullOrWhiteSpace(Model.ActionErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">
+                @Model.ActionErrorMessage
+            </div>
+        }
+
         @if (Model.CanManageTender && Model.Tender.CanBeEdited())
         {
             <div class="d-grid mb-3">
-                <button type="button" class="btn btn-dark">Offertetraject publiceren</button>
+                <form asp-controller="Tender"
+                      asp-action="Open"
+                      asp-route-id="@Model.Tender.Id"
+                      method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-dark">Offertetraject publiceren</button>
+                </form>
             </div>
         }
 

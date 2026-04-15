@@ -76,6 +76,31 @@ public class TenderController(ITenderService tenderService) : Controller
         }
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Open(Guid id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        try
+        {
+            await tenderService.OpenTenderAsync(id, userId);
+            return RedirectToAction(nameof(Details), new { id });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, actionErrorMessage: ex.Message));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
     public async Task<IActionResult> Details(Guid id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -121,7 +146,8 @@ public class TenderController(ITenderService tenderService) : Controller
         string userId,
         TenderFormViewModel? editTender = null,
         bool openEditTenderModal = false,
-        string? errorMessage = null)
+        string? errorMessage = null,
+        string? actionErrorMessage = null)
     {
         var canManageTender = await tenderService.CanManageTenderAsync(id, userId);
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
@@ -131,6 +157,7 @@ public class TenderController(ITenderService tenderService) : Controller
         {
             Tender = tender,
             CanManageTender = canManageTender,
+            ActionErrorMessage = actionErrorMessage,
             QuestionnaireEditor = new QuestionnaireEditorBootstrapViewModel
             {
                 ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",
