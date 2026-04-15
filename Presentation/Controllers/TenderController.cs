@@ -4,7 +4,8 @@ using Domain.Entities;
 using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Presentation.Models;
+using Presentation.Models.Questionnaire;
+using Presentation.Models.Tender;
 
 namespace Presentation.Controllers;
 
@@ -122,12 +123,27 @@ public class TenderController(ITenderService tenderService) : Controller
         bool openEditTenderModal = false,
         string? errorMessage = null)
     {
+        var canManageTender = await tenderService.CanManageTenderAsync(id, userId);
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
+        var canEditTender = canManageTender && tender.CanBeEdited();
 
         return new TenderDetailsViewModel
         {
             Tender = tender,
-            EditTenderModal = tender.CanBeEdited()
+            CanManageTender = canManageTender,
+            QuestionnaireEditor = new QuestionnaireEditorBootstrapViewModel
+            {
+                ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",
+                CanManageQuestions = canEditTender,
+                AntiforgeryHeaderName = "X-CSRF-TOKEN",
+                QuestionTypes = new QuestionnaireQuestionTypeLookupViewModel
+                {
+                    Choice = QuestionType.Choice,
+                    Text = QuestionType.Text,
+                    Numeric = QuestionType.Numeric
+                }
+            },
+            EditTenderModal = canEditTender
                 ? new TenderFormModalViewModel
                 {
                     ModalId = "editTenderModal",

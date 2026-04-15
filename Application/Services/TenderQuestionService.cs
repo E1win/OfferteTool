@@ -1,6 +1,5 @@
 ﻿using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
-using Domain.Constants;
 using Domain.Entities;
 using Domain.Entities.TenderQuestions;
 
@@ -8,9 +7,9 @@ namespace Application.Services;
 
 public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentUserService currentUserService, ITenderQuestionRepository tenderQuestionRepository) : ITenderQuestionService
 {
-    public async Task<TenderQuestion> CreateQuestionAsync(Guid tenderId, TenderQuestion question, string userId)
+    public async Task<List<TenderQuestion>> GetQuestionsAsync(Guid tenderId, string userId)
     {
-        Tender tender = await tenderRepository.GetByIdAsync(tenderId)
+        Tender tender = await tenderRepository.GetByIdWithQuestionsAndOptionsAsync(tenderId)
             ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
@@ -18,11 +17,14 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         if (!tender.IsAccessibleBy(user, role))
             throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
 
-        if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen aanmaken.");
+        return tender.Questions
+            .OrderBy(q => q.Order)
+            .ToList();
+    }
 
-        if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
+    public async Task<TenderQuestion> CreateQuestionAsync(Guid tenderId, TenderQuestion question, string userId)
+    {
+        var (tender, _, _) = await AuthorizeQuestionManagementAsync(tenderId, userId);
 
         question.TenderId = tender.Id;
         question.Order = await tenderQuestionRepository.GetNextOrderForTenderAsync(tender.Id);
@@ -36,33 +38,18 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         return await tenderQuestionRepository.AddAsync(question);
     }
 
-    public async Task<TenderQuestion> UpdateQuestionAsync(Guid questionId, TenderQuestion updatedQuestion, string userId)
+    public async Task<TenderQuestion> UpdateQuestionAsync(Guid tenderId, Guid questionId, TenderQuestion updatedQuestion, string userId)
     {
         TenderQuestion existingQuestion = await tenderQuestionRepository.GetByIdAsync(questionId)
             ?? throw new KeyNotFoundException("Vraag niet gevonden.");
 
-        Tender tender = await tenderRepository.GetByIdAsync(existingQuestion.TenderId)
-            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+        if (existingQuestion.TenderId != tenderId)
+            throw new KeyNotFoundException("Vraag niet gevonden.");
 
-        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+        await AuthorizeQuestionManagementAsync(tenderId, userId);
 
-        if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
-
-        if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen wijzigen.");
-
-        if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
-
-        existingQuestion.Text = updatedQuestion.Text;
-        existingQuestion.Score = updatedQuestion.Score;
-        if (existingQuestion is ChoiceQuestion existingChoice && updatedQuestion is ChoiceQuestion updatedChoice)
-        {
-            existingChoice.SetOptions([.. updatedChoice.Options]);
-        }
-
-        CopyTypeSpecificProperties(existingQuestion, updatedQuestion);
+        // Update relevant fields from existing question with updated question, then validate
+        existingQuestion.UpdateFrom(updatedQuestion);
         existingQuestion.Validate();
 
         await tenderQuestionRepository.SaveChangesAsync();
@@ -70,65 +57,22 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         return existingQuestion;
     }
 
-    private static void CopyTypeSpecificProperties(TenderQuestion existingQuestion, TenderQuestion updatedQuestion)
-    {
-        Type existingType = existingQuestion.GetType();
-        Type updatedType = updatedQuestion.GetType();
-
-        if (existingType != updatedType)
-            return;
-
-        var properties = existingType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly);
-
-        foreach (var property in properties)
-        {
-            if (!property.CanRead || !property.CanWrite)
-                continue;
-            if (property.GetIndexParameters().Length > 0)
-                continue;
-            if (property.Name == nameof(ChoiceQuestion.Options))
-                continue;
-            property.SetValue(existingQuestion, property.GetValue(updatedQuestion));
-        }
-    }
-
-    public async Task DeleteQuestionAsync(Guid questionId, string userId)
+    public async Task DeleteQuestionAsync(Guid tenderId, Guid questionId, string userId)
     {
         TenderQuestion existingQuestion = await tenderQuestionRepository.GetByIdAsync(questionId)
             ?? throw new KeyNotFoundException("Vraag niet gevonden.");
 
-        Tender tender = await tenderRepository.GetByIdAsync(existingQuestion.TenderId)
-            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+        if (existingQuestion.TenderId != tenderId)
+            throw new KeyNotFoundException("Vraag niet gevonden.");
 
-        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
-
-        if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
-        
-        if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen verwijderen.");
-
-        if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Vragen kunnen alleen worden verwijderd zolang het offertetraject de status Ontwerp heeft.");
+        await AuthorizeQuestionManagementAsync(tenderId, userId);
 
         await tenderQuestionRepository.DeleteAsync(existingQuestion);
     }
 
     public async Task ReorderQuestionsAsync(Guid tenderId, List<Guid> orderedQuestionIds, string userId)
     {
-        Tender tender = await tenderRepository.GetByIdWithQuestionsAndOptionsAsync(tenderId)
-            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
-
-        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
-
-        if (!tender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
-
-        if (role != Roles.Inkoper)
-            throw new UnauthorizedAccessException("Alleen inkopers kunnen vragen herordenen.");
-
-        if (!tender.CanBeEdited())
-            throw new InvalidOperationException("Vragen kunnen alleen worden herordend zolang het offertetraject de status Ontwerp heeft.");
+        var (tender, _, _) = await AuthorizeQuestionManagementAsync(tenderId, userId, includeQuestions: true);
 
         var questions = tender.Questions.ToList();
 
@@ -146,9 +90,43 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
             .Select((id, index) => new { id, index })
             .ToDictionary(x => x.id, x => x.index);
 
+        var temporaryOrderOffset = questions
+            .Select(question => question.Order)
+            .DefaultIfEmpty(-1)
+            .Max() + questions.Count + 1;
+
+        // Apply temporary unique orders first to avoid unique-index collisions while swapping positions.
+        foreach (var question in questions)
+            question.Order = temporaryOrderOffset + orderMap[question.Id];
+
+        await tenderQuestionRepository.SaveChangesAsync();
+
         foreach (var question in questions)
             question.Order = orderMap[question.Id];
 
         await tenderQuestionRepository.SaveChangesAsync();
+    }
+
+    private async Task<(Tender Tender, ApplicationUser User, string Role)> AuthorizeQuestionManagementAsync(
+        Guid tenderId,
+        string userId,
+        bool includeQuestions = false)
+    {
+        Tender? tender = includeQuestions
+            ? await tenderRepository.GetByIdWithQuestionsAndOptionsAsync(tenderId)
+            : await tenderRepository.GetByIdAsync(tenderId);
+
+        if (tender is null)
+            throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        if (!tender.CanBeManagedBy(user, role))
+            throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
+
+        if (!tender.CanBeEdited())
+            throw new InvalidOperationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
+
+        return (tender, user, role);
     }
 }

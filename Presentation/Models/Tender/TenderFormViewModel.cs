@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Presentation.Models;
+namespace Presentation.Models.Tender;
 
 public class TenderFormViewModel
 {

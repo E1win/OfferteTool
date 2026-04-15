@@ -47,5 +47,10 @@ public class Tender
             _ => false
         };
 
+    public bool CanBeManagedBy(ApplicationUser user, string role) =>
+        role == Roles.Inkoper
+        && user.OrganisationId is not null
+        && OrganisationId == user.OrganisationId.Value;
+
     public bool CanBeEdited() => Status == TenderStatus.Design;
 }

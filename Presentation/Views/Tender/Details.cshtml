@@ -1,5 +1,5 @@
-@model TenderDetailsViewModel
 @using Domain.Enums
+@model TenderDetailsViewModel
 
 @{
     ViewData["Title"] = Model.Tender.Title;
@@ -22,13 +22,13 @@
             <p class="mb-0">@Model.Tender.Description</p>
         </section>
 
-        @* Vragenlijst section will be added later *@
+        <partial name="_QuestionnaireEditorIsland" model="Model.QuestionnaireEditor" />
     </article>
 
     <aside class="col-lg-4" aria-labelledby="tender-sidebar-heading">
         <h2 id="tender-sidebar-heading" class="visually-hidden">Tenderacties en details</h2>
 
-        @if (Model.Tender.CanBeEdited())
+        @if (Model.CanManageTender && Model.Tender.CanBeEdited())
         {
             <div class="d-grid mb-3">
                 <button type="button" class="btn btn-dark">Offertetraject publiceren</button>
@@ -83,6 +83,8 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/vue/vue.global.prod.js"></script>
+    <script src="~/js/questionnaire-editor.js" asp-append-version="true"></script>
 
     @if (Model.EditTenderModal?.ShowOnLoad == true)
     {

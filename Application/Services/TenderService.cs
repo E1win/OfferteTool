@@ -34,6 +34,16 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
             : throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
     }
 
+    public async Task<bool> CanManageTenderAsync(Guid tenderId, string userId)
+    {
+        var tender = await tenderRepository.GetByIdAsync(tenderId)
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        return tender.CanBeManagedBy(user, role);
+    }
+
     public async Task<Tender> CreateTenderAsync(Tender tender, string userId)
     {
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
@@ -60,8 +70,8 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
-        if (!existingTender.IsAccessibleBy(user, role))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot dit offertetraject.");
+        if (!existingTender.CanBeManagedBy(user, role))
+            throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
 
         if (!existingTender.CanBeEdited())
             throw new InvalidOperationException("Alleen offertetrajecten met de status Ontwerp kunnen worden gewijzigd.");

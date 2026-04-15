@@ -40,4 +40,15 @@ public class TextQuestion : TenderQuestion
         if (MaxLength.HasValue && value.Length > MaxLength.Value)
             throw new InvalidOperationException($"Het antwoord is te lang. Gebruik maximaal {MaxLength.Value} tekens.");
     }
+
+    public override void UpdateFrom(TenderQuestion source)
+    {
+        if (source is not TextQuestion textSource)
+            return;
+
+        Text = textSource.Text;
+        Score = textSource.Score;
+        Rows = textSource.Rows;
+        MaxLength = textSource.MaxLength;
+    }
 }
