@@ -143,6 +143,12 @@ body {
   border-bottom: 1px solid #e5e5e5;
 }
 
+.questionnaire-editor__modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .questionnaire-editor__modal-footer {
   border-bottom: 0;
   border-top: 1px solid #e5e5e5;
