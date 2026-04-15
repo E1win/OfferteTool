@@ -8,8 +8,10 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Presentation.Models.Api;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -88,6 +90,83 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.SuppressModelStateInvalidFilter = true;
 });
+builder.Services.AddRateLimiter(options =>
+{
+    const string loginPath = "/Identity/Account/Login";
+    const string createTenderPath = "/Tender/Create";
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, _) =>
+    {
+        if (context.HttpContext.Response.HasStarted)
+            return;
+
+        context.HttpContext.Response.ContentType = context.HttpContext.Request.Path.StartsWithSegments("/api")
+            ? "application/json"
+            : "text/plain; charset=utf-8";
+
+        if (context.HttpContext.Request.Path.StartsWithSegments("/api"))
+        {
+            await context.HttpContext.Response.WriteAsJsonAsync(new ApiResponse<object?>
+            {
+                Data = null,
+                Message = "Er zijn in korte tijd te veel verzoeken verstuurd. Wacht even en probeer het opnieuw.",
+                Errors = []
+            });
+            return;
+        }
+
+        await context.HttpContext.Response.WriteAsync("Er zijn in korte tijd te veel verzoeken verstuurd. Wacht even en probeer het opnieuw.");
+    };
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "onbekend";
+        var partitionKey = userId is not null ? $"user:{userId}" : $"ip:{remoteIp}";
+        var isPostRequest = HttpMethods.IsPost(httpContext.Request.Method);
+        var path = httpContext.Request.Path;
+
+        if (isPostRequest && path.Equals(loginPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return RateLimitPartition.GetSlidingWindowLimiter(
+                $"login:{remoteIp}",
+                _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(10),
+                    SegmentsPerWindow = 5,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+        }
+
+        if (isPostRequest && path.Equals(createTenderPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return RateLimitPartition.GetSlidingWindowLimiter(
+                $"tender-create:{partitionKey}",
+                _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit = 8,
+                    Window = TimeSpan.FromMinutes(10),
+                    SegmentsPerWindow = 5,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+        }
+
+        return RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey,
+            _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 4,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+});
 
 var app = builder.Build();
 
@@ -155,6 +234,7 @@ app.Use(async (context, next) =>
 });
 
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapStaticAssets();
