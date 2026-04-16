@@ -3,6 +3,7 @@ using Application.Interfaces.Services;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Enums;
+using Domain.Exceptions;
 
 namespace Application.Services;
 
@@ -52,7 +53,7 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
             throw new UnauthorizedAccessException("Alleen inkopers kunnen offertetrajecten aanmaken.");
 
         if (user.OrganisationId is null)
-            throw new InvalidOperationException("Uw account is nog niet gekoppeld aan een organisatie.");
+            throw new BusinessRuleViolationException("Uw account is nog niet gekoppeld aan een organisatie.");
 
         tender.ValidateDates();
 
@@ -74,7 +75,7 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
             throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
 
         if (!existingTender.CanBeEdited())
-            throw new InvalidOperationException("Alleen offertetrajecten met de status Ontwerp kunnen worden gewijzigd.");
+            throw new BusinessRuleViolationException("Alleen offertetrajecten met de status Ontwerp kunnen worden gewijzigd.");
 
         updatedTender.ValidateDates();
 

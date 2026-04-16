@@ -12,7 +12,9 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Presentation.Builders;
 using Presentation.Models.Api;
+using Presentation.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +73,7 @@ builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>(
 builder.Services.AddScoped<ITenderService, TenderService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
+builder.Services.AddScoped<ITenderPageModelBuilder, TenderPageModelBuilder>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 
 builder.Services.AddControllersWithViews(options =>
@@ -81,6 +84,7 @@ builder.Services.AddControllersWithViews(options =>
     options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, fieldName) => $"{fieldName} bevat geen geldige waarde.");
     options.ModelBindingMessageProvider.SetMissingBindRequiredValueAccessor(fieldName => $"{fieldName} is verplicht.");
     options.ModelBindingMessageProvider.SetMissingKeyOrValueAccessor(() => "Deze waarde ontbreekt.");
+    options.Filters.Add<ServiceExceptionFilter>();
 })
 .AddJsonOptions(options =>
 {

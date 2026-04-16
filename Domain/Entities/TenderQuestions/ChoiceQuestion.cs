@@ -1,5 +1,6 @@
-﻿using Domain.Entities.TenderAnswers;
+using Domain.Entities.TenderAnswers;
 using Domain.Enums;
+using Domain.Exceptions;
 
 namespace Domain.Entities.TenderQuestions;
 
@@ -24,7 +25,7 @@ public class ChoiceQuestion : TenderQuestion
             .FirstOrDefault(o => o.Id != Guid.Empty && !existingOptionIds.Contains(o.Id));
 
         if (invalidIncomingOption != null)
-            throw new InvalidOperationException("Een van de opties hoort niet bij deze vraag.");
+            throw new BusinessRuleViolationException("Een van de opties hoort niet bij deze vraag.");
 
         // Remove options that are no longer in the incoming list
         var incomingIds = incomingOptions
@@ -64,7 +65,7 @@ public class ChoiceQuestion : TenderQuestion
     public override void Validate()
     {
         if (Options.Count < 2)
-            throw new InvalidOperationException("Voeg minimaal twee keuzes toe.");
+            throw new BusinessRuleViolationException("Voeg minimaal twee keuzes toe.");
 
         var duplicateValues = Options
             .GroupBy(o => o.Text)
@@ -72,32 +73,32 @@ public class ChoiceQuestion : TenderQuestion
             .Select(g => g.Key);
 
         if (duplicateValues.Any())
-            throw new InvalidOperationException("Gebruik voor elke keuze een unieke tekst.");
+            throw new BusinessRuleViolationException("Gebruik voor elke keuze een unieke tekst.");
 
         if (Options.Any(option => string.IsNullOrEmpty(option.Text)))
-            throw new InvalidOperationException("Elke keuze moet een tekst hebben.");
+            throw new BusinessRuleViolationException("Elke keuze moet een tekst hebben.");
     }
 
     public override void ValidateAnswer(TenderAnswer answer)
     {
         if (answer == null)
-            throw new InvalidOperationException("Vul een antwoord in.");
+            throw new BusinessRuleViolationException("Vul een antwoord in.");
 
         if (answer is not ChoiceAnswer choiceAnswer)
-            throw new InvalidOperationException("Het ingevulde antwoord past niet bij deze vraag.");
-        
+            throw new BusinessRuleViolationException("Het ingevulde antwoord past niet bij deze vraag.");
+
         var selectedOptionIds = choiceAnswer.Selections.Select(s => s.OptionId).ToHashSet();
 
         if (selectedOptionIds.Count == 0)
-            throw new InvalidOperationException("Selecteer minimaal één optie.");
+            throw new BusinessRuleViolationException("Selecteer minimaal één optie.");
 
         if (!AllowMultipleSelection && selectedOptionIds.Count > 1)
-            throw new InvalidOperationException("U kunt bij deze vraag maar één optie kiezen.");
+            throw new BusinessRuleViolationException("U kunt bij deze vraag maar één optie kiezen.");
 
         var validOptionIds = Options.Select(o => o.Id).ToHashSet();
 
         if (selectedOptionIds.Any(id => !validOptionIds.Contains(id)))
-            throw new InvalidOperationException("Een of meer gekozen opties zijn ongeldig.");
+            throw new BusinessRuleViolationException("Een of meer gekozen opties zijn ongeldig.");
     }
 
     public override void UpdateFrom(TenderQuestion source)

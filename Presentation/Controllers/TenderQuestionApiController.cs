@@ -1,38 +1,23 @@
-using System.Security.Claims;
 using Application.Interfaces.Services;
 using Domain.Entities.TenderQuestions;
-using Domain.Enums;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Presentation.Mappings;
 using Presentation.Models.Api;
 using Presentation.Models.Questionnaire;
 
 namespace Presentation.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("api/tenders/{tenderId:guid}/questionnaire")]
-public class TenderQuestionApiController(ITenderQuestionService tenderQuestionService) : ControllerBase
+public class TenderQuestionApiController(
+    ITenderQuestionService tenderQuestionService) : AuthenticatedApiControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<QuestionnaireStateViewModel>>> Get(Guid tenderId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        try
-        {
-            var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, userId);
-            return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions)));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
+        var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, UserId);
+        return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions)));
     }
 
     [HttpPost("questions")]
@@ -42,29 +27,9 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
         if (!ModelState.IsValid)
             return BadRequest(CreateValidationErrorResponse(ModelState));
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var createdQuestion = await tenderQuestionService.CreateQuestionAsync(tenderId, TenderQuestionMapper.ToEntity(model), UserId);
 
-        try
-        {
-            var createdQuestion = await tenderQuestionService.CreateQuestionAsync(tenderId, MapToDomainQuestion(model), userId);
-            return Ok(CreateSuccessResponse(MapToViewModel(createdQuestion), "De vraag is toegevoegd."));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
+        return Ok(CreateSuccessResponse(TenderQuestionMapper.ToViewModel(createdQuestion), "De vraag is toegevoegd."));
     }
 
     [HttpPut("questions/{questionId:guid}")]
@@ -74,54 +39,16 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
         if (!ModelState.IsValid)
             return BadRequest(CreateValidationErrorResponse(ModelState));
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        try
-        {
-            var updatedQuestion = await tenderQuestionService.UpdateQuestionAsync(tenderId, questionId, MapToDomainQuestion(model), userId);
-            return Ok(CreateSuccessResponse(MapToViewModel(updatedQuestion), "De vraag is bijgewerkt."));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
+        var updatedQuestion = await tenderQuestionService.UpdateQuestionAsync(tenderId, questionId, TenderQuestionMapper.ToEntity(model), UserId);
+        return Ok(CreateSuccessResponse(TenderQuestionMapper.ToViewModel(updatedQuestion), "De vraag is bijgewerkt."));
     }
 
     [HttpDelete("questions/{questionId:guid}")]
     [ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid tenderId, Guid questionId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        try
-        {
-            await tenderQuestionService.DeleteQuestionAsync(tenderId, questionId, userId);
-            return Ok(CreateSuccessResponse<object?>(null, "De vraag is verwijderd."));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
+        await tenderQuestionService.DeleteQuestionAsync(tenderId, questionId, UserId);
+        return Ok(CreateSuccessResponse<object?>(null, "De vraag is verwijderd."));
     }
 
     [HttpPost("questions/reorder")]
@@ -131,134 +58,17 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
         if (!ModelState.IsValid)
             return BadRequest(CreateValidationErrorResponse(ModelState));
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        await tenderQuestionService.ReorderQuestionsAsync(tenderId, model.OrderedQuestionIds, UserId);
+        var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, UserId);
 
-        try
-        {
-            await tenderQuestionService.ReorderQuestionsAsync(tenderId, model.OrderedQuestionIds, userId);
-            var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, userId);
-
-            return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions), "De volgorde is bijgewerkt."));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(CreateErrorResponse(ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, CreateErrorResponse(ex.Message));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(CreateErrorResponse(ex.Message));
-        }
-    }
-
-    private static TenderQuestion MapToDomainQuestion(QuestionnaireQuestionInputModel model)
-    {
-        return model.Type switch
-        {
-            QuestionType.Text => new TextQuestion
-            {
-                TenderId = Guid.Empty,
-                Text = model.Text,
-                Score = model.Score,
-                Rows = model.Rows ?? 1,
-                MaxLength = model.MaxLength
-            },
-            QuestionType.Numeric => new NumberQuestion
-            {
-                TenderId = Guid.Empty,
-                Text = model.Text,
-                Score = model.Score,
-                MinValue = model.MinValue,
-                MaxValue = model.MaxValue
-            },
-            QuestionType.Choice => new ChoiceQuestion
-            {
-                TenderId = Guid.Empty,
-                Text = model.Text,
-                Score = model.Score,
-                AllowMultipleSelection = model.AllowMultipleSelection,
-                Options = model.Options
-                    .Select((option, index) => new TenderQuestionOption
-                    {
-                        Id = option.Id ?? Guid.Empty,
-                        Order = index,
-                        Text = option.Text
-                    })
-                    .ToList()
-            },
-            _ => throw new InvalidOperationException("Het gekozen vraagtype is ongeldig.")
-        };
-    }
-
-    private static QuestionnaireQuestionViewModel MapToViewModel(TenderQuestion question)
-    {
-        return question switch
-        {
-            ChoiceQuestion choiceQuestion => new QuestionnaireQuestionViewModel
-            {
-                Id = choiceQuestion.Id,
-                Text = choiceQuestion.Text,
-                Score = choiceQuestion.Score,
-                Type = choiceQuestion.Type,
-                TypeLabel = choiceQuestion.AllowMultipleSelection ? "Meerkeuze" : "Enkele keuze",
-                Order = choiceQuestion.Order,
-                AllowMultipleSelection = choiceQuestion.AllowMultipleSelection,
-                Rows = null,
-                MaxLength = null,
-                MinValue = null,
-                MaxValue = null,
-                Options = choiceQuestion.Options
-                    .OrderBy(option => option.Order)
-                    .Select(option => new QuestionnaireOptionViewModel
-                    {
-                        Id = option.Id,
-                        Text = option.Text,
-                        Order = option.Order
-                    })
-                    .ToList()
-            },
-            NumberQuestion numberQuestion => new QuestionnaireQuestionViewModel
-            {
-                Id = numberQuestion.Id,
-                Text = numberQuestion.Text,
-                Score = numberQuestion.Score,
-                Type = numberQuestion.Type,
-                TypeLabel = "Numeriek",
-                Order = numberQuestion.Order,
-                AllowMultipleSelection = false,
-                Rows = null,
-                MaxLength = null,
-                MinValue = numberQuestion.MinValue,
-                MaxValue = numberQuestion.MaxValue,
-                Options = []
-            },
-            TextQuestion textQuestion => new QuestionnaireQuestionViewModel
-            {
-                Id = textQuestion.Id,
-                Text = textQuestion.Text,
-                Score = textQuestion.Score,
-                Type = textQuestion.Type,
-                TypeLabel = "Tekst",
-                Order = textQuestion.Order,
-                AllowMultipleSelection = false,
-                Rows = textQuestion.Rows,
-                MaxLength = textQuestion.MaxLength,
-                MinValue = null,
-                MaxValue = null,
-                Options = []
-            },
-            _ => throw new InvalidOperationException("Het vraagtype wordt niet ondersteund.")
-        };
+        return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions), "De volgorde is bijgewerkt."));
     }
 
     private QuestionnaireStateViewModel CreateQuestionnaireStateViewModel(IEnumerable<TenderQuestion> questions)
     {
         return new QuestionnaireStateViewModel
         {
-            Questions = questions.Select(MapToViewModel).ToList()
+            Questions = questions.Select(TenderQuestionMapper.ToViewModel).ToList()
         };
     }
 

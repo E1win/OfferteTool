@@ -1,48 +1,38 @@
-using System.Security.Claims;
 using Application.Interfaces.Services;
-using Domain.Entities;
-using Domain.Enums;
-using Microsoft.AspNetCore.Authorization;
+using Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
-using Presentation.Models.Questionnaire;
+using Presentation.Builders;
+using Presentation.Mappings;
 using Presentation.Models.Tender;
 
 namespace Presentation.Controllers;
 
-[Authorize]
-public class TenderController(ITenderService tenderService) : Controller
+public class TenderController(
+    ITenderService tenderService,
+    ITenderPageModelBuilder tenderPageModelBuilder) : AuthenticatedControllerBase
 {
     public async Task<IActionResult> Index()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        return View(await BuildTenderIndexViewModelAsync(userId));
+        return View(await tenderPageModelBuilder.BuildIndexAsync(UserId));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind(Prefix = "CreateTenderModal.Form")] TenderFormViewModel model)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         if (!ModelState.IsValid)
-        {
-            return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true));
-        }
+            return View(nameof(Index), await tenderPageModelBuilder.BuildIndexAsync(UserId, model, true));
 
-        var tender = MapToTender(model);
+        var tender = TenderMapper.ToEntity(model);
 
         try
         {
-            var createdTender = await tenderService.CreateTenderAsync(tender, userId);
+            var createdTender = await tenderService.CreateTenderAsync(tender, UserId);
             return RedirectToAction(nameof(Details), new { id = createdTender.Id });
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessRuleViolationException ex)
         {
-            return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true, ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true, ex.Message));
+            return View(nameof(Index), await tenderPageModelBuilder.BuildIndexAsync(UserId, model, true, ex.Message));
         }
     }
 
@@ -50,29 +40,17 @@ public class TenderController(ITenderService tenderService) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Guid id, [Bind(Prefix = "EditTenderModal.Form")] TenderFormViewModel model)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         if (!ModelState.IsValid)
-        {
-            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true));
-        }
+            return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(id, UserId, model, true));
 
         try
         {
-            await tenderService.UpdateTenderAsync(id, MapToTender(model), userId);
+            await tenderService.UpdateTenderAsync(id, TenderMapper.ToEntity(model), UserId);
             return RedirectToAction(nameof(Details), new { id });
         }
-        catch (KeyNotFoundException)
+        catch (BusinessRuleViolationException ex)
         {
-            return NotFound();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true, ex.Message));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true, ex.Message));
+            return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(id, UserId, model, true, ex.Message));
         }
     }
 
@@ -80,152 +58,19 @@ public class TenderController(ITenderService tenderService) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Open(Guid id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         try
         {
-            await tenderService.OpenTenderAsync(id, userId);
+            await tenderService.OpenTenderAsync(id, UserId);
             return RedirectToAction(nameof(Details), new { id });
         }
-        catch (KeyNotFoundException)
+        catch (BusinessRuleViolationException ex)
         {
-            return NotFound();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, actionErrorMessage: ex.Message));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
+            return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(id, UserId, actionErrorMessage: ex.Message));
         }
     }
 
     public async Task<IActionResult> Details(Guid id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        try
-        {
-            return View(await BuildTenderDetailsViewModelAsync(id, userId));
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-    }
-
-    private async Task<TenderIndexViewModel> BuildTenderIndexViewModelAsync(
-        string userId,
-        TenderFormViewModel? createTender = null,
-        bool openCreateTenderModal = false,
-        string? errorMessage = null)
-    {
-        return new TenderIndexViewModel
-        {
-            Tenders = await tenderService.GetAccessibleTendersAsync(userId),
-            CreateTenderModal = new TenderFormModalViewModel
-            {
-                ModalId = "createTenderModal",
-                ModalTitle = "Nieuwe tender aanmaken",
-                SubmitAction = nameof(Create),
-                SubmitButtonText = "Tender aanmaken",
-                ErrorMessage = errorMessage,
-                ShowOnLoad = openCreateTenderModal,
-                Form = createTender ?? new TenderFormViewModel()
-            }
-        };
-    }
-
-    private async Task<TenderDetailsViewModel> BuildTenderDetailsViewModelAsync(
-        Guid id,
-        string userId,
-        TenderFormViewModel? editTender = null,
-        bool openEditTenderModal = false,
-        string? errorMessage = null,
-        string? actionErrorMessage = null)
-    {
-        var canManageTender = await tenderService.CanManageTenderAsync(id, userId);
-        var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
-        var canEditTender = canManageTender && tender.CanBeEdited();
-
-        return new TenderDetailsViewModel
-        {
-            Tender = tender,
-            CanManageTender = canManageTender,
-            ActionErrorMessage = actionErrorMessage,
-            OpenTenderModal = CreateOpenTenderModal(tender, canEditTender),
-            QuestionnaireEditor = new QuestionnaireEditorBootstrapViewModel
-            {
-                ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",
-                CanManageQuestions = canEditTender,
-                AntiforgeryHeaderName = "X-CSRF-TOKEN",
-                QuestionTypes = new QuestionnaireQuestionTypeLookupViewModel
-                {
-                    Choice = QuestionType.Choice,
-                    Text = QuestionType.Text,
-                    Numeric = QuestionType.Numeric
-                }
-            },
-            EditTenderModal = canEditTender
-                ? new TenderFormModalViewModel
-                {
-                    ModalId = "editTenderModal",
-                    ModalTitle = "Tender wijzigen",
-                    SubmitAction = nameof(Edit),
-                    SubmitButtonText = "Wijzigingen opslaan",
-                    ErrorMessage = errorMessage,
-                    ShowOnLoad = openEditTenderModal,
-                    TenderId = tender.Id,
-                    Form = editTender ?? MapToTenderForm(tender)
-                }
-                : null
-        };
-    }
-
-    private ConfirmationModalViewModel? CreateOpenTenderModal(Tender tender, bool canEditTender)
-    {
-        if (!canEditTender)
-            return null;
-
-        return new ConfirmationModalViewModel
-        {
-            ModalId = "openTenderModal",
-            ModalTitle = "Offertetraject openen",
-            Description = "Weet u zeker dat u dit offertetraject wilt openen? Zodra het traject open staat, kunnen de tendergegevens en vragenlijst niet meer worden gewijzigd.",
-            SubmitAction = nameof(Open),
-            SubmitButtonText = "Offertetraject openen",
-            TenderId = tender.Id
-        };
-    }
-
-    private static Tender MapToTender(TenderFormViewModel model)
-    {
-        return new Tender
-        {
-            Title = model.Title,
-            Description = model.Description,
-            StartDate = model.StartDate,
-            EndDate = model.EndDate,
-            IsPublic = model.IsPublic,
-            Status = TenderStatus.Design,
-            OrganisationId = Guid.Empty
-        };
-    }
-
-    private static TenderFormViewModel MapToTenderForm(Tender tender)
-    {
-        return new TenderFormViewModel
-        {
-            Title = tender.Title,
-            Description = tender.Description,
-            StartDate = tender.StartDate,
-            EndDate = tender.EndDate,
-            IsPublic = tender.IsPublic
-        };
+        return View(await tenderPageModelBuilder.BuildDetailsAsync(id, UserId));
     }
 }

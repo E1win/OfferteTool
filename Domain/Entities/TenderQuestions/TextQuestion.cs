@@ -1,5 +1,6 @@
-﻿using Domain.Entities.TenderAnswers;
+using Domain.Entities.TenderAnswers;
 using Domain.Enums;
+using Domain.Exceptions;
 
 namespace Domain.Entities.TenderQuestions;
 
@@ -12,33 +13,31 @@ public class TextQuestion : TenderQuestion
     {
         Type = QuestionType.Text;
     }
+
     public override void Validate()
     {
         if (Rows < 1)
-        {
-            throw new ArgumentException("Een tekstveld moet minimaal uit één regel bestaan.");
-        }
+            throw new BusinessRuleViolationException("Een tekstveld moet minimaal uit één regel bestaan.");
+
         if (MaxLength.HasValue && MaxLength.Value <= 0)
-        {
-            throw new ArgumentException("De maximale lengte moet groter zijn dan nul.");
-        }
+            throw new BusinessRuleViolationException("De maximale lengte moet groter zijn dan nul.");
     }
 
     public override void ValidateAnswer(TenderAnswer answer)
     {
         if (answer == null)
-            throw new InvalidOperationException("Vul een antwoord in.");
+            throw new BusinessRuleViolationException("Vul een antwoord in.");
 
         if (answer is not TextAnswer textAnswer)
-            throw new InvalidOperationException("Het ingevulde antwoord past niet bij deze vraag.");
+            throw new BusinessRuleViolationException("Het ingevulde antwoord past niet bij deze vraag.");
 
         var value = textAnswer.TextValue;
 
         if (string.IsNullOrWhiteSpace(value))
-            throw new InvalidOperationException("Het antwoord mag niet leeg zijn.");
+            throw new BusinessRuleViolationException("Het antwoord mag niet leeg zijn.");
 
         if (MaxLength.HasValue && value.Length > MaxLength.Value)
-            throw new InvalidOperationException($"Het antwoord is te lang. Gebruik maximaal {MaxLength.Value} tekens.");
+            throw new BusinessRuleViolationException($"Het antwoord is te lang. Gebruik maximaal {MaxLength.Value} tekens.");
     }
 
     public override void UpdateFrom(TenderQuestion source)
