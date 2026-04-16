@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Presentation.Models;
+using Presentation.Models.Shared;
 using System.Diagnostics;
 
 namespace Presentation.Controllers
@@ -8,11 +8,11 @@ namespace Presentation.Controllers
     {
         public IActionResult Index()
         {
-            return View();
-        }
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Tender");
+            }
 
-        public IActionResult Privacy()
-        {
             return View();
         }
 

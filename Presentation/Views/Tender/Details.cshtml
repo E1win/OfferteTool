@@ -1,0 +1,116 @@
+@using Domain.Enums
+@model TenderDetailsViewModel
+
+@{
+    ViewData["Title"] = Model.Tender.Title;
+}
+
+<nav aria-label="Terug navigatie" class="mb-3">
+    <a asp-controller="Tender" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        &larr; Terug naar overzicht
+    </a>
+</nav>
+
+<div class="row">
+    <article class="col-lg-8">
+        <header class="mb-4">
+            <h1 class="mb-0">@Model.Tender.Title</h1>
+        </header>
+
+        <section aria-labelledby="description-heading">
+            <h2 id="description-heading" class="h4">Beschrijving</h2>
+            <p class="mb-0">@Model.Tender.Description</p>
+        </section>
+
+        <partial name="_QuestionnaireEditorIsland" model="Model.QuestionnaireEditor" />
+    </article>
+
+    <aside class="col-lg-4" aria-labelledby="tender-sidebar-heading">
+        <h2 id="tender-sidebar-heading" class="visually-hidden">Tenderacties en details</h2>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ActionErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">
+                @Model.ActionErrorMessage
+            </div>
+        }
+
+        @if (Model.CanManageTender && Model.Tender.CanBeEdited())
+        {
+            <div class="d-grid mb-3">
+                <button type="button"
+                        class="btn btn-dark"
+                        aria-controls="@Model.OpenTenderModal!.ModalId"
+                        aria-haspopup="dialog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#@Model.OpenTenderModal!.ModalId">
+                    Offertetraject openen
+                </button>
+            </div>
+
+            <partial name="_ConfirmationModal" for="OpenTenderModal" />
+        }
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="h5 card-title">Details</h3>
+                <dl class="mb-0">
+                    <dt>Opdrachtgever</dt>
+                    <dd>@(Model.Tender.Organisation?.Name ?? "Onbekend")</dd>
+                    <dt>Status</dt>
+                    <dd>@(Model.Tender.Status switch
+                    {
+                        TenderStatus.Design => "Ontwerp",
+                        TenderStatus.Open => "Open",
+                        TenderStatus.Closed => "Gesloten",
+                        TenderStatus.Completed => "Afgerond",
+                        _ => Model.Tender.Status.ToString()
+                    })</dd>
+
+                    <dt>Publiek</dt>
+                    <dd>@(Model.Tender.IsPublic ? "Ja" : "Nee")</dd>
+
+                    <dt>Begindatum</dt>
+                    <dd>@Model.Tender.StartDate.ToString("dd/MM/yyyy")</dd>
+
+                    <dt>Einddatum</dt>
+                    <dd>@Model.Tender.EndDate.ToString("dd/MM/yyyy")</dd>
+                </dl>
+            </div>
+        </div>
+
+        @if (Model.EditTenderModal is not null)
+        {
+            <div class="d-grid mb-3">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        aria-controls="@Model.EditTenderModal.ModalId"
+                        aria-haspopup="dialog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#@Model.EditTenderModal.ModalId">
+                    Offertetraject wijzigen
+                </button>
+            </div>
+
+            <partial name="_TenderFormModal" for="EditTenderModal" />
+        }
+    </aside>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/vue/vue.global.prod.js"></script>
+    <script src="~/js/questionnaire-editor.js" asp-append-version="true"></script>
+
+    @if (Model.EditTenderModal?.ShowOnLoad == true)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const modalElement = document.getElementById("@Model.EditTenderModal.ModalId");
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+}
