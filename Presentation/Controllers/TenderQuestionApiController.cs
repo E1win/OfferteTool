@@ -1,8 +1,6 @@
-using System.Security.Claims;
 using Application.Interfaces.Services;
 using Domain.Entities.TenderQuestions;
 using Domain.Enums;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Presentation.Mappings;
@@ -11,17 +9,15 @@ using Presentation.Models.Questionnaire;
 
 namespace Presentation.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("api/tenders/{tenderId:guid}/questionnaire")]
-public class TenderQuestionApiController(ITenderQuestionService tenderQuestionService) : ControllerBase
+public class TenderQuestionApiController(
+    ITenderQuestionService tenderQuestionService) : AuthenticatedApiControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<QuestionnaireStateViewModel>>> Get(Guid tenderId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, userId);
+        var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, UserId);
         return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions)));
     }
 
@@ -32,9 +28,7 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
         if (!ModelState.IsValid)
             return BadRequest(CreateValidationErrorResponse(ModelState));
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        var createdQuestion = await tenderQuestionService.CreateQuestionAsync(tenderId, TenderQuestionMapper.ToEntity(model), userId);
+        var createdQuestion = await tenderQuestionService.CreateQuestionAsync(tenderId, TenderQuestionMapper.ToEntity(model), UserId);
 
         return Ok(CreateSuccessResponse(TenderQuestionMapper.ToViewModel(createdQuestion), "De vraag is toegevoegd."));
     }
@@ -46,9 +40,7 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
         if (!ModelState.IsValid)
             return BadRequest(CreateValidationErrorResponse(ModelState));
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        var updatedQuestion = await tenderQuestionService.UpdateQuestionAsync(tenderId, questionId, TenderQuestionMapper.ToEntity(model), userId);
+        var updatedQuestion = await tenderQuestionService.UpdateQuestionAsync(tenderId, questionId, TenderQuestionMapper.ToEntity(model), UserId);
         return Ok(CreateSuccessResponse(TenderQuestionMapper.ToViewModel(updatedQuestion), "De vraag is bijgewerkt."));
     }
 
@@ -56,9 +48,7 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
     [ValidateAntiForgeryToken]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid tenderId, Guid questionId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        await tenderQuestionService.DeleteQuestionAsync(tenderId, questionId, userId);
+        await tenderQuestionService.DeleteQuestionAsync(tenderId, questionId, UserId);
         return Ok(CreateSuccessResponse<object?>(null, "De vraag is verwijderd."));
     }
 
@@ -69,10 +59,8 @@ public class TenderQuestionApiController(ITenderQuestionService tenderQuestionSe
         if (!ModelState.IsValid)
             return BadRequest(CreateValidationErrorResponse(ModelState));
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
-        await tenderQuestionService.ReorderQuestionsAsync(tenderId, model.OrderedQuestionIds, userId);
-        var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, userId);
+        await tenderQuestionService.ReorderQuestionsAsync(tenderId, model.OrderedQuestionIds, UserId);
+        var questions = await tenderQuestionService.GetQuestionsAsync(tenderId, UserId);
 
         return Ok(CreateSuccessResponse(CreateQuestionnaireStateViewModel(questions), "De volgorde is bijgewerkt."));
     }

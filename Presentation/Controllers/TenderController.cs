@@ -1,9 +1,7 @@
-using System.Security.Claims;
 using Application.Interfaces.Services;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Exceptions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.Mappings;
 using Presentation.Models.Questionnaire;
@@ -11,34 +9,31 @@ using Presentation.Models.Tender;
 
 namespace Presentation.Controllers;
 
-[Authorize]
-public class TenderController(ITenderService tenderService) : Controller
+public class TenderController(
+    ITenderService tenderService) : AuthenticatedControllerBase
 {
     public async Task<IActionResult> Index()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        return View(await BuildTenderIndexViewModelAsync(userId));
+        return View(await BuildTenderIndexViewModelAsync(UserId));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind(Prefix = "CreateTenderModal.Form")] TenderFormViewModel model)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         if (!ModelState.IsValid)
-            return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true));
+            return View(nameof(Index), await BuildTenderIndexViewModelAsync(UserId, model, true));
 
         var tender = TenderMapper.ToEntity(model);
 
         try
         {
-            var createdTender = await tenderService.CreateTenderAsync(tender, userId);
+            var createdTender = await tenderService.CreateTenderAsync(tender, UserId);
             return RedirectToAction(nameof(Details), new { id = createdTender.Id });
         }
         catch (BusinessRuleViolationException ex)
         {
-            return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true, ex.Message));
+            return View(nameof(Index), await BuildTenderIndexViewModelAsync(UserId, model, true, ex.Message));
         }
     }
 
@@ -46,19 +41,17 @@ public class TenderController(ITenderService tenderService) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Guid id, [Bind(Prefix = "EditTenderModal.Form")] TenderFormViewModel model)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         if (!ModelState.IsValid)
-            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true));
+            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, UserId, model, true));
 
         try
         {
-            await tenderService.UpdateTenderAsync(id, TenderMapper.ToEntity(model), userId);
+            await tenderService.UpdateTenderAsync(id, TenderMapper.ToEntity(model), UserId);
             return RedirectToAction(nameof(Details), new { id });
         }
         catch (BusinessRuleViolationException ex)
         {
-            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, model, true, ex.Message));
+            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, UserId, model, true, ex.Message));
         }
     }
 
@@ -66,23 +59,20 @@ public class TenderController(ITenderService tenderService) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Open(Guid id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-
         try
         {
-            await tenderService.OpenTenderAsync(id, userId);
+            await tenderService.OpenTenderAsync(id, UserId);
             return RedirectToAction(nameof(Details), new { id });
         }
         catch (BusinessRuleViolationException ex)
         {
-            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, userId, actionErrorMessage: ex.Message));
+            return View(nameof(Details), await BuildTenderDetailsViewModelAsync(id, UserId, actionErrorMessage: ex.Message));
         }
     }
 
     public async Task<IActionResult> Details(Guid id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        return View(await BuildTenderDetailsViewModelAsync(id, userId));
+        return View(await BuildTenderDetailsViewModelAsync(id, UserId));
     }
 
     private async Task<TenderIndexViewModel> BuildTenderIndexViewModelAsync(
