@@ -12,6 +12,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Presentation.Builders;
 using Presentation.Models.Api;
 using Presentation.Filters;
 
@@ -72,6 +73,7 @@ builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>(
 builder.Services.AddScoped<ITenderService, TenderService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
+builder.Services.AddScoped<ITenderViewModelBuilder, TenderViewModelBuilder>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 
 builder.Services.AddControllersWithViews(options =>
