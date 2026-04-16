@@ -2,7 +2,7 @@ using Presentation.Models.Tender;
 
 namespace Presentation.Builders;
 
-public interface ITenderViewModelBuilder
+public interface ITenderPageModelBuilder
 {
     Task<TenderIndexViewModel> BuildIndexAsync(
         string userId,

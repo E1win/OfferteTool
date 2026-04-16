@@ -73,7 +73,7 @@ builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>(
 builder.Services.AddScoped<ITenderService, TenderService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
-builder.Services.AddScoped<ITenderViewModelBuilder, TenderViewModelBuilder>();
+builder.Services.AddScoped<ITenderPageModelBuilder, TenderPageModelBuilder>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 
 builder.Services.AddControllersWithViews(options =>

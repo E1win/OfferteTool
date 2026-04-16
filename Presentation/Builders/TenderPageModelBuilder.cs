@@ -8,7 +8,7 @@ using Presentation.Models.Tender;
 
 namespace Presentation.Builders;
 
-public class TenderViewModelBuilder(ITenderService tenderService) : ITenderViewModelBuilder
+public class TenderPageModelBuilder(ITenderService tenderService) : ITenderPageModelBuilder
 {
     public async Task<TenderIndexViewModel> BuildIndexAsync(
         string userId,
