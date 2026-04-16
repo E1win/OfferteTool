@@ -5,6 +5,7 @@ using Domain.Enums;
 using Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Presentation.Mappings;
 using Presentation.Models.Questionnaire;
 using Presentation.Models.Tender;
 
@@ -28,7 +29,7 @@ public class TenderController(ITenderService tenderService) : Controller
         if (!ModelState.IsValid)
             return View(nameof(Index), await BuildTenderIndexViewModelAsync(userId, model, true));
 
-        var tender = MapToTender(model);
+        var tender = TenderMapper.ToEntity(model);
 
         try
         {
@@ -52,7 +53,7 @@ public class TenderController(ITenderService tenderService) : Controller
 
         try
         {
-            await tenderService.UpdateTenderAsync(id, MapToTender(model), userId);
+            await tenderService.UpdateTenderAsync(id, TenderMapper.ToEntity(model), userId);
             return RedirectToAction(nameof(Details), new { id });
         }
         catch (BusinessRuleViolationException ex)
@@ -146,7 +147,7 @@ public class TenderController(ITenderService tenderService) : Controller
                     ErrorMessage = errorMessage,
                     ShowOnLoad = openEditTenderModal,
                     TenderId = tender.Id,
-                    Form = editTender ?? MapToTenderForm(tender)
+                    Form = editTender ?? TenderMapper.ToFormViewModel(tender)
                 }
                 : null
         };
@@ -165,32 +166,6 @@ public class TenderController(ITenderService tenderService) : Controller
             SubmitAction = nameof(Open),
             SubmitButtonText = "Offertetraject openen",
             TenderId = tender.Id
-        };
-    }
-
-    private static Tender MapToTender(TenderFormViewModel model)
-    {
-        return new Tender
-        {
-            Title = model.Title,
-            Description = model.Description,
-            StartDate = model.StartDate,
-            EndDate = model.EndDate,
-            IsPublic = model.IsPublic,
-            Status = TenderStatus.Design,
-            OrganisationId = Guid.Empty
-        };
-    }
-
-    private static TenderFormViewModel MapToTenderForm(Tender tender)
-    {
-        return new TenderFormViewModel
-        {
-            Title = tender.Title,
-            Description = tender.Description,
-            StartDate = tender.StartDate,
-            EndDate = tender.EndDate,
-            IsPublic = tender.IsPublic
         };
     }
 }
