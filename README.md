@@ -16,8 +16,8 @@ Pull requests op de main-, develop- en release-branches worden pas geaccepteerd 
 
 ## Mitigatie van bedreigingen
 
-Bedreiging #6 is het risico op ongeautoriseerde toegang van gebruikers tot gevoelige informatie. Hiervoor heb Defense In Depth toegepast in de applicatie door in verschillende lagen de gegevens te beschermen. Zo zie je bij Tenders bijvoorbeeld dat alleen ingelogde gebruikers toegang hebben tot offertetraject pagina's bij regel 12 van de TenderController, daarnaast zie je in het domein object Tender op regel 50 dat de controle over wie de Tender kan beheren bij het domein object zelf zit.
+Bedreiging #6 is het risico op ongeautoriseerde toegang van gebruikers tot gevoelige informatie. Hiervoor is Defense In Depth toegepast in de applicatie door in verschillende lagen de gegevens te beschermen. Zo zie je bij Tenders bijvoorbeeld dat alleen ingelogde gebruikers toegang hebben tot offertetraject pagina's bij regel 12 van de TenderController (via de AuthenticatedControllerBase), daarnaast zie je in het domein object Tender op regel 51 dat de controle over wie de Tender kan beheren bij het domein object zelf zit. Dat wordt op bijvoorbeeld regel 101 van de TenderService gebruikt.
 
 Bedreiging #18 is het risico op overbelasting van het systeem. Hiervoor heb ik ratelimiting toegevoegd in Program.cs. Kwetsbare endpoints, zoals die van het inloggen en toevoegen van offertetrajecten, krijgen een lager limiet. Zie ter illustratie regel 136 van Program.cs
 
-Bedreiging #23 is het risico op Cross Site Request Forgery bij POST-requests. Hiervoor heb ik het attribuut [ValidateAntiForgeryToken] toegevoegd aan controlleracties die POST-requests afhandelen. Zie ter illustratie regel 21 van TenderController.cs.
+Bedreiging #23 is het risico op Cross Site Request Forgery bij POST-requests. Hiervoor heb ik het attribuut [ValidateAntiForgeryToken] toegevoegd aan controlleracties die POST-requests afhandelen. Zie ter illustratie regel 20 van TenderController.cs.
