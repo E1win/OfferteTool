@@ -69,10 +69,12 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddScoped<ITenderRepository, TenderRepository>();
 builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>();
+builder.Services.AddScoped<ITenderSubmissionRepository, TenderSubmissionRepository>();
 
 builder.Services.AddScoped<ITenderService, TenderService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
+builder.Services.AddScoped<ITenderSubmissionService, TenderSubmissionService>();
 builder.Services.AddScoped<ITenderPageModelBuilder, TenderPageModelBuilder>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 
