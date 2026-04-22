@@ -1,9 +1,6 @@
 @model Presentation.Models.TenderSubmission.TextTenderSubmissionQuestionViewModel
 
 <section class="submission-question">
-    <input type="hidden" name="@($"{Model.FieldPrefix}.QuestionId")" value="@Model.Answer.QuestionId" />
-    <input type="hidden" name="@($"{Model.FieldPrefix}.Type")" value="@Model.Answer.Type" />
-
     <h3 class="submission-question__title">@Model.Text</h3>
 
     @if (Model.Rows > 1)

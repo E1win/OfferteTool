@@ -1,9 +1,6 @@
 @model Presentation.Models.TenderSubmission.ChoiceTenderSubmissionQuestionViewModel
 
 <section class="submission-question">
-    <input type="hidden" name="@($"{Model.FieldPrefix}.QuestionId")" value="@Model.Answer.QuestionId" />
-    <input type="hidden" name="@($"{Model.FieldPrefix}.Type")" value="@Model.Answer.Type" />
-
     <h3 class="submission-question__title">@Model.Text</h3>
 
     <div class="submission-question__choices" role="group" aria-label="@Model.Text">

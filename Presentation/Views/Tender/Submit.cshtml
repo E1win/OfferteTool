@@ -31,12 +31,15 @@
                 @Html.AntiForgeryToken()
                 @Html.ValidationSummary(false, string.Empty, new { @class = "text-danger mb-3" })
 
-                @for (var index = 0; index < Model.Questions.Count; index++)
+                @for (var index = 0; index < Model.Form.Answers.Count; index++)
                 {
+                    <input type="hidden" asp-for="Form.Answers[index].QuestionId" />
+                    <input type="hidden" asp-for="Form.Answers[index].Type" />
+
                     @Html.EditorFor(model => model.Questions[index], Model.Questions[index].GetType().Name)
                 }
 
-                <button type="submit" class="btn btn-secondary submission-form__submit">
+                <button type="submit" class="btn btn-secondary submission-form__submit" id="submitBtn">
                     Offerte indienen
                 </button>
             </form>
@@ -46,4 +49,15 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelector('.submission-form').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn.disabled) {
+                e.preventDefault();
+                return false;
+            }
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Wordt verwerkt...';
+        });
+    </script>
 }
