@@ -1,0 +1,15 @@
+@model Presentation.Models.TenderSubmission.NumberTenderSubmissionQuestionViewModel
+
+<section class="submission-question">
+    <input type="hidden" name="@($"{Model.FieldPrefix}.QuestionId")" value="@Model.Answer.QuestionId" />
+    <input type="hidden" name="@($"{Model.FieldPrefix}.Type")" value="@Model.Answer.Type" />
+
+    <h3 class="submission-question__title">@Model.Text</h3>
+
+    <input class="form-control submission-question__input"
+           type="number"
+           step="any"
+           name="@($"{Model.FieldPrefix}.NumericValue")"
+           value="@Model.Answer.NumericValue"
+           placeholder="Vul hier het antwoord in" />
+</section>

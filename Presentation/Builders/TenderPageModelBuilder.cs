@@ -12,7 +12,8 @@ namespace Presentation.Builders;
 
 public class TenderPageModelBuilder(
     ITenderService tenderService,
-    ITenderQuestionService tenderQuestionService) : ITenderPageModelBuilder
+    ITenderQuestionService tenderQuestionService,
+    ITenderSubmissionService tenderSubmissionService) : ITenderPageModelBuilder
 {
     public async Task<TenderIndexViewModel> BuildIndexAsync(
         string userId,
@@ -91,12 +92,23 @@ public class TenderPageModelBuilder(
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
         var questions = await tenderQuestionService.GetQuestionsAsync(id, userId)
             ?? [];
+        var persistedForm = form;
+
+        if (persistedForm is null)
+        {
+            var submission = await tenderSubmissionService.GetByTenderForCurrentSupplierAsync(id, userId);
+            if (submission is not null)
+                persistedForm = TenderSubmissionMapper.ToFormViewModel(submission.Answers);
+        }
+
+        var orderedQuestions = questions.OrderBy(question => question.Order).ToList();
+        var normalizedForm = CreateSubmissionForm(orderedQuestions, persistedForm);
 
         return new TenderSubmissionPageViewModel
         {
             Tender = tender,
-            Questions = questions.OrderBy(question => question.Order).ToList(),
-            Form = CreateSubmissionForm(questions, form),
+            Questions = CreateSubmissionQuestions(orderedQuestions, normalizedForm),
+            Form = normalizedForm,
             ErrorMessage = errorMessage
         };
     }
@@ -151,6 +163,57 @@ public class TenderPageModelBuilder(
                     };
                 })
                 .ToList()
+        };
+    }
+
+    private static List<TenderSubmissionQuestionViewModel> CreateSubmissionQuestions(
+        IReadOnlyList<TenderQuestion> questions,
+        TenderSubmissionFormViewModel form)
+    {
+        return questions
+            .Select((question, index) => CreateSubmissionQuestion(question, form.Answers[index], index))
+            .ToList();
+    }
+
+    private static TenderSubmissionQuestionViewModel CreateSubmissionQuestion(
+        TenderQuestion question,
+        TenderSubmissionAnswerInputModel answer,
+        int index)
+    {
+        return question switch
+        {
+            TextQuestion textQuestion => new TextTenderSubmissionQuestionViewModel
+            {
+                Index = index,
+                Text = textQuestion.Text,
+                Answer = answer,
+                Rows = textQuestion.Rows,
+                MaxLength = textQuestion.MaxLength
+            },
+            NumberQuestion numberQuestion => new NumberTenderSubmissionQuestionViewModel
+            {
+                Index = index,
+                Text = numberQuestion.Text,
+                Answer = answer,
+                MinValue = numberQuestion.MinValue,
+                MaxValue = numberQuestion.MaxValue
+            },
+            ChoiceQuestion choiceQuestion => new ChoiceTenderSubmissionQuestionViewModel
+            {
+                Index = index,
+                Text = choiceQuestion.Text,
+                Answer = answer,
+                AllowMultipleSelection = choiceQuestion.AllowMultipleSelection,
+                Options = choiceQuestion.Options
+                    .OrderBy(option => option.Order)
+                    .Select(option => new TenderSubmissionOptionViewModel
+                    {
+                        Id = option.Id,
+                        Text = option.Text
+                    })
+                    .ToList()
+            },
+            _ => throw new InvalidOperationException("Het gekozen vraagtype wordt niet ondersteund.")
         };
     }
 }

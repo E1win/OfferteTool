@@ -1,5 +1,3 @@
-@using Domain.Entities.TenderQuestions
-@using Domain.Enums
 @model Presentation.Models.TenderSubmission.TenderSubmissionPageViewModel
 
 @{
@@ -35,66 +33,7 @@
 
                 @for (var index = 0; index < Model.Questions.Count; index++)
                 {
-                    var question = Model.Questions[index];
-
-                    <section class="submission-question">
-                        <input asp-for="Form.Answers[index].QuestionId" type="hidden" />
-                        <input asp-for="Form.Answers[index].Type" type="hidden" />
-
-                        <h3 class="submission-question__title">@question.Text</h3>
-
-                        @switch (question)
-                        {
-                            case TextQuestion textQuestion:
-                                if (textQuestion.Rows > 1)
-                                {
-                                    <textarea asp-for="Form.Answers[index].TextValue"
-                                                class="form-control submission-question__textarea"
-                                                rows="@textQuestion.Rows"
-                                                placeholder="Vul hier het antwoord in"></textarea>
-                                }
-                                else
-                                {
-                                    <input asp-for="Form.Answers[index].TextValue"
-                                            class="form-control submission-question__input"
-                                            placeholder="Vul hier het antwoord in" />
-                                }
-
-                                if (textQuestion.MaxLength.HasValue)
-                                {
-                                    <p class="form-text mb-0">Maximaal @textQuestion.MaxLength.Value tekens.</p>
-                                }
-                                break;
-
-                            case NumberQuestion:
-                                <input asp-for="Form.Answers[index].NumericValue"
-                                        type="number"
-                                        step="any"
-                                        class="form-control submission-question__input"
-                                        placeholder="Vul hier het antwoord in" />
-                                break;
-
-                            case ChoiceQuestion choiceQuestion:
-                                <div class="submission-question__choices" role="group" aria-label="@question.Text">
-                                    @foreach (var option in choiceQuestion.Options.OrderBy(option => option.Order))
-                                    {
-                                        var inputId = $"question-{question.Id}-option-{option.Id}";
-                                        var selectedOptionIds = Model.Form.Answers[index].SelectedOptionIds;
-
-                                        <label class="submission-choice" for="@inputId">
-                                            <input id="@inputId"
-                                                    class="submission-choice__input"
-                                                    type="@(choiceQuestion.AllowMultipleSelection ? "checkbox" : "radio")"
-                                                    name="Form.Answers[@index].SelectedOptionIds"
-                                                    value="@option.Id"
-                                                    checked="@selectedOptionIds.Contains(option.Id)" />
-                                            <span class="submission-choice__label">@option.Text</span>
-                                        </label>
-                                    }
-                                </div>
-                                break;
-                        }
-                    </section>
+                    @Html.EditorFor(model => model.Questions[index], Model.Questions[index].GetType().Name)
                 }
 
                 <button type="submit" class="btn btn-secondary submission-form__submit">

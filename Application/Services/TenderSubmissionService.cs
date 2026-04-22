@@ -12,6 +12,19 @@ public class TenderSubmissionService(
     ITenderSubmissionRepository tenderSubmissionRepository,
     ICurrentUserService currentUserService) : ITenderSubmissionService
 {
+    public async Task<TenderSubmission?> GetByTenderForCurrentSupplierAsync(Guid tenderId, string userId)
+    {
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        if (role != Roles.Leverancier)
+            throw new UnauthorizedAccessException("Alleen leveranciers kunnen zich inschrijven op een offertetraject.");
+
+        if (user.OrganisationId is null)
+            throw new BusinessRuleViolationException("Uw account is nog niet gekoppeld aan een organisatie.");
+
+        return await tenderSubmissionRepository.GetByTenderAndSupplierAsync(tenderId, user.OrganisationId.Value);
+    }
+
     public async Task<TenderSubmission> SubmitAsync(Guid tenderId, IEnumerable<TenderAnswer> answers, string userId)
     {
         var tender = await tenderRepository.GetByIdWithQuestionsAndOptionsAsync(tenderId)
