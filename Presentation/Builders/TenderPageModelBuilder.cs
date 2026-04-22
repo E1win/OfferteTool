@@ -1,14 +1,18 @@
 using Application.Interfaces.Services;
 using Domain.Entities;
+using Domain.Entities.TenderQuestions;
 using Domain.Enums;
 using Presentation.Controllers;
 using Presentation.Mappings;
 using Presentation.Models.Questionnaire;
 using Presentation.Models.Tender;
+using Presentation.Models.TenderSubmission;
 
 namespace Presentation.Builders;
 
-public class TenderPageModelBuilder(ITenderService tenderService) : ITenderPageModelBuilder
+public class TenderPageModelBuilder(
+    ITenderService tenderService,
+    ITenderQuestionService tenderQuestionService) : ITenderPageModelBuilder
 {
     public async Task<TenderIndexViewModel> BuildIndexAsync(
         string userId,
@@ -78,6 +82,25 @@ public class TenderPageModelBuilder(ITenderService tenderService) : ITenderPageM
         };
     }
 
+    public async Task<TenderSubmissionPageViewModel> BuildSubmissionAsync(
+        Guid id,
+        string userId,
+        TenderSubmissionFormViewModel? form = null,
+        string? errorMessage = null)
+    {
+        var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
+        var questions = await tenderQuestionService.GetQuestionsAsync(id, userId)
+            ?? [];
+
+        return new TenderSubmissionPageViewModel
+        {
+            Tender = tender,
+            Questions = questions.OrderBy(question => question.Order).ToList(),
+            Form = CreateSubmissionForm(questions, form),
+            ErrorMessage = errorMessage
+        };
+    }
+
     private static ConfirmationModalViewModel? CreateOpenTenderModal(Tender tender, bool canEditTender)
     {
         if (!canEditTender)
@@ -91,6 +114,43 @@ public class TenderPageModelBuilder(ITenderService tenderService) : ITenderPageM
             SubmitAction = nameof(TenderController.Open),
             SubmitButtonText = "Offertetraject openen",
             TenderId = tender.Id
+        };
+    }
+
+    private static TenderSubmissionFormViewModel CreateSubmissionForm(
+        IEnumerable<TenderQuestion> questions,
+        TenderSubmissionFormViewModel? existingForm = null)
+    {
+        var existingAnswers = existingForm?.Answers
+            .GroupBy(answer => answer.QuestionId)
+            .ToDictionary(group => group.Key, group => group.First())
+            ?? [];
+
+        return new TenderSubmissionFormViewModel
+        {
+            Answers = questions
+                .OrderBy(question => question.Order)
+                .Select(question =>
+                {
+                    if (existingAnswers.TryGetValue(question.Id, out var existingAnswer))
+                    {
+                        return new TenderSubmissionAnswerInputModel
+                        {
+                            QuestionId = question.Id,
+                            Type = question.Type,
+                            TextValue = existingAnswer.TextValue,
+                            NumericValue = existingAnswer.NumericValue,
+                            SelectedOptionIds = existingAnswer.SelectedOptionIds.ToList()
+                        };
+                    }
+
+                    return new TenderSubmissionAnswerInputModel
+                    {
+                        QuestionId = question.Id,
+                        Type = question.Type
+                    };
+                })
+                .ToList()
         };
     }
 }
