@@ -112,7 +112,7 @@
                             {
                                 var reviewer = Model.AssignedReviewers[index];
                                 var itemClass = index < Model.AssignedReviewers.Count - 1
-                                ? "border-bottom pb-3 mb-3"
+                                ? "mb-3"
                                 : string.Empty;
 
                                 <li class="@itemClass">
@@ -120,6 +120,20 @@
                                 </li>
                             }
                         </ul>
+                    }
+
+                    @if (Model.ReviewerAssignmentModal is not null)
+                    {
+                        <div class="d-grid mt-3">
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    aria-controls="@Model.ReviewerAssignmentModal.ModalId"
+                                    aria-haspopup="dialog"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#@Model.ReviewerAssignmentModal.ModalId">
+                                Beoordelaars wijzigen
+                            </button>
+                        </div>
                     }
                 }
 
@@ -137,7 +151,7 @@
                             {
                                 var submission = Model.SupplierSubmissions[index];
                                 var itemClass = index < Model.SupplierSubmissions.Count - 1
-                                ? "border-bottom pb-3 mb-3"
+                                ? "mb-3"
                                                                 : string.Empty;
 
                                 <li class="@itemClass">
@@ -177,6 +191,11 @@
 
             <partial name="_TenderFormModal" for="EditTenderModal" />
         }
+
+        @if (Model.ReviewerAssignmentModal is not null)
+        {
+            <partial name="_TenderReviewerAssignmentModal" for="ReviewerAssignmentModal" />
+        }
     </aside>
 </div>
 
@@ -190,6 +209,18 @@
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 const modalElement = document.getElementById("@Model.EditTenderModal.ModalId");
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+
+    @if (Model.ReviewerAssignmentModal?.ShowOnLoad == true)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const modalElement = document.getElementById("@Model.ReviewerAssignmentModal.ModalId");
                 if (modalElement) {
                     bootstrap.Modal.getOrCreateInstance(modalElement).show();
                 }

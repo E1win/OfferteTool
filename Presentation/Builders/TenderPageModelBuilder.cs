@@ -44,25 +44,45 @@ public class TenderPageModelBuilder(
         TenderFormViewModel? editTender = null,
         bool openEditTenderModal = false,
         string? errorMessage = null,
+        TenderReviewerAssignmentFormViewModel? reviewerAssignmentForm = null,
+        bool openReviewerAssignmentModal = false,
+        string? reviewerErrorMessage = null,
         string? actionErrorMessage = null)
     {
         var canManageTender = await tenderService.CanManageTenderAsync(id, userId);
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
         var canEditTender = canManageTender && tender.CanBeEdited();
         var canCloseTender = canManageTender && tender.Status == TenderStatus.Open;
-        var assignedReviewers = canManageTender
+        var assignedReviewerUsers = canManageTender
             ? await tenderReviewerService.GetAssignedReviewersAsync(id, userId)
+            : [];
+        var assignableReviewerUsers = canManageTender
+            ? await tenderReviewerService.GetAssignableReviewersAsync(id, userId)
             : [];
         var supplierSubmissions = canManageTender && tender.Status == TenderStatus.Open
             ? await tenderSubmissionService.GetForManagedTenderAsync(id, userId)
             : [];
+
+        var reviewerAssignmentOptions = reviewerAssignmentForm?.Reviewers
+            ?? assignedReviewerUsers
+                .Concat(assignableReviewerUsers)
+                .GroupBy(user => user.Id)
+                .Select(group => group.First())
+                .Select(user => new TenderReviewerAssignmentOptionViewModel
+                {
+                    UserId = user.Id,
+                    Name = GetDisplayName(user),
+                    IsSelected = assignedReviewerUsers.Any(assignedReviewer => assignedReviewer.Id == user.Id)
+                })
+                .OrderBy(reviewer => reviewer.Name)
+                .ToList();
 
         return new TenderDetailsViewModel
         {
             Tender = tender,
             CanManageTender = canManageTender,
             ActionErrorMessage = actionErrorMessage,
-            AssignedReviewers = assignedReviewers
+            AssignedReviewers = assignedReviewerUsers
                 .Select(reviewer => new TenderReviewerViewModel
                 {
                     Name = GetDisplayName(reviewer)
@@ -76,6 +96,22 @@ public class TenderPageModelBuilder(
                 .ToList(),
             OpenTenderModal = CreateOpenTenderModal(tender, canEditTender),
             CloseTenderModal = CreateCloseTenderModal(tender, canCloseTender),
+            ReviewerAssignmentModal = canManageTender && tender.Status != TenderStatus.Completed
+                ? new TenderReviewerAssignmentModalViewModel
+                {
+                    ModalId = "reviewerAssignmentModal",
+                    ModalTitle = "Beoordelaars beheren",
+                    SubmitAction = nameof(TenderController.UpdateReviewers),
+                    SubmitButtonText = "Beoordelaars opslaan",
+                    ErrorMessage = reviewerErrorMessage,
+                    ShowOnLoad = openReviewerAssignmentModal,
+                    TenderId = tender.Id,
+                    Form = new TenderReviewerAssignmentFormViewModel
+                    {
+                        Reviewers = reviewerAssignmentOptions
+                    }
+                }
+                : null,
             QuestionnaireEditor = new QuestionnaireEditorBootstrapViewModel
             {
                 ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",

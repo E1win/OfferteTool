@@ -17,6 +17,9 @@ public interface ITenderPageModelBuilder
         TenderFormViewModel? editTender = null,
         bool openEditTenderModal = false,
         string? errorMessage = null,
+        TenderReviewerAssignmentFormViewModel? reviewerAssignmentForm = null,
+        bool openReviewerAssignmentModal = false,
+        string? reviewerErrorMessage = null,
         string? actionErrorMessage = null);
 
     Task<TenderSubmissionPageViewModel> BuildSubmissionAsync(

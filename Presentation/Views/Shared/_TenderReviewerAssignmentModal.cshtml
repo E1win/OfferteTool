@@ -1,0 +1,61 @@
+@model TenderReviewerAssignmentModalViewModel
+
+<div class="modal fade" id="@Model.ModalId" tabindex="-1" aria-labelledby="@(Model.ModalId)Label" aria-describedby="@(Model.ModalId)Description" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="Tender" asp-action="@Model.SubmitAction" asp-route-id="@Model.TenderId" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="@(Model.ModalId)Label">@Model.ModalTitle</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p id="@(Model.ModalId)Description" class="mb-3">
+                        Selecteer de inkopers en beoordelaars die dit offertetraject mogen beoordelen.
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert" aria-live="assertive">
+                            @Model.ErrorMessage
+                        </div>
+                    }
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert" aria-live="assertive"></div>
+
+                    @if (Model.Form.Reviewers.Count == 0)
+                    {
+                        <p class="mb-0 text-body-secondary">Er zijn geen beschikbare beoordelaars gevonden binnen deze organisatie.</p>
+                    }
+                    else
+                    {
+                        <fieldset>
+                            <legend class="visually-hidden">@Model.ModalTitle</legend>
+
+                            <div class="d-grid gap-2">
+                                @for (var index = 0; index < Model.Form.Reviewers.Count; index++)
+                                {
+                                    <div class="form-check border rounded p-3">
+                                        <input asp-for="Form.Reviewers[index].IsSelected" class="form-check-input" />
+                                        <input asp-for="Form.Reviewers[index].UserId" type="hidden" />
+                                        <input asp-for="Form.Reviewers[index].Name" type="hidden" />
+                                        <label asp-for="Form.Reviewers[index].IsSelected" class="form-check-label fw-semibold">
+                                            @Model.Form.Reviewers[index].Name
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </fieldset>
+                    }
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuleren</button>
+                    <button type="submit" class="btn btn-dark">@Model.SubmitButtonText</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

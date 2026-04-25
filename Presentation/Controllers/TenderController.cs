@@ -12,6 +12,7 @@ namespace Presentation.Controllers;
 
 public class TenderController(
     ITenderService tenderService,
+    ITenderReviewerService tenderReviewerService,
     ITenderSubmissionService tenderSubmissionService,
     ITenderPageModelBuilder tenderPageModelBuilder) : AuthenticatedControllerBase
 {
@@ -89,6 +90,43 @@ public class TenderController(
         catch (BusinessRuleViolationException ex)
         {
             return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(id, UserId, actionErrorMessage: ex.Message));
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = Roles.Inkoper)]
+    public async Task<IActionResult> UpdateReviewers(Guid id, [Bind(Prefix = "ReviewerAssignmentModal.Form")] TenderReviewerAssignmentFormViewModel model)
+    {
+        var reviewers = model.Reviewers ?? [];
+        var selectedReviewerIds = reviewers
+            .Where(reviewer => reviewer.IsSelected)
+            .Select(reviewer => reviewer.UserId)
+            .ToHashSet();
+
+        try
+        {
+            var assignedReviewers = await tenderReviewerService.GetAssignedReviewersAsync(id, UserId);
+            var assignedReviewerIds = assignedReviewers
+                .Select(reviewer => reviewer.Id)
+                .ToHashSet();
+
+            foreach (var reviewerId in assignedReviewerIds.Except(selectedReviewerIds))
+                await tenderReviewerService.RemoveReviewerAsync(id, reviewerId, UserId);
+
+            foreach (var reviewerId in selectedReviewerIds.Except(assignedReviewerIds))
+                await tenderReviewerService.AddReviewerAsync(id, reviewerId, UserId);
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+        catch (BusinessRuleViolationException ex)
+        {
+            return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(
+                id,
+                UserId,
+                reviewerAssignmentForm: model,
+                openReviewerAssignmentModal: true,
+                reviewerErrorMessage: ex.Message));
         }
     }
 
