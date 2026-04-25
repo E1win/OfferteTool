@@ -41,7 +41,7 @@ public class Tender
             Roles.Inkoper
                 => user.OrganisationId is not null && OrganisationId == user.OrganisationId.Value,
             Roles.Beoordelaar
-                => CanReview(user, role),
+                => CanReview(user),
             Roles.Leverancier
                 => IsPublic && Status == TenderStatus.Open,
             _ => false
@@ -66,7 +66,7 @@ public class Tender
         !string.IsNullOrWhiteSpace(userId)
         && Reviewers.Any(reviewer => reviewer.UserId == userId);
 
-    public bool CanReview(ApplicationUser user, string role)
+    public bool CanReview(ApplicationUser user)
     {
         ArgumentNullException.ThrowIfNull(user);
 

@@ -16,9 +16,9 @@ public class TenderReviewerService(
         var tender = await tenderRepository.GetByIdWithReviewersAsync(tenderId)
             ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
-        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+        var (user, _) = await currentUserService.GetUserWithRoleAsync(userId);
 
-        return tender.CanReview(user, role);
+        return tender.CanReview(user);
     }
 
     public async Task<List<ApplicationUser>> GetAssignableReviewersAsync(Guid tenderId, string actorUserId)
