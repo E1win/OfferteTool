@@ -13,9 +13,6 @@ public class TenderCreateRequest
     public string Description { get; init; } = string.Empty;
 
     [DataType(DataType.Date)]
-    public DateOnly StartDate { get; init; } = DateOnly.FromDateTime(DateTime.Today);
-
-    [DataType(DataType.Date)]
     public DateOnly EndDate { get; init; } = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
 
     public bool IsPublic { get; init; }

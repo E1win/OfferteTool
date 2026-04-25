@@ -78,7 +78,6 @@ public class TenderServiceTests
         var tender = CreateTender(
             organisationId: Guid.Empty,
             status: TenderStatus.Open,
-            startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(2)));
 
         SetupCurrentUser(Roles.Inkoper, organisationId);
@@ -127,7 +126,6 @@ public class TenderServiceTests
             organisationId: organisationId,
             title: "Original",
             description: "Original description",
-            startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(3)),
             isPublic: false);
         var updatedTender = CreateTender(
@@ -135,7 +133,6 @@ public class TenderServiceTests
             status: TenderStatus.Open,
             title: "Updated",
             description: "Updated description",
-            startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(8)),
             isPublic: true);
 
@@ -153,7 +150,6 @@ public class TenderServiceTests
         Assert.Same(existingTender, result);
         Assert.Equal("Updated", existingTender.Title);
         Assert.Equal("Updated description", existingTender.Description);
-        Assert.Equal(updatedTender.StartDate, existingTender.StartDate);
         Assert.Equal(updatedTender.EndDate, existingTender.EndDate);
         Assert.True(existingTender.IsPublic);
         Assert.Equal(organisationId, existingTender.OrganisationId);
@@ -266,7 +262,6 @@ public class TenderServiceTests
         TenderStatus status = TenderStatus.Design,
         string title = "Tender",
         string description = "Description",
-        DateOnly? startDate = null,
         DateOnly? endDate = null,
         bool isPublic = false,
         List<TenderQuestion>? questions = null)
@@ -276,7 +271,6 @@ public class TenderServiceTests
             Id = Guid.NewGuid(),
             Title = title,
             Description = description,
-            StartDate = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
             EndDate = endDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(2)),
             Status = status,
             IsPublic = isPublic,

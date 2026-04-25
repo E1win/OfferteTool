@@ -28,11 +28,11 @@ public static class DbSeeder
 
         await SeedTenderAsync(dbContext, "tender-one-id", "Kantoormeubelen 2026",
             "Levering van ergonomische bureaustoelen en sta-bureaus voor 200 werkplekken.",
-            new DateOnly(2026, 5, 1), new DateOnly(2026, 6, 15), TenderStatus.Open, true, clientOrg.Id);
+            new DateOnly(2026, 6, 15), TenderStatus.Open, true, clientOrg.Id);
 
         await SeedTenderAsync(dbContext, "tender-two-id", "IT Infrastructuur Upgrade",
             "Vervanging van netwerkapparatuur en servers in drie datacenters.",
-            new DateOnly(2026, 7, 1), new DateOnly(2026, 8, 31), TenderStatus.Design, true, clientOrg.Id);
+            new DateOnly(2026, 8, 31), TenderStatus.Design, true, clientOrg.Id);
     }
 
     private static async Task<Organisation> SeedOrganisationAsync(
@@ -101,7 +101,6 @@ public static class DbSeeder
         string idSeed,
         string title,
         string description,
-        DateOnly startDate,
         DateOnly endDate,
         TenderStatus status,
         bool isPublic,
@@ -116,7 +115,6 @@ public static class DbSeeder
             Id = id,
             Title = title,
             Description = description,
-            StartDate = startDate,
             EndDate = endDate,
             Status = status,
             IsPublic = isPublic,

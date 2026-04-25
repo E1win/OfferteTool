@@ -13,9 +13,6 @@ public class TenderEditRequest
     public string Description { get; init; } = string.Empty;
 
     [DataType(DataType.Date)]
-    public DateOnly StartDate { get; init; }
-
-    [DataType(DataType.Date)]
     public DateOnly EndDate { get; init; }
 
     public bool IsPublic { get; init; }

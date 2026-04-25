@@ -10,7 +10,6 @@ public static class TenderMapper
     {
         Title = model.Title,
         Description = model.Description,
-        StartDate = model.StartDate,
         EndDate = model.EndDate,
         IsPublic = model.IsPublic,
         Status = TenderStatus.Design,
@@ -21,7 +20,6 @@ public static class TenderMapper
     {
         Title = request.Title,
         Description = request.Description,
-        StartDate = request.StartDate,
         EndDate = request.EndDate,
         IsPublic = request.IsPublic,
         Status = TenderStatus.Design,
@@ -32,7 +30,6 @@ public static class TenderMapper
     {
         Title = request.Title,
         Description = request.Description,
-        StartDate = request.StartDate,
         EndDate = request.EndDate,
         IsPublic = request.IsPublic,
         Status = TenderStatus.Design,
@@ -43,7 +40,6 @@ public static class TenderMapper
     {
         Title = tender.Title,
         Description = tender.Description,
-        StartDate = tender.StartDate,
         EndDate = tender.EndDate,
         IsPublic = tender.IsPublic
     };
@@ -52,7 +48,6 @@ public static class TenderMapper
     {
         Title = request.Title,
         Description = request.Description,
-        StartDate = request.StartDate,
         EndDate = request.EndDate,
         IsPublic = request.IsPublic
     };
@@ -61,7 +56,6 @@ public static class TenderMapper
     {
         Title = request.Title,
         Description = request.Description,
-        StartDate = request.StartDate,
         EndDate = request.EndDate,
         IsPublic = request.IsPublic
     };

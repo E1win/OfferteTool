@@ -15,10 +15,6 @@ public class TenderFormViewModel
     public string Description { get; set; } = string.Empty;
 
     [DataType(DataType.Date)]
-    [Display(Name = "Begindatum")]
-    public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-
-    [DataType(DataType.Date)]
     [Display(Name = "Einddatum")]
     public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
 

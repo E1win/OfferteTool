@@ -38,18 +38,10 @@
                             <span asp-validation-for="Form.Description" class="text-danger" aria-live="polite"></span>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Form.StartDate" class="form-label"></label>
-                                <input asp-for="Form.StartDate" class="form-control" type="date" />
-                                <span asp-validation-for="Form.StartDate" class="text-danger" aria-live="polite"></span>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Form.EndDate" class="form-label"></label>
-                                <input asp-for="Form.EndDate" class="form-control" type="date" />
-                                <span asp-validation-for="Form.EndDate" class="text-danger" aria-live="polite"></span>
-                            </div>
+                        <div class="mb-3">
+                            <label asp-for="Form.EndDate" class="form-label"></label>
+                            <input asp-for="Form.EndDate" class="form-control" type="date" />
+                            <span asp-validation-for="Form.EndDate" class="text-danger" aria-live="polite"></span>
                         </div>
 
                         <div class="form-check">
