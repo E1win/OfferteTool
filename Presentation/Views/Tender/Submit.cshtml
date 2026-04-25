@@ -51,11 +51,18 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         document.querySelector('.submission-form').addEventListener('submit', function(e) {
+            const form = e.currentTarget;
             const submitBtn = document.getElementById('submitBtn');
+
             if (submitBtn.disabled) {
                 e.preventDefault();
                 return false;
             }
+
+            if (window.jQuery && !window.jQuery(form).valid()) {
+                return;
+            }
+
             submitBtn.disabled = true;
             submitBtn.textContent = 'Wordt verwerkt...';
         });
