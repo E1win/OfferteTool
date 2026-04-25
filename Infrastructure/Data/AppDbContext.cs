@@ -17,6 +17,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<TenderQuestionOption> TenderQuestionOptions => Set<TenderQuestionOption>();
     public DbSet<TenderSubmission> TenderSubmissions => Set<TenderSubmission>();
     public DbSet<TenderAnswer> TenderAnswers => Set<TenderAnswer>();
+    public DbSet<TenderSubmissionReview> TenderSubmissionReviews => Set<TenderSubmissionReview>();
+    public DbSet<TenderQuestionReview> TenderQuestionReviews => Set<TenderQuestionReview>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -33,6 +35,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureTenderQuestionOption(modelBuilder);
         ConfigureTenderSubmission(modelBuilder);
         ConfigureTenderAnswer(modelBuilder);
+        ConfigureTenderSubmissionReview(modelBuilder);
+        ConfigureTenderQuestionReview(modelBuilder);
         ConfigureTenderReviewer(modelBuilder);
     }
 
@@ -107,6 +111,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(a => a.SubmissionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            e.HasMany(s => s.Reviews)
+                .WithOne(r => r.Submission)
+                .HasForeignKey(r => r.SubmissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // One submission per supplier per tender
             e.HasIndex(s => new { s.TenderId, s.SupplierId })
                 .IsUnique();
@@ -153,6 +162,39 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         modelBuilder.Entity<ChoiceAnswer>()
             .Ignore(a => a.Selections);
+    }
+
+    private static void ConfigureTenderSubmissionReview(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TenderSubmissionReview>(e =>
+        {
+            e.HasMany(r => r.QuestionReviews)
+                .WithOne(qr => qr.SubmissionReview)
+                .HasForeignKey(qr => qr.SubmissionReviewId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(r => r.Reviewer)
+                .WithMany()
+                .HasForeignKey(r => r.ReviewerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(r => new { r.SubmissionId, r.ReviewerUserId })
+                .IsUnique();
+        });
+    }
+
+    private static void ConfigureTenderQuestionReview(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TenderQuestionReview>(e =>
+        {
+            e.HasOne(qr => qr.Question)
+                .WithMany()
+                .HasForeignKey(qr => qr.QuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(qr => new { qr.SubmissionReviewId, qr.QuestionId })
+                .IsUnique();
+        });
     }
 
     private static void ConfigureTenderReviewer(ModelBuilder modelBuilder)
