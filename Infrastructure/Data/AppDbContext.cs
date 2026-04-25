@@ -165,7 +165,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             e.HasOne(r => r.User)
                 .WithMany()
                 .HasForeignKey(r => r.UserId)
-                .OnDelete(DeleteBehavior.Cascade); // Remove reviewer is user is deleted
+                .OnDelete(DeleteBehavior.Cascade); // Remove reviewer if user is deleted
         });
     }
 }
