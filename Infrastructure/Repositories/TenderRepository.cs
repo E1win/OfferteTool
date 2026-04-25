@@ -15,6 +15,12 @@ public class TenderRepository(AppDbContext dbContext) : ITenderRepository
             .Include(t => t.Organisation)
             .FirstOrDefaultAsync(t => t.Id == id);
 
+    public async Task<Tender?> GetByIdWithReviewersAsync(Guid id) =>
+        await dbContext.Tenders
+            .Include(t => t.Organisation)
+            .Include(t => t.Reviewers)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
     public async Task<Tender?> GetByIdWithQuestionsAndOptionsAsync(Guid id) =>
         await dbContext.Tenders
             .Include(t => t.Organisation)
@@ -25,6 +31,13 @@ public class TenderRepository(AppDbContext dbContext) : ITenderRepository
     public async Task<List<Tender>> GetByOrganisationAsync(Guid organisationId) =>
         await dbContext.Tenders
             .Where(t => t.OrganisationId == organisationId)
+            .ToListAsync();
+
+    public async Task<List<Tender>> GetClosedByReviewerAsync(string reviewerUserId) =>
+        await dbContext.Tenders
+            .Include(t => t.Organisation)
+            .Include(t => t.Reviewers)
+            .Where(t => t.Status == TenderStatus.Closed && t.Reviewers.Any(reviewer => reviewer.UserId == reviewerUserId))
             .ToListAsync();
 
     public async Task<List<Tender>> GetPublicOpenAsync() =>

@@ -98,6 +98,45 @@
                     <dd>@Model.Tender.EndDate.ToString("dd/MM/yyyy")</dd>
                 </dl>
 
+                @if (Model.CanManageTender)
+                {
+                    <h3 class="h5 card-title">Beoordelaars</h3>
+                    @if (Model.AssignedReviewers.Count == 0)
+                    {
+                        <p class="mb-0 text-body-secondary">Er zijn nog geen beoordelaars toegewezen.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-unstyled mb-0">
+                            @for (var index = 0; index < Model.AssignedReviewers.Count; index++)
+                            {
+                                var reviewer = Model.AssignedReviewers[index];
+                                var itemClass = index < Model.AssignedReviewers.Count - 1
+                                ? "mb-3"
+                                : string.Empty;
+
+                                <li class="@itemClass">
+                                    <span class="fw-semibold">@reviewer.Name</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    @if (Model.ReviewerAssignmentModal is not null)
+                    {
+                        <div class="d-grid mt-3">
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    aria-controls="@Model.ReviewerAssignmentModal.ModalId"
+                                    aria-haspopup="dialog"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#@Model.ReviewerAssignmentModal.ModalId">
+                                Beoordelaars wijzigen
+                            </button>
+                        </div>
+                    }
+                }
+
                 @if (Model.CanManageTender && Model.Tender.Status == TenderStatus.Open)
                 {
                     <h3 class="h5 card-title">Offertes ingediend door</h3>
@@ -112,7 +151,7 @@
                             {
                                 var submission = Model.SupplierSubmissions[index];
                                 var itemClass = index < Model.SupplierSubmissions.Count - 1
-                                ? "border-bottom pb-3 mb-3"
+                                ? "mb-3"
                                                                 : string.Empty;
 
                                 <li class="@itemClass">
@@ -152,6 +191,11 @@
 
             <partial name="_TenderFormModal" for="EditTenderModal" />
         }
+
+        @if (Model.ReviewerAssignmentModal is not null)
+        {
+            <partial name="_TenderReviewerAssignmentModal" for="ReviewerAssignmentModal" />
+        }
     </aside>
 </div>
 
@@ -165,6 +209,18 @@
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 const modalElement = document.getElementById("@Model.EditTenderModal.ModalId");
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+
+    @if (Model.ReviewerAssignmentModal?.ShowOnLoad == true)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const modalElement = document.getElementById("@Model.ReviewerAssignmentModal.ModalId");
                 if (modalElement) {
                     bootstrap.Modal.getOrCreateInstance(modalElement).show();
                 }

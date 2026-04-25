@@ -33,6 +33,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureTenderQuestionOption(modelBuilder);
         ConfigureTenderSubmission(modelBuilder);
         ConfigureTenderAnswer(modelBuilder);
+        ConfigureTenderReviewer(modelBuilder);
     }
 
     private static void ConfigureRole(ModelBuilder modelBuilder)
@@ -58,6 +59,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .WithOne(s => s.Tender)
                 .HasForeignKey(s => s.TenderId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(t => t.Reviewers)
+               .WithOne(r => r.Tender)
+               .HasForeignKey(r => r.TenderId)
+               .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
@@ -147,5 +153,19 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         modelBuilder.Entity<ChoiceAnswer>()
             .Ignore(a => a.Selections);
+    }
+
+    private static void ConfigureTenderReviewer(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TenderReviewer>(e =>
+        {
+            e.HasIndex(r => new { r.TenderId, r.UserId })
+                    .IsUnique(); // One reviewer per user per tender
+
+            e.HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade); // Remove reviewer if user is deleted
+        });
     }
 }

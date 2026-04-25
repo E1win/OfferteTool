@@ -37,6 +37,30 @@ public class TenderServiceTests
         // Assert
         Assert.Same(expectedTenders, result);
         tenderRepository.Verify(repository => repository.GetByOrganisationAsync(organisationId), Times.Once);
+        tenderRepository.Verify(repository => repository.GetClosedByReviewerAsync(It.IsAny<string>()), Times.Never);
+        tenderRepository.Verify(repository => repository.GetPublicOpenAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAccessibleTendersAsync_ForBeoordelaar_ReturnsClosedAssignedTenders()
+    {
+        // Arrange
+        var expectedTenders = new List<Tender> { CreateTender(status: TenderStatus.Closed) };
+
+        SetupCurrentUser(Roles.Beoordelaar, Guid.NewGuid());
+        tenderRepository
+            .Setup(repository => repository.GetClosedByReviewerAsync(UserId))
+            .ReturnsAsync(expectedTenders);
+
+        var tenderService = CreateTenderService();
+
+        // Act
+        var result = await tenderService.GetAccessibleTendersAsync(UserId);
+
+        // Assert
+        Assert.Same(expectedTenders, result);
+        tenderRepository.Verify(repository => repository.GetClosedByReviewerAsync(UserId), Times.Once);
+        tenderRepository.Verify(repository => repository.GetByOrganisationAsync(It.IsAny<Guid>()), Times.Never);
         tenderRepository.Verify(repository => repository.GetPublicOpenAsync(), Times.Never);
     }
 
@@ -94,6 +118,7 @@ public class TenderServiceTests
         Assert.Same(tender, result);
         Assert.Equal(organisationId, tender.OrganisationId);
         Assert.Equal(TenderStatus.Design, tender.Status);
+        Assert.Contains(tender.Reviewers, reviewer => reviewer.UserId == UserId);
         tenderRepository.Verify(repository => repository.AddAsync(tender), Times.Once);
     }
 
@@ -104,7 +129,7 @@ public class TenderServiceTests
         var tender = CreateTender(organisationId: Guid.NewGuid());
 
         tenderRepository
-            .Setup(repository => repository.GetByIdAsync(tender.Id))
+            .Setup(repository => repository.GetByIdWithReviewersAsync(tender.Id))
             .ReturnsAsync(tender);
         SetupCurrentUser(Roles.Inkoper, Guid.NewGuid());
 
@@ -114,7 +139,54 @@ public class TenderServiceTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => tenderService.GetAccessibleTenderByIdAsync(tender.Id, UserId));
 
         // Assert
-        tenderRepository.Verify(repository => repository.GetByIdAsync(tender.Id), Times.Once);
+        tenderRepository.Verify(repository => repository.GetByIdWithReviewersAsync(tender.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccessibleTenderByIdAsync_ForAssignedBeoordelaarOnClosedTender_ReturnsTender()
+    {
+        // Arrange
+        var organisationId = Guid.NewGuid();
+        var tender = CreateTender(organisationId: organisationId, status: TenderStatus.Closed);
+        tender.Reviewers.Add(new TenderReviewer(UserId)
+        {
+            TenderId = tender.Id
+        });
+
+        tenderRepository
+            .Setup(repository => repository.GetByIdWithReviewersAsync(tender.Id))
+            .ReturnsAsync(tender);
+        SetupCurrentUser(Roles.Beoordelaar, organisationId);
+
+        var tenderService = CreateTenderService();
+
+        // Act
+        var result = await tenderService.GetAccessibleTenderByIdAsync(tender.Id, UserId);
+
+        // Assert
+        Assert.Same(tender, result);
+    }
+
+    [Fact]
+    public async Task GetAccessibleTenderByIdAsync_ForAssignedBeoordelaarOnOpenTender_ThrowsUnauthorizedAccessException()
+    {
+        // Arrange
+        var organisationId = Guid.NewGuid();
+        var tender = CreateTender(organisationId: organisationId, status: TenderStatus.Open);
+        tender.Reviewers.Add(new TenderReviewer(UserId)
+        {
+            TenderId = tender.Id
+        });
+
+        tenderRepository
+            .Setup(repository => repository.GetByIdWithReviewersAsync(tender.Id))
+            .ReturnsAsync(tender);
+        SetupCurrentUser(Roles.Beoordelaar, organisationId);
+
+        var tenderService = CreateTenderService();
+
+        // Act
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => tenderService.GetAccessibleTenderByIdAsync(tender.Id, UserId));
     }
 
     [Fact]
