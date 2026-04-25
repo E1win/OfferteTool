@@ -98,7 +98,7 @@
                     <dd>@Model.Tender.EndDate.ToString("dd/MM/yyyy")</dd>
                 </dl>
 
-                @if (User.IsInRole(Roles.Inkoper) && Model.Tender.Status == TenderStatus.Open)
+                @if (Model.CanManageTender && Model.Tender.Status == TenderStatus.Open)
                 {
                     <h3 class="h5 card-title">Offertes ingediend door</h3>
                     @if (Model.SupplierSubmissions.Count == 0)
