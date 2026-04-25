@@ -105,7 +105,8 @@ public class Tender
 
     public void AddReviewer(string userId)
     {
-        EnsureCanBeReviewed();
+        if (Status == TenderStatus.Completed)
+            throw new BusinessRuleViolationException("Beoordelaars kunnen niet worden toegevoegd aan afgeronde offertetrajecten.");
 
         if (HasReviewer(userId))
             return;
