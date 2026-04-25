@@ -54,6 +54,7 @@ public class Tender
     public bool CanBeOpened() =>
         Status == TenderStatus.Design
         && Questions.Count > 0;
+    
     public bool CanBeClosed() => Status == TenderStatus.Open;
 
     public void EnsureCanReceiveSubmission(DateOnly today)
