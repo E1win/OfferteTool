@@ -58,6 +58,22 @@
 
             <partial name="_ConfirmationModal" for="OpenTenderModal" />
         }
+        
+        @if (Model.CanManageTender && Model.Tender.Status == TenderStatus.Open)
+        {
+            <div class="d-grid mb-3">
+                <button type="button"
+                        class="btn btn-dark"
+                        aria-controls="@Model.CloseTenderModal!.ModalId"
+                        aria-haspopup="dialog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#@Model.CloseTenderModal!.ModalId">
+                    Offertetraject sluiten
+                </button>
+            </div>
+
+            <partial name="_ConfirmationModal" for="CloseTenderModal" />
+        }
 
         <div class="card mb-3">
             <div class="card-body">

@@ -10,6 +10,7 @@ public class TenderDetailsViewModel
     public string? ActionErrorMessage { get; init; }
     public required IReadOnlyList<TenderSubmissionSupplierViewModel> SupplierSubmissions { get; init; }
     public ConfirmationModalViewModel? OpenTenderModal { get; init; }
+    public ConfirmationModalViewModel? CloseTenderModal { get; init; }
     public TenderFormModalViewModel? EditTenderModal { get; init; }
     public required QuestionnaireEditorBootstrapViewModel QuestionnaireEditor { get; init; }
 }
