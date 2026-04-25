@@ -59,6 +59,15 @@ public class Tender
         Status == TenderStatus.Design
         && Questions.Count > 0;
 
+    public void EnsureCanReceiveSubmission(DateOnly today)
+    {
+        if (Status != TenderStatus.Open)
+            throw new BusinessRuleViolationException("Alleen openstaande offertetrajecten kunnen inschrijvingen ontvangen.");
+
+        if (EndDate < today)
+            throw new BusinessRuleViolationException("De inschrijftermijn is verstreken.");
+    }
+
     public void Open()
     {
         if (!CanBeOpened())

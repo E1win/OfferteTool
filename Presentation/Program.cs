@@ -3,7 +3,9 @@ using Application.Interfaces.Services;
 using Application.Services;
 using Domain.Entities;
 using Infrastructure.Data;
+using Infrastructure.Configuration;
 using Infrastructure.Repositories;
+using Infrastructure.Security;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -69,10 +71,16 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddScoped<ITenderRepository, TenderRepository>();
 builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>();
+builder.Services.AddScoped<ITenderSubmissionRepository, TenderSubmissionRepository>();
+builder.Services.Configure<TenderSubmissionEncryptionOptions>(
+    builder.Configuration.GetSection(TenderSubmissionEncryptionOptions.SectionName));
 
 builder.Services.AddScoped<ITenderService, TenderService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
+builder.Services.AddScoped<ITenderSubmissionService, TenderSubmissionService>();
+builder.Services.AddScoped<ITenderSubmissionEncryptionService, AesTenderSubmissionEncryptionService>();
+builder.Services.AddSingleton<TenderAnswerPayloadSerializer>();
 builder.Services.AddScoped<ITenderPageModelBuilder, TenderPageModelBuilder>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 
@@ -151,7 +159,7 @@ builder.Services.AddRateLimiter(options =>
                 $"tender-create:{partitionKey}",
                 _ => new SlidingWindowRateLimiterOptions
                 {
-                    PermitLimit = 8,
+                    PermitLimit = 25,
                     Window = TimeSpan.FromMinutes(10),
                     SegmentsPerWindow = 5,
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,

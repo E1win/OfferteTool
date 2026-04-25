@@ -17,6 +17,28 @@ public static class TenderMapper
         OrganisationId = Guid.Empty
     };
 
+    public static Tender ToEntity(TenderCreateRequest request) => new()
+    {
+        Title = request.Title,
+        Description = request.Description,
+        StartDate = request.StartDate,
+        EndDate = request.EndDate,
+        IsPublic = request.IsPublic,
+        Status = TenderStatus.Design,
+        OrganisationId = Guid.Empty
+    };
+
+    public static Tender ToEntity(TenderEditRequest request) => new()
+    {
+        Title = request.Title,
+        Description = request.Description,
+        StartDate = request.StartDate,
+        EndDate = request.EndDate,
+        IsPublic = request.IsPublic,
+        Status = TenderStatus.Design,
+        OrganisationId = Guid.Empty
+    };
+
     public static TenderFormViewModel ToFormViewModel(Tender tender) => new()
     {
         Title = tender.Title,
@@ -24,5 +46,23 @@ public static class TenderMapper
         StartDate = tender.StartDate,
         EndDate = tender.EndDate,
         IsPublic = tender.IsPublic
+    };
+
+    public static TenderFormViewModel ToFormViewModel(TenderCreateRequest request) => new()
+    {
+        Title = request.Title,
+        Description = request.Description,
+        StartDate = request.StartDate,
+        EndDate = request.EndDate,
+        IsPublic = request.IsPublic
+    };
+
+    public static TenderFormViewModel ToFormViewModel(TenderEditRequest request) => new()
+    {
+        Title = request.Title,
+        Description = request.Description,
+        StartDate = request.StartDate,
+        EndDate = request.EndDate,
+        IsPublic = request.IsPublic
     };
 }

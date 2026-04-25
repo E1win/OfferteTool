@@ -1,0 +1,63 @@
+@model Presentation.Models.TenderSubmission.TenderSubmissionPageViewModel
+
+@{
+    ViewData["Title"] = $"{Model.Tender.Title} - Offerte indienen";
+}
+
+<nav aria-label="Terug navigatie" class="mb-3">
+    <a asp-controller="Tender" asp-action="Details" asp-route-id="@Model.Tender.Id" class="btn btn-outline-secondary btn-sm">
+        &larr; Terug naar offertetraject
+    </a>
+</nav>
+
+<section class="submission-page">
+    <article class="submission-panel">
+        <header class="submission-panel__header">
+            <h1 class="submission-panel__title">@Model.Tender.Title</h1>
+            <p class="submission-panel__description">@Model.Tender.Description</p>
+        </header>
+
+        <section aria-labelledby="submission-questions-heading">
+            <h2 id="submission-questions-heading" class="submission-panel__section-title">Vragenlijst</h2>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @Model.ErrorMessage
+                </div>
+            }
+
+            <form asp-action="Submit" asp-route-id="@Model.Tender.Id" method="post" class="submission-form">
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(false, string.Empty, new { @class = "text-danger mb-3" })
+
+                @for (var index = 0; index < Model.Form.Answers.Count; index++)
+                {
+                    <input type="hidden" asp-for="Form.Answers[index].QuestionId" />
+                    <input type="hidden" asp-for="Form.Answers[index].Type" />
+
+                    @Html.EditorFor(model => model.Questions[index], Model.Questions[index].GetType().Name)
+                }
+
+                <button type="submit" class="btn btn-secondary submission-form__submit" id="submitBtn">
+                    Offerte indienen
+                </button>
+            </form>
+        </section>
+    </article>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelector('.submission-form').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn.disabled) {
+                e.preventDefault();
+                return false;
+            }
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Wordt verwerkt...';
+        });
+    </script>
+}

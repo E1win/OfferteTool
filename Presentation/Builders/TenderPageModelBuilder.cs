@@ -1,14 +1,19 @@
 using Application.Interfaces.Services;
 using Domain.Entities;
+using Domain.Entities.TenderQuestions;
 using Domain.Enums;
 using Presentation.Controllers;
 using Presentation.Mappings;
 using Presentation.Models.Questionnaire;
 using Presentation.Models.Tender;
+using Presentation.Models.TenderSubmission;
 
 namespace Presentation.Builders;
 
-public class TenderPageModelBuilder(ITenderService tenderService) : ITenderPageModelBuilder
+public class TenderPageModelBuilder(
+    ITenderService tenderService,
+    ITenderQuestionService tenderQuestionService,
+    ITenderSubmissionService tenderSubmissionService) : ITenderPageModelBuilder
 {
     public async Task<TenderIndexViewModel> BuildIndexAsync(
         string userId,
@@ -78,6 +83,36 @@ public class TenderPageModelBuilder(ITenderService tenderService) : ITenderPageM
         };
     }
 
+    public async Task<TenderSubmissionPageViewModel> BuildSubmissionAsync(
+        Guid id,
+        string userId,
+        TenderSubmissionFormViewModel? form = null,
+        string? errorMessage = null)
+    {
+        var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
+        var questions = await tenderQuestionService.GetQuestionsAsync(id, userId)
+            ?? [];
+        var persistedForm = form;
+
+        if (persistedForm is null)
+        {
+            var submission = await tenderSubmissionService.GetByTenderForCurrentSupplierAsync(id, userId);
+            if (submission is not null)
+                persistedForm = TenderSubmissionMapper.ToFormViewModel(submission.Answers);
+        }
+
+        var orderedQuestions = questions.OrderBy(question => question.Order).ToList();
+        var normalizedForm = CreateSubmissionForm(orderedQuestions, persistedForm);
+
+        return new TenderSubmissionPageViewModel
+        {
+            Tender = tender,
+            Questions = CreateSubmissionQuestions(orderedQuestions, normalizedForm),
+            Form = normalizedForm,
+            ErrorMessage = errorMessage
+        };
+    }
+
     private static ConfirmationModalViewModel? CreateOpenTenderModal(Tender tender, bool canEditTender)
     {
         if (!canEditTender)
@@ -91,6 +126,94 @@ public class TenderPageModelBuilder(ITenderService tenderService) : ITenderPageM
             SubmitAction = nameof(TenderController.Open),
             SubmitButtonText = "Offertetraject openen",
             TenderId = tender.Id
+        };
+    }
+
+    private static TenderSubmissionFormViewModel CreateSubmissionForm(
+        IEnumerable<TenderQuestion> questions,
+        TenderSubmissionFormViewModel? existingForm = null)
+    {
+        var existingAnswers = existingForm?.Answers
+            .GroupBy(answer => answer.QuestionId)
+            .ToDictionary(group => group.Key, group => group.First())
+            ?? [];
+
+        return new TenderSubmissionFormViewModel
+        {
+            Answers = questions
+                .OrderBy(question => question.Order)
+                .Select(question =>
+                {
+                    if (existingAnswers.TryGetValue(question.Id, out var existingAnswer))
+                    {
+                        return new TenderSubmissionAnswerInputModel
+                        {
+                            QuestionId = question.Id,
+                            Type = question.Type,
+                            TextValue = existingAnswer.TextValue,
+                            NumericValue = existingAnswer.NumericValue,
+                            SelectedOptionIds = existingAnswer.SelectedOptionIds.ToList()
+                        };
+                    }
+
+                    return new TenderSubmissionAnswerInputModel
+                    {
+                        QuestionId = question.Id,
+                        Type = question.Type
+                    };
+                })
+                .ToList()
+        };
+    }
+
+    private static List<TenderSubmissionQuestionViewModel> CreateSubmissionQuestions(
+        IReadOnlyList<TenderQuestion> questions,
+        TenderSubmissionFormViewModel form)
+    {
+        return questions
+            .Select((question, index) => CreateSubmissionQuestion(question, form.Answers[index], index))
+            .ToList();
+    }
+
+    private static TenderSubmissionQuestionViewModel CreateSubmissionQuestion(
+        TenderQuestion question,
+        TenderSubmissionAnswerInputModel answer,
+        int index)
+    {
+        return question switch
+        {
+            TextQuestion textQuestion => new TextTenderSubmissionQuestionViewModel
+            {
+                Index = index,
+                Text = textQuestion.Text,
+                Answer = answer,
+                Rows = textQuestion.Rows,
+                MaxLength = textQuestion.MaxLength
+            },
+            NumberQuestion numberQuestion => new NumberTenderSubmissionQuestionViewModel
+            {
+                Index = index,
+                Text = numberQuestion.Text,
+                Answer = answer,
+                MinValue = numberQuestion.MinValue,
+                MaxValue = numberQuestion.MaxValue
+            },
+            ChoiceQuestion choiceQuestion => new ChoiceTenderSubmissionQuestionViewModel
+            {
+                Index = index,
+                Text = choiceQuestion.Text,
+                Answer = answer,
+                AllowMultipleSelection = choiceQuestion.AllowMultipleSelection,
+                Options = choiceQuestion.Options
+                    .OrderBy(option => option.Order)
+                    .Select(option => new TenderSubmissionOptionViewModel
+                    {
+                        Id = option.Id,
+                        Text = option.Text
+                    })
+                    .ToList()
+            },
+            _ => throw new InvalidOperationException("Het gekozen vraagtype wordt niet ondersteund.")
         };
     }
 }

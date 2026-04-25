@@ -1,0 +1,25 @@
+@model Presentation.Models.TenderSubmission.TextTenderSubmissionQuestionViewModel
+
+<section class="submission-question">
+    <h3 class="submission-question__title">@Model.Text</h3>
+
+    @if (Model.Rows > 1)
+    {
+        <textarea class="form-control submission-question__textarea"
+                  name="@($"{Model.FieldPrefix}.TextValue")"
+                  rows="@Model.Rows"
+                  placeholder="Vul hier het antwoord in">@Model.Answer.TextValue</textarea>
+    }
+    else
+    {
+        <input class="form-control submission-question__input"
+               name="@($"{Model.FieldPrefix}.TextValue")"
+               value="@Model.Answer.TextValue"
+               placeholder="Vul hier het antwoord in" />
+    }
+
+    @if (Model.MaxLength.HasValue)
+    {
+        <p class="form-text mb-0">Maximaal @Model.MaxLength.Value tekens.</p>
+    }
+</section>

@@ -17,7 +17,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<TenderQuestionOption> TenderQuestionOptions => Set<TenderQuestionOption>();
     public DbSet<TenderSubmission> TenderSubmissions => Set<TenderSubmission>();
     public DbSet<TenderAnswer> TenderAnswers => Set<TenderAnswer>();
-    public DbSet<ChoiceAnswerSelection> ChoiceAnswerSelections => Set<ChoiceAnswerSelection>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -34,7 +33,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureTenderQuestionOption(modelBuilder);
         ConfigureTenderSubmission(modelBuilder);
         ConfigureTenderAnswer(modelBuilder);
-        ConfigureChoiceAnswerSelection(modelBuilder);
     }
 
     private static void ConfigureRole(ModelBuilder modelBuilder)
@@ -111,11 +109,24 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
     private static void ConfigureTenderAnswer(ModelBuilder modelBuilder)
     {
+        modelBuilder.Ignore<ChoiceAnswerSelection>();
+
         modelBuilder.Entity<TenderAnswer>(e =>
         {
             // Every question can only be answered once per submission
             e.HasIndex(s => new { s.SubmissionId, s.QuestionId })
                 .IsUnique();
+
+            e.Property(a => a.EncryptedPayload)
+                .IsRequired();
+
+            e.Property(a => a.Nonce)
+                .HasMaxLength(12)
+                .IsRequired();
+
+            e.Property(a => a.Tag)
+                .HasMaxLength(16)
+                .IsRequired();
 
             e.HasOne(a => a.Question)
                 .WithMany()
@@ -128,26 +139,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .HasValue<NumberAnswer>(AnswerType.Numeric);
         });
 
-        modelBuilder.Entity<ChoiceAnswer>(e =>
-        {
-            e.HasMany(a => a.Selections)
-                .WithOne(s => s.ChoiceAnswer)
-                .HasForeignKey(s => s.ChoiceAnswerId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-    }
+        modelBuilder.Entity<TextAnswer>()
+            .Ignore(a => a.TextValue);
 
-    private static void ConfigureChoiceAnswerSelection(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<ChoiceAnswerSelection>(e =>
-        {
-            e.HasOne(s => s.Option)
-                .WithMany()
-                .HasForeignKey(s => s.OptionId)
-                .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<NumberAnswer>()
+            .Ignore(a => a.NumericValue);
 
-            e.HasIndex(s => new { s.ChoiceAnswerId, s.OptionId })
-                .IsUnique();
-        });
+        modelBuilder.Entity<ChoiceAnswer>()
+            .Ignore(a => a.Selections);
     }
 }

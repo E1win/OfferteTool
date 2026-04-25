@@ -1,0 +1,22 @@
+@model Presentation.Models.TenderSubmission.ChoiceTenderSubmissionQuestionViewModel
+
+<section class="submission-question">
+    <h3 class="submission-question__title">@Model.Text</h3>
+
+    <div class="submission-question__choices" role="group" aria-label="@Model.Text">
+        @foreach (var option in Model.Options)
+        {
+            var inputId = $"question-{Model.Answer.QuestionId}-option-{option.Id}";
+
+            <label class="submission-choice" for="@inputId">
+                <input id="@inputId"
+                       class="submission-choice__input"
+                       type="@(Model.AllowMultipleSelection ? "checkbox" : "radio")"
+                       name="@($"{Model.FieldPrefix}.SelectedOptionIds")"
+                       value="@option.Id"
+                       checked="@Model.Answer.SelectedOptionIds.Contains(option.Id)" />
+                <span class="submission-choice__label">@option.Text</span>
+            </label>
+        }
+    </div>
+</section>

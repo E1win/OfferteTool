@@ -1,3 +1,4 @@
+@using Domain.Constants
 @using Domain.Enums
 @model TenderDetailsViewModel
 
@@ -32,6 +33,13 @@
         {
             <div class="alert alert-danger" role="alert">
                 @Model.ActionErrorMessage
+            </div>
+        }
+
+        @if (TempData["TenderSubmissionSuccess"] is string successMessage)
+        {
+            <div class="alert alert-success" role="alert">
+                @successMessage
             </div>
         }
 
@@ -78,6 +86,18 @@
                 </dl>
             </div>
         </div>
+
+        @if (User.IsInRole(Roles.Leverancier) && Model.Tender.Status == TenderStatus.Open)
+        {
+            <div class="d-grid mb-3">
+                <a asp-controller="Tender"
+                   asp-action="Submit"
+                   asp-route-id="@Model.Tender.Id"
+                   class="btn btn-dark">
+                    Offerte indienen
+                </a>
+            </div>
+        }
 
         @if (Model.EditTenderModal is not null)
         {
