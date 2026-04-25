@@ -23,15 +23,12 @@ public class TenderController(
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = Roles.Inkoper)]
-    public async Task<IActionResult> Create(TenderCreateRequest request)
+    public async Task<IActionResult> Create([Bind(Prefix = "CreateTenderModal.Form")] TenderFormViewModel model)
     {
         if (!ModelState.IsValid)
-        {
-            var form = TenderMapper.ToFormViewModel(request);
-            return View(nameof(Index), await tenderPageModelBuilder.BuildIndexAsync(UserId, form, true));
-        }
+            return View(nameof(Index), await tenderPageModelBuilder.BuildIndexAsync(UserId, model, true));
 
-        var tender = TenderMapper.ToEntity(request);
+        var tender = TenderMapper.ToEntity(model);
 
         try
         {
@@ -40,8 +37,7 @@ public class TenderController(
         }
         catch (BusinessRuleViolationException ex)
         {
-            var form = TenderMapper.ToFormViewModel(request);
-            return View(nameof(Index), await tenderPageModelBuilder.BuildIndexAsync(UserId, form, true, ex.Message));
+            return View(nameof(Index), await tenderPageModelBuilder.BuildIndexAsync(UserId, model, true, ex.Message));
         }
     }
 
