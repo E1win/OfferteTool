@@ -142,12 +142,12 @@ public class TenderPageModelBuilder(
 
     private static string GetDisplayName(ApplicationUser user)
     {
-        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        var fullNameWithEmail = $"{user.FirstName} {user.LastName} ({user.Email})".Trim();
 
-        if (!string.IsNullOrWhiteSpace(fullName))
-            return fullName;
+        if (!(string.IsNullOrWhiteSpace(user.FirstName) && string.IsNullOrWhiteSpace(user.LastName) && string.IsNullOrWhiteSpace(user.Email)))
+            return fullNameWithEmail;
 
-        return user.Email ?? user.UserName ?? "Onbekende beoordelaar";
+        return user.UserName ?? "Onbekende beoordelaar";
     }
 
     public async Task<TenderSubmissionPageViewModel> BuildSubmissionAsync(
