@@ -15,6 +15,12 @@ public class TenderRepository(AppDbContext dbContext) : ITenderRepository
             .Include(t => t.Organisation)
             .FirstOrDefaultAsync(t => t.Id == id);
 
+    public async Task<Tender?> GetByIdWithReviewersAsync(Guid id) =>
+        await dbContext.Tenders
+            .Include(t => t.Organisation)
+            .Include(t => t.Reviewers)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
     public async Task<Tender?> GetByIdWithQuestionsAndOptionsAsync(Guid id) =>
         await dbContext.Tenders
             .Include(t => t.Organisation)
