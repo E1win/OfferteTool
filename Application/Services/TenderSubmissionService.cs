@@ -10,7 +10,8 @@ namespace Application.Services;
 public class TenderSubmissionService(
     ITenderRepository tenderRepository,
     ITenderSubmissionRepository tenderSubmissionRepository,
-    ICurrentUserService currentUserService) : ITenderSubmissionService
+    ICurrentUserService currentUserService,
+    ITenderSubmissionEncryptionService tenderSubmissionEncryptionService) : ITenderSubmissionService
 {
     public async Task<TenderSubmission?> GetByTenderForCurrentSupplierAsync(Guid tenderId, string userId)
     {
@@ -22,7 +23,12 @@ public class TenderSubmissionService(
         if (user.OrganisationId is null)
             throw new BusinessRuleViolationException("Uw account is nog niet gekoppeld aan een organisatie.");
 
-        return await tenderSubmissionRepository.GetByTenderAndSupplierAsync(tenderId, user.OrganisationId.Value);
+        var submission = await tenderSubmissionRepository.GetByTenderAndSupplierAsync(tenderId, user.OrganisationId.Value);
+
+        if (submission is not null)
+            tenderSubmissionEncryptionService.Decrypt(submission);
+
+        return submission;
     }
 
     public async Task<TenderSubmission> SubmitAsync(Guid tenderId, IEnumerable<TenderAnswer> answers, string userId)
@@ -54,10 +60,12 @@ public class TenderSubmissionService(
             };
 
             submission.Submit(tender, answers, DateTime.UtcNow);
+            tenderSubmissionEncryptionService.Encrypt(submission);
             return await tenderSubmissionRepository.AddAsync(submission);
         }
 
         submission.Submit(tender, answers, DateTime.UtcNow);
+        tenderSubmissionEncryptionService.Encrypt(submission);
         await tenderSubmissionRepository.SaveChangesAsync();
 
         return submission;
