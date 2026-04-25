@@ -25,6 +25,7 @@ public class Tender
 
     public List<TenderQuestion> Questions { get; set; } = [];
     public List<TenderSubmission> Submissions { get; set; } = [];
+    public List<TenderReviewer> Reviewers { get; set; } = [];
 
     public void ValidateDates()
     {
@@ -54,8 +55,28 @@ public class Tender
     public bool CanBeOpened() =>
         Status == TenderStatus.Design
         && Questions.Count > 0;
-    
+
     public bool CanBeClosed() => Status == TenderStatus.Open;
+    
+    public bool CanBeReviewed() => Status == TenderStatus.Closed;
+
+    public bool HasReviewer(string userId) =>
+        !string.IsNullOrWhiteSpace(userId)
+        && Reviewers.Any(reviewer => reviewer.UserId == userId);
+
+    public bool CanReview(ApplicationUser user, string role)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+
+        return CanBeReviewed()
+            && HasReviewer(user.Id);
+    }
+
+    public void EnsureCanBeReviewed()
+    {
+        if (!CanBeReviewed())
+            throw new BusinessRuleViolationException("Antwoorden kunnen pas worden beoordeeld zodra het offertetraject is gesloten.");
+    }
 
     public void EnsureCanReceiveSubmission(DateOnly today)
     {
@@ -80,5 +101,25 @@ public class Tender
             throw new BusinessRuleViolationException("Alleen openstaande offertetrajecten kunnen worden gesloten.");
 
         Status = TenderStatus.Closed;
+    }
+
+    public void AddReviewer(string userId)
+    {
+        EnsureCanBeReviewed();
+
+        if (HasReviewer(userId))
+            return;
+
+        Reviewers.Add(new TenderReviewer(userId));
+    }
+
+    public void RemoveReviewer(string userId)
+    {
+        var reviewer = Reviewers.FirstOrDefault(existingReviewer => existingReviewer.UserId == userId);
+
+        if (reviewer is null)
+            return;
+
+        Reviewers.Remove(reviewer);
     }
 }
