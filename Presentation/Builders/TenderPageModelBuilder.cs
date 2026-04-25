@@ -142,10 +142,15 @@ public class TenderPageModelBuilder(
 
     private static string GetDisplayName(ApplicationUser user)
     {
-        var fullNameWithEmail = $"{user.FirstName} {user.LastName} ({user.Email})".Trim();
-
-        if (!(string.IsNullOrWhiteSpace(user.FirstName) && string.IsNullOrWhiteSpace(user.LastName) && string.IsNullOrWhiteSpace(user.Email)))
-            return fullNameWithEmail;
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        var hasFullName = !string.IsNullOrWhiteSpace(fullName);
+        var hasEmail = !string.IsNullOrWhiteSpace(user.Email);
+        if (hasFullName && hasEmail)
+            return $"{fullName} ({user.Email})";
+        if (hasFullName)
+            return fullName;
+        if (hasEmail)
+            return user.Email!;
 
         return user.UserName ?? "Onbekende beoordelaar";
     }
