@@ -215,7 +215,6 @@ public class TenderQuestionServiceTests
             Id = Guid.NewGuid(),
             Title = "Tender",
             Description = "Description",
-            StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
             EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(2)),
             Status = status,
             IsPublic = false,

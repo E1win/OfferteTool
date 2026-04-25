@@ -82,7 +82,6 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
         // Update only allowed fields
         existingTender.Title = updatedTender.Title;
         existingTender.Description = updatedTender.Description;
-        existingTender.StartDate = updatedTender.StartDate;
         existingTender.EndDate = updatedTender.EndDate;
         existingTender.IsPublic = updatedTender.IsPublic;
 

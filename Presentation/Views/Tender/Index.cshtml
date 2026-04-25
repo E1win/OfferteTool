@@ -41,7 +41,6 @@ else
                 <tr>
                     <th scope="col">Titel</th>
                     <th scope="col">Status</th>
-                    <th scope="col">Startdatum</th>
                     <th scope="col">Einddatum</th>
                     <th scope="col">Openbaar</th>
                 </tr>
@@ -71,7 +70,6 @@ else
                                 @tender.Status
                             </span>
                         </td>
-                        <td>@tender.StartDate.ToString("dd-MM-yyyy")</td>
                         <td>@tender.EndDate.ToString("dd-MM-yyyy")</td>
                         <td>@(tender.IsPublic ? "Ja" : "Nee")</td>
                     </tr>

@@ -16,7 +16,6 @@ public class Tender
     [MaxLength(2048)]
     public required string Description { get; set; }
 
-    public required DateOnly StartDate { get; set; }
     public required DateOnly EndDate { get; set; }
     public required TenderStatus Status { get; set; }
     public required bool IsPublic { get; set; }
@@ -29,11 +28,8 @@ public class Tender
 
     public void ValidateDates()
     {
-        if (EndDate <= StartDate)
-            throw new BusinessRuleViolationException("De einddatum moet na de begindatum liggen.");
-
-        if (StartDate < DateOnly.FromDateTime(DateTime.Today))
-            throw new BusinessRuleViolationException("De begindatum mag niet voor vandaag liggen.");
+        if (EndDate <= DateOnly.FromDateTime(DateTime.Today))
+            throw new BusinessRuleViolationException("De einddatum moet na vandaag liggen.");
     }
 
     public bool IsValidOrganisationType(OrganisationType type) => type == OrganisationType.Client;
