@@ -14,4 +14,11 @@ public abstract class TenderAnswer
     public TenderQuestion? Question { get; set; }
 
     public required AnswerType Type { get; set; }
+
+    // Encrypted JSON representation of the answer contents.
+    public byte[] EncryptedPayload { get; set; } = [];
+    // Random AES-GCM nonce; required again when decrypting this answer.
+    public byte[] Nonce { get; set; } = [];
+    // AES-GCM authentication tag that detects tampering.
+    public byte[] Tag { get; set; } = [];
 }
