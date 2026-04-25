@@ -48,12 +48,21 @@ public class TenderPageModelBuilder(
         var canManageTender = await tenderService.CanManageTenderAsync(id, userId);
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
         var canEditTender = canManageTender && tender.CanBeEdited();
+        var supplierSubmissions = canManageTender && tender.Status == TenderStatus.Open
+            ? await tenderSubmissionService.GetForManagedTenderAsync(id, userId)
+            : [];
 
         return new TenderDetailsViewModel
         {
             Tender = tender,
             CanManageTender = canManageTender,
             ActionErrorMessage = actionErrorMessage,
+            SupplierSubmissions = supplierSubmissions
+                .Select(submission => new TenderSubmissionSupplierViewModel
+                {
+                    Name = submission.Supplier?.Name ?? "Onbekende leverancier"
+                })
+                .ToList(),
             OpenTenderModal = CreateOpenTenderModal(tender, canEditTender),
             QuestionnaireEditor = new QuestionnaireEditorBootstrapViewModel
             {

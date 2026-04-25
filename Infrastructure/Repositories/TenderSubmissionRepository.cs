@@ -12,6 +12,13 @@ public class TenderSubmissionRepository(AppDbContext dbContext) : ITenderSubmiss
             .Include(submission => submission.Answers)
             .FirstOrDefaultAsync(submission => submission.TenderId == tenderId && submission.SupplierId == supplierId);
 
+    public async Task<List<TenderSubmission>> GetByTenderWithSuppliersAsync(Guid tenderId) =>
+        await dbContext.TenderSubmissions
+            .Include(submission => submission.Supplier)
+            .Where(submission => submission.TenderId == tenderId)
+            .OrderBy(submission => submission.Supplier!.Name)
+            .ToListAsync();
+
     public async Task<TenderSubmission> AddAsync(TenderSubmission submission)
     {
         await dbContext.TenderSubmissions.AddAsync(submission);
