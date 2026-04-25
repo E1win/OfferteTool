@@ -161,39 +161,31 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("Tenders");
                 });
 
-            modelBuilder.Entity("Domain.Entities.TenderAnswers.ChoiceAnswerSelection", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ChoiceAnswerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("OptionId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OptionId");
-
-                    b.HasIndex("ChoiceAnswerId", "OptionId")
-                        .IsUnique();
-
-                    b.ToTable("ChoiceAnswerSelections");
-                });
-
             modelBuilder.Entity("Domain.Entities.TenderAnswers.TenderAnswer", b =>
                 {
+                    b.Property<byte[]>("EncryptedPayload")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<byte[]>("Nonce")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("bytea");
 
                     b.Property<Guid>("QuestionId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("SubmissionId")
                         .HasColumnType("uuid");
+
+                    b.Property<byte[]>("Tag")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("bytea");
 
                     b.Property<int>("Type")
                         .HasColumnType("integer");
@@ -474,19 +466,12 @@ namespace Infrastructure.Data.Migrations
                 {
                     b.HasBaseType("Domain.Entities.TenderAnswers.TenderAnswer");
 
-                    b.Property<decimal?>("NumericValue")
-                        .HasColumnType("numeric");
-
                     b.HasDiscriminator().HasValue(1);
                 });
 
             modelBuilder.Entity("Domain.Entities.TenderAnswers.TextAnswer", b =>
                 {
                     b.HasBaseType("Domain.Entities.TenderAnswers.TenderAnswer");
-
-                    b.Property<string>("TextValue")
-                        .HasMaxLength(4096)
-                        .HasColumnType("character varying(4096)");
 
                     b.HasDiscriminator().HasValue(0);
                 });
@@ -545,25 +530,6 @@ namespace Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Organisation");
-                });
-
-            modelBuilder.Entity("Domain.Entities.TenderAnswers.ChoiceAnswerSelection", b =>
-                {
-                    b.HasOne("Domain.Entities.TenderAnswers.ChoiceAnswer", "ChoiceAnswer")
-                        .WithMany("Selections")
-                        .HasForeignKey("ChoiceAnswerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.TenderQuestions.TenderQuestionOption", "Option")
-                        .WithMany()
-                        .HasForeignKey("OptionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ChoiceAnswer");
-
-                    b.Navigation("Option");
                 });
 
             modelBuilder.Entity("Domain.Entities.TenderAnswers.TenderAnswer", b =>
@@ -687,11 +653,6 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("Domain.Entities.TenderSubmission", b =>
                 {
                     b.Navigation("Answers");
-                });
-
-            modelBuilder.Entity("Domain.Entities.TenderAnswers.ChoiceAnswer", b =>
-                {
-                    b.Navigation("Selections");
                 });
 
             modelBuilder.Entity("Domain.Entities.TenderQuestions.ChoiceQuestion", b =>
