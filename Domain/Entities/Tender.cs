@@ -38,8 +38,10 @@ public class Tender
     public bool IsAccessibleBy(ApplicationUser user, string role) =>
         role switch
         {
-            Roles.Inkoper or Roles.Beoordelaar
+            Roles.Inkoper
                 => user.OrganisationId is not null && OrganisationId == user.OrganisationId.Value,
+            Roles.Beoordelaar
+                => CanReview(user, role),
             Roles.Leverancier
                 => IsPublic && Status == TenderStatus.Open,
             _ => false

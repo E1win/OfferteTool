@@ -33,6 +33,13 @@ public class TenderRepository(AppDbContext dbContext) : ITenderRepository
             .Where(t => t.OrganisationId == organisationId)
             .ToListAsync();
 
+    public async Task<List<Tender>> GetClosedByReviewerAsync(string reviewerUserId) =>
+        await dbContext.Tenders
+            .Include(t => t.Organisation)
+            .Include(t => t.Reviewers)
+            .Where(t => t.Status == TenderStatus.Closed && t.Reviewers.Any(reviewer => reviewer.UserId == reviewerUserId))
+            .ToListAsync();
+
     public async Task<List<Tender>> GetPublicOpenAsync() =>
         await dbContext.Tenders
             .Where(t => t.IsPublic && t.Status == TenderStatus.Open)

@@ -15,8 +15,10 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
 
         return role switch
         {
-            Roles.Inkoper or Roles.Beoordelaar when user.OrganisationId is not null
+            Roles.Inkoper when user.OrganisationId is not null
                 => await tenderRepository.GetByOrganisationAsync(user.OrganisationId.Value),
+            Roles.Beoordelaar
+                => await tenderRepository.GetClosedByReviewerAsync(user.Id),
             Roles.Leverancier
                 => await tenderRepository.GetPublicOpenAsync(),
             _ => []
@@ -25,7 +27,7 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
 
     public async Task<Tender> GetAccessibleTenderByIdAsync(Guid tenderId, string userId)
     {
-        var tender = await tenderRepository.GetByIdAsync(tenderId)
+        var tender = await tenderRepository.GetByIdWithReviewersAsync(tenderId)
             ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
