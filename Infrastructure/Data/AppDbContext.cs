@@ -161,6 +161,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         {
             e.HasIndex(r => new { r.TenderId, r.UserId })
                     .IsUnique(); // One reviewer per user per tender
+
+            e.HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade); // Remove reviewer is user is deleted
         });
     }
 }

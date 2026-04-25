@@ -21,6 +21,7 @@ public class TenderReviewer
 
     [MaxLength(450)]
     public string UserId { get; private set; } = string.Empty;
+    public ApplicationUser? User { get; private set; }
 
     public Guid TenderId { get; set; }
     public Tender? Tender { get; set; }
