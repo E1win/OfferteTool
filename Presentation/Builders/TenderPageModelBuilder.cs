@@ -48,13 +48,24 @@ public class TenderPageModelBuilder(
         var canManageTender = await tenderService.CanManageTenderAsync(id, userId);
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
         var canEditTender = canManageTender && tender.CanBeEdited();
+        var canCloseTender = canManageTender && tender.Status == TenderStatus.Open;
+        var supplierSubmissions = canManageTender && tender.Status == TenderStatus.Open
+            ? await tenderSubmissionService.GetForManagedTenderAsync(id, userId)
+            : [];
 
         return new TenderDetailsViewModel
         {
             Tender = tender,
             CanManageTender = canManageTender,
             ActionErrorMessage = actionErrorMessage,
+            SupplierSubmissions = supplierSubmissions
+                .Select(submission => new TenderSubmissionSupplierViewModel
+                {
+                    Name = submission.Supplier?.Name ?? "Onbekende leverancier"
+                })
+                .ToList(),
             OpenTenderModal = CreateOpenTenderModal(tender, canEditTender),
+            CloseTenderModal = CreateCloseTenderModal(tender, canCloseTender),
             QuestionnaireEditor = new QuestionnaireEditorBootstrapViewModel
             {
                 ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",
@@ -125,6 +136,22 @@ public class TenderPageModelBuilder(
             Description = "Weet u zeker dat u dit offertetraject wilt openen? Zodra het traject open staat, kunnen de tendergegevens en vragenlijst niet meer worden gewijzigd.",
             SubmitAction = nameof(TenderController.Open),
             SubmitButtonText = "Offertetraject openen",
+            TenderId = tender.Id
+        };
+    }
+
+    private static ConfirmationModalViewModel? CreateCloseTenderModal(Tender tender, bool canCloseTender)
+    {
+        if (!canCloseTender)
+            return null;
+
+        return new ConfirmationModalViewModel
+        {
+            ModalId = "closeTenderModal",
+            ModalTitle = "Offertetraject sluiten",
+            Description = "Weet u zeker dat u dit offertetraject wilt sluiten? Zodra het traject gesloten is, kunnen geen offertes meer ingediend worden.",
+            SubmitAction = nameof(TenderController.Close),
+            SubmitButtonText = "Offertetraject sluiten",
             TenderId = tender.Id
         };
     }

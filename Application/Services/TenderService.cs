@@ -107,4 +107,22 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
 
         return tender;
     }
+
+    public async Task<Tender> CloseTenderAsync(Guid tenderId, string userId)
+    {
+        var tender = await tenderRepository.GetByIdAsync(tenderId)
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        if (!tender.CanBeManagedBy(user, role))
+            throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
+
+        // Closes tender if valid, otherwise throws an exception with the reason
+        tender.Close();
+
+        await tenderRepository.UpdateAsync();
+
+        return tender;
+    }
 }

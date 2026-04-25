@@ -76,6 +76,22 @@ public class TenderController(
         }
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = Roles.Inkoper)]
+    public async Task<IActionResult> Close(Guid id)
+    {
+        try
+        {
+            await tenderService.CloseTenderAsync(id, UserId);
+            return RedirectToAction(nameof(Details), new { id });
+        }
+        catch (BusinessRuleViolationException ex)
+        {
+            return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(id, UserId, actionErrorMessage: ex.Message));
+        }
+    }
+
     public async Task<IActionResult> Details(Guid id)
     {
         return View(await tenderPageModelBuilder.BuildDetailsAsync(id, UserId));
