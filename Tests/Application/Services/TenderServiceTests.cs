@@ -94,6 +94,7 @@ public class TenderServiceTests
         Assert.Same(tender, result);
         Assert.Equal(organisationId, tender.OrganisationId);
         Assert.Equal(TenderStatus.Design, tender.Status);
+        Assert.Contains(tender.Reviewers, reviewer => reviewer.UserId == UserId);
         tenderRepository.Verify(repository => repository.AddAsync(tender), Times.Once);
     }
 

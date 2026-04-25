@@ -61,6 +61,9 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
         tender.OrganisationId = user.OrganisationId.Value;
         tender.Status = TenderStatus.Design;
 
+        // Add current user as a reviewer
+        tender.AddReviewer(user.Id);
+
         return await tenderRepository.AddAsync(tender);
     }
 
