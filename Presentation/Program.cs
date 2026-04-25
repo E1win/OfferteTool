@@ -159,7 +159,7 @@ builder.Services.AddRateLimiter(options =>
                 $"tender-create:{partitionKey}",
                 _ => new SlidingWindowRateLimiterOptions
                 {
-                    PermitLimit = 8,
+                    PermitLimit = 25,
                     Window = TimeSpan.FromMinutes(10),
                     SegmentsPerWindow = 5,
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
