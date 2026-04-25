@@ -83,7 +83,7 @@ public class TenderController(
     {
         try
         {
-            //await tenderService.OpenTenderAsync(id, UserId);
+            await tenderService.CloseTenderAsync(id, UserId);
             return RedirectToAction(nameof(Details), new { id });
         }
         catch (BusinessRuleViolationException ex)

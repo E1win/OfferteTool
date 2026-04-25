@@ -54,6 +54,7 @@ public class Tender
     public bool CanBeOpened() =>
         Status == TenderStatus.Design
         && Questions.Count > 0;
+    public bool CanBeClosed() => Status == TenderStatus.Open;
 
     public void EnsureCanReceiveSubmission(DateOnly today)
     {
@@ -70,5 +71,13 @@ public class Tender
             throw new BusinessRuleViolationException("Alleen offertetrajecten met de status Ontwerp en minimaal een vraag kunnen worden gepubliceerd.");
 
         Status = TenderStatus.Open;
+    }
+
+    public void Close()
+    {
+        if (!CanBeClosed())
+            throw new BusinessRuleViolationException("Alleen openstaande offertetrajecten kunnen worden gesloten.");
+
+        Status = TenderStatus.Closed;
     }
 }
