@@ -98,6 +98,31 @@
                     <dd>@Model.Tender.EndDate.ToString("dd/MM/yyyy")</dd>
                 </dl>
 
+                @if (Model.CanManageTender)
+                {
+                    <h3 class="h5 card-title">Beoordelaars</h3>
+                    @if (Model.AssignedReviewers.Count == 0)
+                    {
+                        <p class="mb-0 text-body-secondary">Er zijn nog geen beoordelaars toegewezen.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-unstyled mb-0">
+                            @for (var index = 0; index < Model.AssignedReviewers.Count; index++)
+                            {
+                                var reviewer = Model.AssignedReviewers[index];
+                                var itemClass = index < Model.AssignedReviewers.Count - 1
+                                ? "border-bottom pb-3 mb-3"
+                                : string.Empty;
+
+                                <li class="@itemClass">
+                                    <span class="fw-semibold">@reviewer.Name</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+
                 @if (Model.CanManageTender && Model.Tender.Status == TenderStatus.Open)
                 {
                     <h3 class="h5 card-title">Offertes ingediend door</h3>

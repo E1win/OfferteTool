@@ -13,6 +13,7 @@ namespace Presentation.Builders;
 public class TenderPageModelBuilder(
     ITenderService tenderService,
     ITenderQuestionService tenderQuestionService,
+    ITenderReviewerService tenderReviewerService,
     ITenderSubmissionService tenderSubmissionService) : ITenderPageModelBuilder
 {
     public async Task<TenderIndexViewModel> BuildIndexAsync(
@@ -49,6 +50,9 @@ public class TenderPageModelBuilder(
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
         var canEditTender = canManageTender && tender.CanBeEdited();
         var canCloseTender = canManageTender && tender.Status == TenderStatus.Open;
+        var assignedReviewers = canManageTender
+            ? await tenderReviewerService.GetAssignedReviewersAsync(id, userId)
+            : [];
         var supplierSubmissions = canManageTender && tender.Status == TenderStatus.Open
             ? await tenderSubmissionService.GetForManagedTenderAsync(id, userId)
             : [];
@@ -58,6 +62,12 @@ public class TenderPageModelBuilder(
             Tender = tender,
             CanManageTender = canManageTender,
             ActionErrorMessage = actionErrorMessage,
+            AssignedReviewers = assignedReviewers
+                .Select(reviewer => new TenderReviewerViewModel
+                {
+                    Name = GetDisplayName(reviewer)
+                })
+                .ToList(),
             SupplierSubmissions = supplierSubmissions
                 .Select(submission => new TenderSubmissionSupplierViewModel
                 {
@@ -92,6 +102,16 @@ public class TenderPageModelBuilder(
                 }
                 : null
         };
+    }
+
+    private static string GetDisplayName(ApplicationUser user)
+    {
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+
+        if (!string.IsNullOrWhiteSpace(fullName))
+            return fullName;
+
+        return user.Email ?? user.UserName ?? "Onbekende beoordelaar";
     }
 
     public async Task<TenderSubmissionPageViewModel> BuildSubmissionAsync(
