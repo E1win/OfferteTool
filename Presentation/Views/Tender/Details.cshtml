@@ -23,7 +23,34 @@
             <p class="mb-0">@Model.Tender.Description</p>
         </section>
 
-        <partial name="_QuestionnaireEditorIsland" model="Model.QuestionnaireEditor" />
+        @if (Model.ShowSupplierSubmissionSelection)
+        {
+            <section class="mt-5" aria-labelledby="submitted-tenders-heading">
+                <h2 id="submitted-tenders-heading" class="h4">Ingediende offertes</h2>
+
+                @if (Model.SupplierSubmissions.Count == 0)
+                {
+                    <p class="mb-0 text-body-secondary">Er zijn nog geen offertes ingediend.</p>
+                }
+                else
+                {
+                    <div class="list-group">
+                        @foreach (var submission in Model.SupplierSubmissions)
+                        {
+                            <button type="button"
+                                    class="list-group-item list-group-item-action text-start"
+                                    data-submission-id="@submission.SubmissionId">
+                                @submission.Name
+                            </button>
+                        }
+                    </div>
+                }
+            </section>
+        }
+        else
+        {
+            <partial name="_QuestionnaireEditorIsland" model="Model.QuestionnaireEditor" />
+        }
     </article>
 
     <aside class="col-lg-4" aria-labelledby="tender-sidebar-heading">
@@ -200,9 +227,12 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script src="~/lib/vue/vue.global.prod.js"></script>
-    <script src="~/js/questionnaire-editor.js" asp-append-version="true"></script>
+    @if (!Model.ShowSupplierSubmissionSelection)
+    {
+        <partial name="_ValidationScriptsPartial" />
+        <script src="~/lib/vue/vue.global.prod.js"></script>
+        <script src="~/js/questionnaire-editor.js" asp-append-version="true"></script>
+    }
 
     @if (Model.EditTenderModal?.ShowOnLoad == true)
     {

@@ -6,6 +6,6 @@ namespace Application.Interfaces.Services;
 public interface ITenderSubmissionService
 {
     Task<TenderSubmission?> GetByTenderForCurrentSupplierAsync(Guid tenderId, string userId);
-    Task<List<TenderSubmission>> GetForManagedTenderAsync(Guid tenderId, string userId);
+    Task<List<TenderSubmission>> GetForAccessibleTenderAsync(Guid tenderId, string userId);
     Task<TenderSubmission> SubmitAsync(Guid tenderId, IEnumerable<TenderAnswer> answers, string userId);
 }
