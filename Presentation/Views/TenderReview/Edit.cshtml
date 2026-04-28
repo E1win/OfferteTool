@@ -17,16 +17,10 @@
                 <h1 class="submission-panel__title">@Model.TenderTitle</h1>
                 <p class="submission-panel__description">@Model.TenderDescription</p>
             </div>
-            <dl class="review-summary mb-0">
-                <dt>Leverancier</dt>
-                <dd>@Model.SupplierName</dd>
-                <dt>Ingediend op</dt>
-                <dd>@Model.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</dd>
-            </dl>
         </header>
 
         <section aria-labelledby="review-questions-heading">
-            <h2 id="review-questions-heading" class="submission-panel__section-title">Beoordeling</h2>
+            <h2 id="review-questions-heading" class="submission-panel__section-title">Offerte van @Model.SupplierName</h2>
 
             @if (TempData["TenderReviewSuccess"] is string successMessage)
             {
