@@ -201,6 +201,31 @@ namespace Infrastructure.Data.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("Domain.Entities.TenderQuestionReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SubmissionReviewId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("SubmissionReviewId", "QuestionId")
+                        .IsUnique();
+
+                    b.ToTable("TenderQuestionReviews");
+                });
+
             modelBuilder.Entity("Domain.Entities.TenderQuestions.TenderQuestion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -308,6 +333,33 @@ namespace Infrastructure.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("TenderSubmissions");
+                });
+
+            modelBuilder.Entity("Domain.Entities.TenderSubmissionReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReviewerUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<Guid>("SubmissionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewerUserId");
+
+                    b.HasIndex("SubmissionId", "ReviewerUserId")
+                        .IsUnique();
+
+                    b.ToTable("TenderSubmissionReviews");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -572,6 +624,25 @@ namespace Infrastructure.Data.Migrations
                     b.Navigation("Submission");
                 });
 
+            modelBuilder.Entity("Domain.Entities.TenderQuestionReview", b =>
+                {
+                    b.HasOne("Domain.Entities.TenderQuestions.TenderQuestion", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.TenderSubmissionReview", "SubmissionReview")
+                        .WithMany("QuestionReviews")
+                        .HasForeignKey("SubmissionReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("SubmissionReview");
+                });
+
             modelBuilder.Entity("Domain.Entities.TenderQuestions.TenderQuestion", b =>
                 {
                     b.HasOne("Domain.Entities.Tender", "Tender")
@@ -630,6 +701,25 @@ namespace Infrastructure.Data.Migrations
                     b.Navigation("Supplier");
 
                     b.Navigation("Tender");
+                });
+
+            modelBuilder.Entity("Domain.Entities.TenderSubmissionReview", b =>
+                {
+                    b.HasOne("Domain.Entities.ApplicationUser", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.TenderSubmission", "Submission")
+                        .WithMany("Reviews")
+                        .HasForeignKey("SubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reviewer");
+
+                    b.Navigation("Submission");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -695,6 +785,13 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("Domain.Entities.TenderSubmission", b =>
                 {
                     b.Navigation("Answers");
+
+                    b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("Domain.Entities.TenderSubmissionReview", b =>
+                {
+                    b.Navigation("QuestionReviews");
                 });
 
             modelBuilder.Entity("Domain.Entities.TenderQuestions.ChoiceQuestion", b =>
