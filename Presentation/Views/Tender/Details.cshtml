@@ -37,11 +37,13 @@
                     <div class="list-group">
                         @foreach (var submission in Model.SupplierSubmissions)
                         {
-                            <button type="button"
-                                    class="list-group-item list-group-item-action text-start"
-                                    data-submission-id="@submission.SubmissionId">
+                            <a asp-controller="TenderReview"
+                               asp-action="Edit"
+                               asp-route-tenderId="@Model.Tender.Id"
+                               asp-route-submissionId="@submission.SubmissionId"
+                               class="list-group-item list-group-item-action">
                                 @submission.Name
-                            </button>
+                            </a>
                         }
                     </div>
                 }

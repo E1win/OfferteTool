@@ -1,0 +1,10 @@
+@model Presentation.Models.TenderReview.NumberTenderReviewQuestionViewModel
+
+@if (Model.Answer.HasValue)
+{
+    <p class="mb-0 review-answer-text">@Model.Answer.Value</p>
+}
+else
+{
+    <p class="mb-0 text-body-secondary">Geen antwoord gegeven.</p>
+}

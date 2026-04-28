@@ -1,0 +1,10 @@
+@model Presentation.Models.TenderReview.TextTenderReviewQuestionViewModel
+
+@if (string.IsNullOrWhiteSpace(Model.Answer))
+{
+    <p class="mb-0 text-body-secondary">Geen antwoord gegeven.</p>
+}
+else
+{
+    <p class="mb-0 review-answer-text">@Model.Answer</p>
+}
