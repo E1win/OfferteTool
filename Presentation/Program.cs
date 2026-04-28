@@ -72,6 +72,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddScoped<ITenderRepository, TenderRepository>();
 builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>();
 builder.Services.AddScoped<ITenderSubmissionRepository, TenderSubmissionRepository>();
+builder.Services.AddScoped<ITenderSubmissionReviewRepository, TenderSubmissionReviewRepository>();
 builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
 builder.Services.Configure<TenderSubmissionEncryptionOptions>(
     builder.Configuration.GetSection(TenderSubmissionEncryptionOptions.SectionName));
@@ -80,6 +81,7 @@ builder.Services.AddScoped<ITenderService, TenderService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
 builder.Services.AddScoped<ITenderReviewerService, TenderReviewerService>();
+builder.Services.AddScoped<ITenderReviewService, TenderReviewService>();
 builder.Services.AddScoped<ITenderSubmissionService, TenderSubmissionService>();
 builder.Services.AddScoped<ITenderSubmissionEncryptionService, AesTenderSubmissionEncryptionService>();
 builder.Services.AddSingleton<TenderAnswerPayloadSerializer>();
