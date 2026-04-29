@@ -31,15 +31,17 @@ public class TenderSubmissionService(
         return submission;
     }
 
-    public async Task<List<TenderSubmission>> GetForManagedTenderAsync(Guid tenderId, string userId)
+    public async Task<List<TenderSubmission>> GetForAccessibleTenderAsync(Guid tenderId, string userId)
     {
-        var tender = await tenderRepository.GetByIdAsync(tenderId)
+        var tender = await tenderRepository.GetByIdWithReviewersAsync(tenderId)
             ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
-        if (!tender.CanBeManagedBy(user, role))
-            throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
+        var canAccessSubmissions = tender.CanBeManagedBy(user, role) || tender.CanReview(user);
+
+        if (!canAccessSubmissions)
+            throw new UnauthorizedAccessException("U heeft geen toegang tot de ingediende offertes.");
 
         return await tenderSubmissionRepository.GetByTenderWithSuppliersAsync(tenderId);
     }

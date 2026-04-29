@@ -17,6 +17,7 @@ public class TenderSubmission
     public DateTime SubmittedAt { get; set; }
 
     public ICollection<TenderAnswer> Answers { get; set; } = [];
+    public ICollection<TenderSubmissionReview> Reviews { get; set; } = [];
 
     public void Submit(Tender tender, IEnumerable<TenderAnswer> answers, DateTime submittedAt)
     {

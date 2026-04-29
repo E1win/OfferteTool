@@ -51,16 +51,18 @@ public class TenderPageModelBuilder(
     {
         var canManageTender = await tenderService.CanManageTenderAsync(id, userId);
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
+        var canReviewTender = await tenderReviewerService.CanReviewTenderAsync(id, userId);
         var canEditTender = canManageTender && tender.CanBeEdited();
         var canCloseTender = canManageTender && tender.Status == TenderStatus.Open;
+        var showSupplierSubmissionSelection = canReviewTender && tender.Status == TenderStatus.Closed;
         var assignedReviewerUsers = canManageTender
             ? await tenderReviewerService.GetAssignedReviewersAsync(id, userId)
             : [];
         var assignableReviewerUsers = canManageTender
             ? await tenderReviewerService.GetAssignableReviewersAsync(id, userId)
             : [];
-        var supplierSubmissions = canManageTender && tender.Status == TenderStatus.Open
-            ? await tenderSubmissionService.GetForManagedTenderAsync(id, userId)
+        var supplierSubmissions = (canManageTender && tender.Status == TenderStatus.Open) || showSupplierSubmissionSelection
+            ? await tenderSubmissionService.GetForAccessibleTenderAsync(id, userId)
             : [];
 
         var reviewerAssignmentOptions = reviewerAssignmentForm?.Reviewers
@@ -81,6 +83,7 @@ public class TenderPageModelBuilder(
         {
             Tender = tender,
             CanManageTender = canManageTender,
+            ShowSupplierSubmissionSelection = showSupplierSubmissionSelection,
             ActionErrorMessage = actionErrorMessage,
             AssignedReviewers = assignedReviewerUsers
                 .Select(reviewer => new TenderReviewerViewModel
@@ -91,6 +94,7 @@ public class TenderPageModelBuilder(
             SupplierSubmissions = supplierSubmissions
                 .Select(submission => new TenderSubmissionSupplierViewModel
                 {
+                    SubmissionId = submission.Id,
                     Name = submission.Supplier?.Name ?? "Onbekende leverancier"
                 })
                 .ToList(),

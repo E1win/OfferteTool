@@ -1,0 +1,15 @@
+@model Presentation.Models.TenderReview.ChoiceTenderReviewQuestionViewModel
+
+@if (Model.SelectedOptions.Count == 0)
+{
+    <p class="mb-0 text-body-secondary">Geen antwoord gegeven.</p>
+}
+else
+{
+    <ul class="mb-0 ps-3">
+        @foreach (var option in Model.SelectedOptions)
+        {
+            <li>@option</li>
+        }
+    </ul>
+}
