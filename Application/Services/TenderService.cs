@@ -130,4 +130,21 @@ public class TenderService(ITenderRepository tenderRepository, ICurrentUserServi
 
         return tender;
     }
+
+    public async Task<Tender> CompleteTenderAsync(Guid tenderId, string userId)
+    {
+        var tender = await tenderRepository.GetByIdAsync(tenderId)
+            ?? throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        if (!tender.CanBeManagedBy(user, role))
+            throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
+
+        tender.Complete();
+
+        await tenderRepository.UpdateAsync();
+
+        return tender;
+    }
 }
