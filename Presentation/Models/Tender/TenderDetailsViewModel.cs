@@ -13,6 +13,7 @@ public class TenderDetailsViewModel
     public required IReadOnlyList<TenderSubmissionSupplierViewModel> SupplierSubmissions { get; init; }
     public ConfirmationModalViewModel? OpenTenderModal { get; init; }
     public ConfirmationModalViewModel? CloseTenderModal { get; init; }
+    public ConfirmationModalViewModel? CompleteTenderModal { get; init; }
     public TenderReviewerAssignmentModalViewModel? ReviewerAssignmentModal { get; init; }
     public TenderFormModalViewModel? EditTenderModal { get; init; }
     public required QuestionnaireEditorBootstrapViewModel QuestionnaireEditor { get; init; }

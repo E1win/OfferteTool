@@ -104,6 +104,22 @@
             <partial name="_ConfirmationModal" for="CloseTenderModal" />
         }
 
+        @if (Model.CompleteTenderModal is not null)
+        {
+            <div class="d-grid mb-3">
+                <button type="button"
+                        class="btn btn-dark"
+                        aria-controls="@Model.CompleteTenderModal.ModalId"
+                        aria-haspopup="dialog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#@Model.CompleteTenderModal.ModalId">
+                    Offertetraject afronden
+                </button>
+            </div>
+
+            <partial name="_ConfirmationModal" for="CompleteTenderModal" />
+        }
+
         <div class="card mb-3">
             <div class="card-body">
                 <h3 class="h5 card-title">Details</h3>

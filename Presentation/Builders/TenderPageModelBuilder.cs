@@ -53,7 +53,8 @@ public class TenderPageModelBuilder(
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
         var canReviewTender = await tenderReviewerService.CanReviewTenderAsync(id, userId);
         var canEditTender = canManageTender && tender.CanBeEdited();
-        var canCloseTender = canManageTender && tender.Status == TenderStatus.Open;
+        var canCloseTender = canManageTender && tender.CanBeClosed();
+        var canCompleteTender = canManageTender && tender.CanBeCompleted();
         var showSupplierSubmissionSelection = canReviewTender && tender.Status == TenderStatus.Closed;
         var assignedReviewerUsers = canManageTender
             ? await tenderReviewerService.GetAssignedReviewersAsync(id, userId)
@@ -100,6 +101,7 @@ public class TenderPageModelBuilder(
                 .ToList(),
             OpenTenderModal = CreateOpenTenderModal(tender, canEditTender),
             CloseTenderModal = CreateCloseTenderModal(tender, canCloseTender),
+            CompleteTenderModal = CreateCompleteTenderModal(tender, canCompleteTender),
             ReviewerAssignmentModal = canManageTender && tender.Status != TenderStatus.Completed
                 ? new TenderReviewerAssignmentModalViewModel
                 {
@@ -217,6 +219,22 @@ public class TenderPageModelBuilder(
             Description = "Weet u zeker dat u dit offertetraject wilt sluiten? Zodra het traject gesloten is, kunnen geen offertes meer ingediend worden.",
             SubmitAction = nameof(TenderController.Close),
             SubmitButtonText = "Offertetraject sluiten",
+            TenderId = tender.Id
+        };
+    }
+
+    private static ConfirmationModalViewModel? CreateCompleteTenderModal(Tender tender, bool canCompleteTender)
+    {
+        if (!canCompleteTender)
+            return null;
+
+        return new ConfirmationModalViewModel
+        {
+            ModalId = "completeTenderModal",
+            ModalTitle = "Offertetraject afronden",
+            Description = "Weet u zeker dat u dit offertetraject wilt afronden? Zodra het traject afgerond is, kunnen offertes niet meer worden beoordeeld.",
+            SubmitAction = nameof(TenderController.Complete),
+            SubmitButtonText = "Offertetraject afronden",
             TenderId = tender.Id
         };
     }
