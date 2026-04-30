@@ -96,6 +96,22 @@ public class TenderController(
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = Roles.Inkoper)]
+    public async Task<IActionResult> Complete(Guid id)
+    {
+        try
+        {
+            await tenderService.CompleteTenderAsync(id, UserId);
+            return RedirectToAction(nameof(Details), new { id });
+        }
+        catch (BusinessRuleViolationException ex)
+        {
+            return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(id, UserId, actionErrorMessage: ex.Message));
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = Roles.Inkoper)]
     public async Task<IActionResult> UpdateReviewers(Guid id, [Bind(Prefix = "ReviewerAssignmentModal.Form")] TenderReviewerAssignmentFormViewModel model)
     {
         var reviewers = model.Reviewers ?? [];

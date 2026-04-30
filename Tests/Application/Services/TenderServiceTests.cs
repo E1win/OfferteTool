@@ -351,6 +351,51 @@ public class TenderServiceTests
         tenderRepository.Verify(repository => repository.UpdateAsync(), Times.Never);
     }
 
+    [Fact]
+    public async Task CompleteTenderAsync_WhenTenderIsClosed_SetsStatusToCompletedAndPersists()
+    {
+        // Arrange
+        var organisationId = Guid.NewGuid();
+        var tender = CreateTender(organisationId: organisationId, status: TenderStatus.Closed);
+
+        tenderRepository
+            .Setup(repository => repository.GetByIdAsync(tender.Id))
+            .ReturnsAsync(tender);
+        SetupCurrentUser(Roles.Inkoper, organisationId);
+
+        var tenderService = CreateTenderService();
+
+        // Act
+        var result = await tenderService.CompleteTenderAsync(tender.Id, UserId);
+
+        // Assert
+        Assert.Same(tender, result);
+        Assert.Equal(TenderStatus.Completed, tender.Status);
+        tenderRepository.Verify(repository => repository.UpdateAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteTenderAsync_WhenTenderIsNotClosed_ThrowsBusinessRuleViolationException()
+    {
+        // Arrange
+        var organisationId = Guid.NewGuid();
+        var tender = CreateTender(organisationId: organisationId, status: TenderStatus.Open);
+
+        tenderRepository
+            .Setup(repository => repository.GetByIdAsync(tender.Id))
+            .ReturnsAsync(tender);
+        SetupCurrentUser(Roles.Inkoper, organisationId);
+
+        var tenderService = CreateTenderService();
+
+        // Act
+        await Assert.ThrowsAsync<BusinessRuleViolationException>(() => tenderService.CompleteTenderAsync(tender.Id, UserId));
+
+        // Assert
+        Assert.Equal(TenderStatus.Open, tender.Status);
+        tenderRepository.Verify(repository => repository.UpdateAsync(), Times.Never);
+    }
+
     private TenderService CreateTenderService()
     {
         return new TenderService(tenderRepository.Object, currentUserService.Object);

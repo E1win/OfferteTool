@@ -11,4 +11,5 @@ public interface ITenderService
     Task<Tender> UpdateTenderAsync(Guid tenderId, Tender updatedTender, string userId);
     Task<Tender> OpenTenderAsync(Guid tenderId, string userId);
     Task<Tender> CloseTenderAsync(Guid tenderId, string userId);
+    Task<Tender> CompleteTenderAsync(Guid tenderId, string userId);
 }

@@ -59,6 +59,8 @@ public class Tender
         && Questions.Count > 0;
 
     public bool CanBeClosed() => Status == TenderStatus.Open;
+
+    public bool CanBeCompleted() => Status == TenderStatus.Closed;
     
     public bool CanBeReviewed() => Status == TenderStatus.Closed;
 
@@ -103,6 +105,14 @@ public class Tender
             throw new BusinessRuleViolationException("Alleen openstaande offertetrajecten kunnen worden gesloten.");
 
         Status = TenderStatus.Closed;
+    }
+
+    public void Complete()
+    {
+        if (!CanBeCompleted())
+            throw new BusinessRuleViolationException("Alleen gesloten offertetrajecten kunnen worden afgerond.");
+
+        Status = TenderStatus.Completed;
     }
 
     public void AddReviewer(string userId)
