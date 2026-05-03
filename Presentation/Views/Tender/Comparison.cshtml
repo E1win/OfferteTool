@@ -1,0 +1,72 @@
+@model TenderComparisonPageViewModel
+
+@{
+    ViewData["Title"] = $"{Model.TenderTitle} - vergelijking";
+}
+
+<nav aria-label="Terug navigatie" class="mb-3">
+    <a asp-controller="Tender"
+       asp-action="Details"
+       asp-route-id="@Model.TenderId"
+       class="btn btn-outline-secondary btn-sm">
+        &larr; Terug naar offertetraject
+    </a>
+</nav>
+
+<header class="mb-4">
+    <h1 class="mb-1">Inschrijvingen vergelijken</h1>
+    <p class="mb-0 text-body-secondary">@Model.TenderTitle</p>
+</header>
+
+<section aria-labelledby="submission-ranking-heading">
+    <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+        <h2 id="submission-ranking-heading" class="h4 mb-0">Rangschikking inschrijvingen</h2>
+        <span class="text-body-secondary">Max score: @Model.MaximumScore.ToString("0.##")</span>
+    </div>
+
+    @if (Model.Submissions.Count == 0)
+    {
+        <p class="mb-0 text-body-secondary">Er zijn geen inschrijvingen om te vergelijken.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Rang</th>
+                        <th scope="col">Leverancier</th>
+                        <th scope="col">Score</th>
+                        <th scope="col">Percentage</th>
+                        <th scope="col">Beoordelaars</th>
+                        <th scope="col">Ingediend op</th>
+                        <th scope="col">
+                            <span class="visually-hidden">Acties</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var submission in Model.Submissions)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@submission.Rank</td>
+                            <td>@submission.SupplierName</td>
+                            <td>@submission.AwardedScore.ToString("0.##") / @Model.MaximumScore.ToString("0.##")</td>
+                            <td>@submission.ScorePercentage.ToString("0.##")%</td>
+                            <td>@submission.CompletedReviewCount / @submission.ReviewerCount</td>
+                            <td>@submission.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        aria-label="Inschrijving van @submission.SupplierName openen"
+                                        disabled>
+                                    &rsaquo;
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

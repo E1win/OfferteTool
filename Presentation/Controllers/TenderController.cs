@@ -14,7 +14,8 @@ public class TenderController(
     ITenderService tenderService,
     ITenderReviewerService tenderReviewerService,
     ITenderSubmissionService tenderSubmissionService,
-    ITenderPageModelBuilder tenderPageModelBuilder) : AuthenticatedControllerBase
+    ITenderPageModelBuilder tenderPageModelBuilder,
+    ITenderComparisonPageModelBuilder tenderComparisonPageModelBuilder) : AuthenticatedControllerBase
 {
     public async Task<IActionResult> Index()
     {
@@ -149,6 +150,13 @@ public class TenderController(
     public async Task<IActionResult> Details(Guid id)
     {
         return View(await tenderPageModelBuilder.BuildDetailsAsync(id, UserId));
+    }
+
+    [HttpGet]
+    [Authorize(Roles = Roles.Inkoper)]
+    public async Task<IActionResult> Comparison(Guid id)
+    {
+        return View(await tenderComparisonPageModelBuilder.BuildComparisonAsync(id, UserId));
     }
 
     [HttpGet]

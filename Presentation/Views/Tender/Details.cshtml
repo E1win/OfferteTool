@@ -120,6 +120,18 @@
             <partial name="_ConfirmationModal" for="CompleteTenderModal" />
         }
 
+        @if (Model.CanManageTender && Model.Tender.Status == TenderStatus.Completed)
+        {
+            <div class="d-grid mb-3">
+                <a asp-controller="Tender"
+                   asp-action="Comparison"
+                   asp-route-id="@Model.Tender.Id"
+                   class="btn btn-dark">
+                    Inschrijvingen vergelijken
+                </a>
+            </div>
+        }
+
         <div class="card mb-3">
             <div class="card-body">
                 <h3 class="h5 card-title">Details</h3>
