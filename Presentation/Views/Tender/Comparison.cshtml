@@ -15,17 +15,15 @@
 </nav>
 
 <header class="mb-4">
-    <h1 class="mb-1">Inschrijvingen vergelijken</h1>
-    <p class="mb-0 text-body-secondary">@Model.TenderTitle</p>
+    <h1 class="mb-1">Vergelijkingsdashboard</h1>
+    <p class="mb-2 text-body-secondary">@Model.TenderTitle</p>
+    <p class="mb-0">@Model.TenderDescription</p>
 </header>
 
 @if (Model.Submissions.Count > 0)
 {
     <section aria-labelledby="score-chart-heading" class="mb-5">
-        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-            <h2 id="score-chart-heading" class="h4 mb-0">Totaalscore per leverancier</h2>
-            <span class="text-body-secondary">Max score: @Model.MaximumScore.ToString("0.##")</span>
-        </div>
+        <h2 id="score-chart-heading" class="h4 mb-3">Totaalscore per leverancier</h2>
 
         <div class="vstack gap-3" role="img" aria-label="Staafdiagram met totaalscore per leverancier">
             @foreach (var submission in Model.Submissions)
@@ -56,10 +54,7 @@
 }
 
 <section aria-labelledby="submission-ranking-heading">
-    <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-        <h2 id="submission-ranking-heading" class="h4 mb-0">Rangschikking inschrijvingen</h2>
-        <span class="text-body-secondary">Max score: @Model.MaximumScore.ToString("0.##")</span>
-    </div>
+    <h2 id="score-chart-heading" class="h4 mb-3">Rangschikking inschrijvingen</h2>
 
     @if (Model.Submissions.Count == 0)
     {

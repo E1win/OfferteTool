@@ -94,6 +94,7 @@ public class TenderComparisonServiceTests
 
         // Assert
         Assert.Equal(tender.Id, dashboard.TenderId);
+        Assert.Equal(tender.Description, dashboard.TenderDescription);
         Assert.Equal(TenderStatus.Completed, dashboard.Status);
         Assert.Equal(30, dashboard.MaximumScore);
         Assert.Equal(1, dashboard.ReviewerCount);

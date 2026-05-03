@@ -41,6 +41,7 @@ public class TenderComparisonService(
         {
             TenderId = tender.Id,
             TenderTitle = tender.Title,
+            TenderDescription = tender.Description,
             Status = tender.Status,
             MaximumScore = maximumScore,
             ReviewerCount = tender.Reviewers.Count,

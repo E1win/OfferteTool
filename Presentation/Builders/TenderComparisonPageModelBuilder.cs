@@ -14,6 +14,7 @@ public class TenderComparisonPageModelBuilder(
         {
             TenderId = dashboard.TenderId,
             TenderTitle = dashboard.TenderTitle,
+            TenderDescription = dashboard.TenderDescription,
             MaximumScore = dashboard.MaximumScore,
             Submissions = dashboard.Submissions
                 .Select(submission => new TenderComparisonSubmissionViewModel
