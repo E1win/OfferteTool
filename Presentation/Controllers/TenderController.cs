@@ -159,6 +159,13 @@ public class TenderController(
         return View(await tenderComparisonPageModelBuilder.BuildComparisonAsync(id, UserId));
     }
 
+    [HttpGet("Tender/{tenderId:guid}/Submissions/{submissionId:guid}/Comparison")]
+    [Authorize(Roles = Roles.Inkoper)]
+    public async Task<IActionResult> SubmissionComparison(Guid tenderId, Guid submissionId)
+    {
+        return View(await tenderComparisonPageModelBuilder.BuildSubmissionComparisonAsync(tenderId, submissionId, UserId));
+    }
+
     [HttpGet]
     [Authorize(Roles = Roles.Leverancier)]
     public async Task<IActionResult> Submit(Guid id)

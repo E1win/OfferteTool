@@ -1,0 +1,104 @@
+@model TenderSubmissionComparisonPageViewModel
+
+@{
+    ViewData["Title"] = $"{Model.SupplierName} - Offerte";
+}
+
+<nav aria-label="Terug navigatie" class="mb-3">
+    <a asp-controller="Tender"
+       asp-action="Comparison"
+       asp-route-id="@Model.TenderId"
+       class="btn btn-outline-secondary btn-sm">
+        &larr; Terug naar vergelijkingsdashboard
+    </a>
+</nav>
+
+<header class="mb-4">
+    <h1 class="mb-1">Offerte van @Model.SupplierName</h1>
+    <p class="mb-2 text-body-secondary">@Model.TenderTitle</p>
+    <p class="mb-0">@Model.TenderDescription</p>
+</header>
+
+<section aria-labelledby="submission-summary-heading" class="mb-5">
+    <h2 id="submission-summary-heading" class="visually-hidden">Samenvatting</h2>
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Totaalscore</dt>
+        <dd class="col-sm-9">@Model.AwardedScore.ToString("0.##") / @Model.MaximumScore.ToString("0.##") (@Model.ScorePercentage.ToString("0.##")%)</dd>
+
+        <dt class="col-sm-3">Ingediend op</dt>
+        <dd class="col-sm-9">@Model.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+    </dl>
+</section>
+
+<section aria-labelledby="submission-answers-heading">
+    <h2 id="submission-answers-heading" class="h4 mb-3">Antwoorden en beoordelingen</h2>
+
+    <div class="vstack gap-4">
+        @foreach (var question in Model.Questions)
+        {
+            <article class="border rounded p-3">
+                <header class="mb-3">
+                    <div class="d-flex align-items-start justify-content-between gap-3">
+                        <h3 class="h5 mb-0">@question.Text</h3>
+                        @if (question.MaximumScore.HasValue)
+                        {
+                            <span class="badge text-bg-secondary">@question.MaximumScore.Value punten</span>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-light">Geen score</span>
+                        }
+                    </div>
+                </header>
+
+                <section class="mb-3" aria-label="Antwoord">
+                    <h4 class="h6">Antwoord</h4>
+                    @if (string.IsNullOrWhiteSpace(question.Answer))
+                    {
+                        <p class="mb-0 text-body-secondary">Geen antwoord beschikbaar.</p>
+                    }
+                    else
+                    {
+                        <p class="mb-0">@question.Answer</p>
+                    }
+                </section>
+
+                @if (question.MaximumScore.HasValue)
+                {
+                    <section aria-label="Beoordelingen">
+                        <h4 class="h6">Beoordelingen</h4>
+
+                        @if (question.ReviewerScores.Count == 0)
+                        {
+                            <p class="mb-0 text-body-secondary">Er zijn geen beoordelingen voor deze vraag.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Beoordelaar</th>
+                                            <th scope="col">Beoordeling</th>
+                                            <th scope="col">Punten</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var score in question.ReviewerScores)
+                                        {
+                                            <tr>
+                                                <td>@score.ReviewerName</td>
+                                                <td>@score.RatingLabel</td>
+                                                <td>@score.AwardedScore.ToString("0.##") / @question.MaximumScore.Value.ToString("0.##")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </section>
+                }
+            </article>
+        }
+    </div>
+</section>

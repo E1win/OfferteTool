@@ -54,7 +54,7 @@
 }
 
 <section aria-labelledby="submission-ranking-heading">
-    <h2 id="score-chart-heading" class="h4 mb-3">Rangschikking inschrijvingen</h2>
+    <h2 id="submission-ranking-heading" class="h4 mb-3">Rangschikking inschrijvingen</h2>
 
     @if (Model.Submissions.Count == 0)
     {
@@ -88,12 +88,14 @@
                             <td>@submission.CompletedReviewCount / @submission.ReviewerCount</td>
                             <td>@submission.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</td>
                             <td class="text-end">
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-secondary"
-                                        aria-label="Inschrijving van @submission.SupplierName openen"
-                                        disabled>
+                                <a asp-controller="Tender"
+                                   asp-action="SubmissionComparison"
+                                   asp-route-tenderId="@Model.TenderId"
+                                   asp-route-submissionId="@submission.SubmissionId"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   aria-label="Inschrijving van @submission.SupplierName openen">
                                     &rsaquo;
-                                </button>
+                                </a>
                             </td>
                         </tr>
                     }
