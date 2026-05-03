@@ -20,11 +20,17 @@ public static class DbSeeder
 
         var supplierOrg = await SeedOrganisationAsync(dbContext,
             "supplier-one-id", "Leverancier B.V.", "87654321", OrganisationType.Supplier);
+        var secondSupplierOrg = await SeedOrganisationAsync(dbContext,
+            "supplier-two-id", "Leverancier 2 B.V.", "87654322", OrganisationType.Supplier);
+        var thirdSupplierOrg = await SeedOrganisationAsync(dbContext,
+            "supplier-three-id", "Leverancier 3 B.V.", "87654323", OrganisationType.Supplier);
 
         await SeedUserAsync(userManager, "inkoper@test.nl", "Password123!", Roles.Inkoper, "Jan", "de Vries", clientOrg.Id);
         await SeedUserAsync(userManager, "beoordelaar@test.nl", "Password123!", Roles.Beoordelaar, "Pieter", "Bakker", clientOrg.Id);
         await SeedUserAsync(userManager, "beheerder@test.nl", "Password123!", Roles.Beheerder, "Anna", "Jansen");
         await SeedUserAsync(userManager, "leverancier@test.nl", "Password123!", Roles.Leverancier, "Maria", "Visser", supplierOrg.Id);
+        await SeedUserAsync(userManager, "leverancier2@test.nl", "Password123!", Roles.Leverancier, "Sanne", "de Boer", secondSupplierOrg.Id);
+        await SeedUserAsync(userManager, "leverancier3@test.nl", "Password123!", Roles.Leverancier, "Daan", "Meijer", thirdSupplierOrg.Id);
 
         await SeedTenderAsync(dbContext, "tender-one-id", "Kantoormeubelen 2026",
             "Levering van ergonomische bureaustoelen en sta-bureaus voor 200 werkplekken.",
