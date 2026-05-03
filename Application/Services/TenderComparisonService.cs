@@ -96,6 +96,8 @@ public class TenderComparisonService(
             MaximumScore = maximumScore,
             AwardedScore = awardedScore,
             ScorePercentage = CalculatePercentage(awardedScore, maximumScore),
+            CompletedReviewCount = submission.Reviews.Count,
+            ReviewerCount = tender.Reviewers.Count,
             Questions = CreateQuestionDetails(questions, submission)
         };
     }

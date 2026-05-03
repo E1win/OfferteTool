@@ -52,6 +52,8 @@ public class TenderComparisonPageModelBuilder(
             MaximumScore = details.MaximumScore,
             AwardedScore = details.AwardedScore,
             ScorePercentage = details.ScorePercentage,
+            CompletedReviewCount = details.CompletedReviewCount,
+            ReviewerCount = details.ReviewerCount,
             Questions = details.Questions
                 .OrderBy(question => question.Order)
                 .Select(question => new TenderSubmissionComparisonQuestionViewModel

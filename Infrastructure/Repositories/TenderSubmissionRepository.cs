@@ -27,6 +27,8 @@ public class TenderSubmissionRepository(AppDbContext dbContext) : ITenderSubmiss
             .Include(submission => submission.Tender)
             .ThenInclude(tender => tender!.Questions)
             .ThenInclude(question => ((ChoiceQuestion)question).Options)
+            .Include(submission => submission.Tender)
+            .ThenInclude(tender => tender!.Reviewers)
             .Include(submission => submission.Reviews)
             .ThenInclude(review => review.Reviewer)
             .Include(submission => submission.Reviews)

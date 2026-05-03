@@ -146,6 +146,7 @@ public class TenderComparisonServiceTests
             status: TenderStatus.Completed,
             questions: [scoredQuestion, unscoredQuestion]);
         submission.Tender.Id = submission.TenderId;
+        submission.Tender.Reviewers.Add(new TenderReviewer("reviewer-1"));
         submission.Answers.Add(new TextAnswer
         {
             Id = Guid.NewGuid(),
@@ -183,6 +184,8 @@ public class TenderComparisonServiceTests
         Assert.Equal("Alpha BV", details.SupplierName);
         Assert.Equal(10, details.MaximumScore);
         Assert.Equal(8, details.AwardedScore);
+        Assert.Equal(1, details.CompletedReviewCount);
+        Assert.Equal(1, details.ReviewerCount);
         tenderSubmissionEncryptionService.Verify(service => service.Decrypt(submission), Times.Once);
         Assert.Collection(
             details.Questions,

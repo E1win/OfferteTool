@@ -11,5 +11,7 @@ public class TenderSubmissionComparisonPageViewModel
     public required decimal MaximumScore { get; init; }
     public required decimal AwardedScore { get; init; }
     public required decimal ScorePercentage { get; init; }
+    public required int CompletedReviewCount { get; init; }
+    public required int ReviewerCount { get; init; }
     public required IReadOnlyList<TenderSubmissionComparisonQuestionViewModel> Questions { get; init; }
 }
