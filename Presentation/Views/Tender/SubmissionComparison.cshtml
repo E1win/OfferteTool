@@ -1,0 +1,186 @@
+@model TenderSubmissionComparisonPageViewModel
+
+@{
+    ViewData["Title"] = $"{Model.SupplierName} - Offerte";
+}
+
+<nav aria-label="Terug navigatie" class="mb-3">
+    <a asp-controller="Tender"
+       asp-action="Comparison"
+       asp-route-id="@Model.TenderId"
+       class="btn btn-outline-secondary btn-sm">
+        &larr; Terug naar vergelijkingsdashboard
+    </a>
+</nav>
+
+<header class="mb-4 row g-4">
+    <div class="col-xxl-6">
+        <h1 class="mb-1">Offerte van @Model.SupplierName</h1>
+        <p class="mb-2 text-body-secondary">@Model.TenderTitle</p>
+        <p class="mb-0">@Model.TenderDescription</p>
+    </div>
+    <section aria-labelledby="submission-summary-heading" class="col-xxl-6">
+        <h2 id="submission-summary-heading" class="visually-hidden">Samenvatting</h2>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             width="32"
+                             height="32"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true"
+                             viewBox="0 0 24 24">
+                            <path d="M3 3v18h18" />
+                            <path d="m7 14 4-4 3 3 5-6" />
+                        </svg>
+                        <div>
+                            <h3 class="h6 card-title text-body-secondary">Totaalscore</h3>
+                            <p class="h4 mb-0">@Model.AwardedScore.ToString("0.##") / @Model.MaximumScore.ToString("0.##")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             width="32"
+                             height="32"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true"
+                             viewBox="0 0 24 24">
+                            <path d="M8 2v4" />
+                            <path d="M16 2v4" />
+                            <rect width="18" height="18" x="3" y="4" rx="2" />
+                            <path d="M3 10h18" />
+                        </svg>
+                        <div>
+                            <h3 class="h6 card-title text-body-secondary">Ingediend op</h3>
+                            <p class="h4 mb-0">@Model.SubmittedAt.ToString("dd/MM/yyyy")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             width="32"
+                             height="32"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true"
+                             viewBox="0 0 24 24">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        <div>
+                            <h3 class="h6 card-title text-body-secondary">Beoordelaars</h3>
+                            <p class="h4 mb-0">@Model.CompletedReviewCount / @Model.ReviewerCount</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</header>
+
+
+<section aria-labelledby="submission-answers-heading">
+    <div class="vstack gap-2">
+        @foreach (var question in Model.Questions)
+        {
+            <article class="card">
+                <div class="card-body">
+                    <div class="row g-4">
+                        <section class="col-lg-6" aria-label="Vraag en antwoord">
+                            <header class="border-bottom pb-3 mb-3">
+                                <div class="d-flex align-items-start justify-content-between gap-3">
+                                    <div>
+                                        <p class="small text-body-secondary mb-1">Vraag @(question.Order + 1)</p>
+                                        <h3 class="h5 mb-0">@question.Text</h3>
+                                    </div>
+
+                                    @if (question.MaximumScore.HasValue)
+                                    {
+                                        <span class="badge text-bg-secondary">@question.MaximumScore.Value punten</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-light border">Geen score</span>
+                                    }
+                                </div>
+                            </header>
+                            <h4 class="h6 text-body-secondary">Antwoord van leverancier</h4>
+                            <div class="border rounded p-3">
+                                @if (string.IsNullOrWhiteSpace(question.Answer))
+                                {
+                                    <p class="mb-0 text-body-secondary">Geen antwoord beschikbaar.</p>
+                                }
+                                else
+                                {
+                                    <p class="mb-0">@question.Answer</p>
+                                }
+                            </div>
+                        </section>
+
+                        <section class="col-lg-6" aria-label="Beoordelingen">
+                            @if (question.MaximumScore.HasValue)
+                            {
+                                @if (question.ReviewerScores.Count == 0)
+                                {
+                                    <p class="mb-0 text-body-secondary">Er zijn geen beoordelingen voor deze vraag.</p>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive border rounded">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th scope="col" style="font-weight: 600 !important;">Beoordelaar</th>
+                                                    <th scope="col" style="font-weight: 600 !important;">Beoordeling</th>
+                                                    <th scope="col" style="font-weight: 600 !important;">Punten</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var score in question.ReviewerScores)
+                                                {
+                                                    <tr>
+                                                        <td>@score.ReviewerName</td>
+                                                        <td>@score.RatingLabel</td>
+                                                        <td>@score.AwardedScore.ToString("0.##") / @question.MaximumScore.Value.ToString("0.##")</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="mb-0 text-body-secondary">Deze vraag telt niet mee in de score.</p>
+                            }
+                        </section>
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+</section>

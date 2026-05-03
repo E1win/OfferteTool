@@ -64,18 +64,18 @@ public class TenderReviewService(
     private async Task<TenderSubmission> GetAccessibleSubmissionAsync(Guid tenderId, Guid submissionId, string reviewerUserId)
     {
         var submission = await tenderSubmissionReviewRepository.GetSubmissionForReviewAsync(submissionId)
-            ?? throw new KeyNotFoundException("De inschrijving kon niet worden gevonden.");
+            ?? throw new KeyNotFoundException("De offerte kon niet worden gevonden.");
 
         if (submission.TenderId != tenderId)
-            throw new KeyNotFoundException("De inschrijving kon niet worden gevonden.");
+            throw new KeyNotFoundException("De offerte kon niet worden gevonden.");
 
         var tender = submission.Tender
-            ?? throw new InvalidOperationException("De inschrijving is niet volledig geladen voor beoordeling.");
+            ?? throw new InvalidOperationException("De offerte is niet volledig geladen voor beoordeling.");
 
         var (reviewer, _) = await currentUserService.GetUserWithRoleAsync(reviewerUserId);
 
         if (!tender.CanReview(reviewer))
-            throw new UnauthorizedAccessException("U heeft geen toegang tot deze inschrijving.");
+            throw new UnauthorizedAccessException("U heeft geen toegang tot deze offerte.");
 
         return submission;
     }

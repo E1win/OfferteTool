@@ -1,5 +1,6 @@
 using Application.Interfaces.Repositories;
 using Domain.Entities;
+using Domain.Entities.TenderQuestions;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,21 @@ public class TenderSubmissionRepository(AppDbContext dbContext) : ITenderSubmiss
             .Where(submission => submission.TenderId == tenderId)
             .OrderBy(submission => submission.Supplier!.Name)
             .ToListAsync();
+
+    public async Task<TenderSubmission?> GetComparisonDetailsAsync(Guid submissionId) =>
+        await dbContext.TenderSubmissions
+            .Include(submission => submission.Supplier)
+            .Include(submission => submission.Answers)
+            .Include(submission => submission.Tender)
+            .ThenInclude(tender => tender!.Questions)
+            .ThenInclude(question => ((ChoiceQuestion)question).Options)
+            .Include(submission => submission.Tender)
+            .ThenInclude(tender => tender!.Reviewers)
+            .Include(submission => submission.Reviews)
+            .ThenInclude(review => review.Reviewer)
+            .Include(submission => submission.Reviews)
+            .ThenInclude(review => review.QuestionReviews)
+            .FirstOrDefaultAsync(submission => submission.Id == submissionId);
 
     public async Task<TenderSubmission> AddAsync(TenderSubmission submission)
     {

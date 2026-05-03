@@ -28,7 +28,7 @@ public class TenderReviewPageModelBuilder(ITenderReviewService tenderReviewServi
         var submission = await tenderReviewService.GetSubmissionForReviewAsync(tenderId, submissionId, reviewerUserId);
         var review = await tenderReviewService.GetReviewAsync(tenderId, submissionId, reviewerUserId);
         var tender = submission.Tender
-            ?? throw new InvalidOperationException("De inschrijving is niet volledig geladen voor beoordeling.");
+            ?? throw new InvalidOperationException("De offerte is niet volledig geladen voor beoordeling.");
 
         var questions = tender.Questions
             .OrderBy(question => question.Order)

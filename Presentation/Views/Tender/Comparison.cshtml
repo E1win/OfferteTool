@@ -1,0 +1,126 @@
+@model TenderComparisonPageViewModel
+@using System.Globalization
+
+@{
+    ViewData["Title"] = $"{Model.TenderTitle} - vergelijking";
+}
+
+<nav aria-label="Terug navigatie" class="mb-3">
+    <a asp-controller="Tender"
+       asp-action="Details"
+       asp-route-id="@Model.TenderId"
+       class="btn btn-outline-secondary btn-sm">
+        &larr; Terug naar offertetraject
+    </a>
+</nav>
+
+<header class="mb-4">
+    <h1 class="mb-1">Vergelijkingsdashboard</h1>
+    <p class="mb-2 text-body-secondary">@Model.TenderTitle</p>
+    <p class="mb-0">@Model.TenderDescription</p>
+</header>
+
+@if (Model.Submissions.Count > 0)
+{
+    <section aria-labelledby="score-chart-heading" class="mb-5">
+        <h2 id="score-chart-heading" class="h4 mb-3">Totaalscore per leverancier</h2>
+
+        <div class="vstack gap-3" role="img" aria-label="Staafdiagram met totaalscore per leverancier">
+            @foreach (var submission in Model.Submissions)
+            {
+                var barWidth = Math.Min(submission.ScorePercentage, 100);
+                var barWidthValue = barWidth.ToString("0.##", CultureInfo.InvariantCulture);
+
+                <div>
+                    <div class="d-flex justify-content-between gap-3 mb-1">
+                        <span class="fw-semibold">@submission.SupplierName</span>
+                        <span class="text-body-secondary">
+                            @submission.AwardedScore.ToString("0.##") / @Model.MaximumScore.ToString("0.##")
+                        </span>
+                    </div>
+                    <div class="progress"
+                         role="progressbar"
+                         aria-label="Score van @submission.SupplierName"
+                         aria-valuenow="@barWidthValue"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         style="height: 1.25rem;">
+                        <div class="progress-bar bg-success" style="width: @barWidthValue%;"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+<section aria-labelledby="submission-ranking-heading">
+    <h2 id="submission-ranking-heading" class="h4 mb-3">Rangschikking offertes</h2>
+
+    @if (Model.Submissions.Count == 0)
+    {
+        <p class="mb-0 text-body-secondary">Er zijn geen offertes om te vergelijken.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Leverancier</th>
+                        <th scope="col">Score</th>
+                        <th scope="col">Percentage</th>
+                        <th scope="col">Beoordelaars</th>
+                        <th scope="col">Ingediend op</th>
+                        <th scope="col">
+                            <span class="visually-hidden">Acties</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var submission in Model.Submissions)
+                    {
+                        var submissionUrl = Url.Action(
+                            "SubmissionComparison",
+                            "Tender",
+                            new { tenderId = Model.TenderId, submissionId = submission.SubmissionId });
+
+                        <tr class="comparison-row" data-href="@submissionUrl">
+                            <td class="fw-semibold">@submission.Rank</td>
+                            <td>@submission.SupplierName</td>
+                            <td>@submission.AwardedScore.ToString("0.##") / @Model.MaximumScore.ToString("0.##")</td>
+                            <td>@submission.ScorePercentage.ToString("0.##")%</td>
+                            <td>@submission.CompletedReviewCount / @submission.ReviewerCount</td>
+                            <td>@submission.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">
+                                <a href="@submissionUrl"
+                                   class="comparison-row__link"
+                                   aria-label="Offerte van @submission.SupplierName openen">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M16.0599 10.94C16.3408 11.2212 16.4986 11.6025 16.4986 12C16.4986 12.3975 16.3408 12.7787 16.0599 13.06L10.4039 18.718C10.1225 18.9992 9.74089 19.1572 9.34304 19.1571C8.94518 19.157 8.56365 18.9989 8.28239 18.7175C8.00113 18.4361 7.84317 18.0545 7.84326 17.6566C7.84336 17.2588 8.00149 16.8772 8.28289 16.596L12.8789 12L8.28289 7.40398C8.00952 7.1212 7.85814 6.74237 7.86137 6.34907C7.8646 5.95577 8.02218 5.57948 8.30016 5.30123C8.57815 5.02299 8.95429 4.86506 9.34759 4.86146C9.74088 4.85785 10.1199 5.00887 10.4029 5.28198L16.0609 10.939L16.0599 10.94Z" fill="currentColor" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll(".comparison-row[data-href]").forEach(function (row) {
+            row.addEventListener("click", function (event) {
+                if (event.target.closest("a, button, input, select, textarea")) {
+                    return;
+                }
+
+                if (row.dataset.href) {
+                    window.location.href = row.dataset.href;
+                }
+            });
+        });
+    </script>
+}

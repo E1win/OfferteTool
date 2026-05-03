@@ -13,7 +13,7 @@ public class TenderSubmissionReview
     public TenderSubmissionReview(Guid submissionId, string reviewerUserId)
     {
         if (submissionId == Guid.Empty)
-            throw new BusinessRuleViolationException("De inschrijving is ongeldig.");
+            throw new BusinessRuleViolationException("De offerte is ongeldig.");
 
         if (string.IsNullOrWhiteSpace(reviewerUserId))
             throw new BusinessRuleViolationException("De beoordelaar is ongeldig.");

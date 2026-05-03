@@ -78,6 +78,7 @@ builder.Services.Configure<TenderSubmissionEncryptionOptions>(
     builder.Configuration.GetSection(TenderSubmissionEncryptionOptions.SectionName));
 
 builder.Services.AddScoped<ITenderService, TenderService>();
+builder.Services.AddScoped<ITenderComparisonService, TenderComparisonService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
 builder.Services.AddScoped<ITenderReviewerService, TenderReviewerService>();
@@ -86,6 +87,7 @@ builder.Services.AddScoped<ITenderSubmissionService, TenderSubmissionService>();
 builder.Services.AddScoped<ITenderSubmissionEncryptionService, AesTenderSubmissionEncryptionService>();
 builder.Services.AddSingleton<TenderAnswerPayloadSerializer>();
 builder.Services.AddScoped<ITenderPageModelBuilder, TenderPageModelBuilder>();
+builder.Services.AddScoped<ITenderComparisonPageModelBuilder, TenderComparisonPageModelBuilder>();
 builder.Services.AddScoped<ITenderReviewPageModelBuilder, TenderReviewPageModelBuilder>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 
@@ -141,10 +143,28 @@ builder.Services.AddRateLimiter(options =>
         var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "onbekend";
         var partitionKey = userId is not null ? $"user:{userId}" : $"ip:{remoteIp}";
-        var isPostRequest = HttpMethods.IsPost(httpContext.Request.Method);
+        var isMutationRequest =
+            HttpMethods.IsPost(httpContext.Request.Method)
+            || HttpMethods.IsPut(httpContext.Request.Method)
+            || HttpMethods.IsPatch(httpContext.Request.Method)
+            || HttpMethods.IsDelete(httpContext.Request.Method);
         var path = httpContext.Request.Path;
 
-        if (isPostRequest && path.Equals(loginPath, StringComparison.OrdinalIgnoreCase))
+        if (!isMutationRequest)
+        {
+            return RateLimitPartition.GetSlidingWindowLimiter(
+                $"read:{partitionKey}",
+                _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit = 600,
+                    Window = TimeSpan.FromMinutes(1),
+                    SegmentsPerWindow = 6,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+        }
+
+        if (HttpMethods.IsPost(httpContext.Request.Method) && path.Equals(loginPath, StringComparison.OrdinalIgnoreCase))
         {
             return RateLimitPartition.GetSlidingWindowLimiter(
                 $"login:{remoteIp}",
@@ -158,7 +178,7 @@ builder.Services.AddRateLimiter(options =>
                 });
         }
 
-        if (isPostRequest && path.Equals(createTenderPath, StringComparison.OrdinalIgnoreCase))
+        if (HttpMethods.IsPost(httpContext.Request.Method) && path.Equals(createTenderPath, StringComparison.OrdinalIgnoreCase))
         {
             return RateLimitPartition.GetSlidingWindowLimiter(
                 $"tender-create:{partitionKey}",

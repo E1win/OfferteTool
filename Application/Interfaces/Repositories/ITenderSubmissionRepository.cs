@@ -6,6 +6,7 @@ public interface ITenderSubmissionRepository
 {
     Task<TenderSubmission?> GetByTenderAndSupplierAsync(Guid tenderId, Guid supplierId);
     Task<List<TenderSubmission>> GetByTenderWithSuppliersAsync(Guid tenderId);
+    Task<TenderSubmission?> GetComparisonDetailsAsync(Guid submissionId);
     Task<TenderSubmission> AddAsync(TenderSubmission submission);
     Task SaveChangesAsync();
 }
