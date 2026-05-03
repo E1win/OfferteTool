@@ -28,6 +28,17 @@ public class TenderRepository(AppDbContext dbContext) : ITenderRepository
             .ThenInclude(q => ((ChoiceQuestion)q).Options)
             .FirstOrDefaultAsync(t => t.Id == id);
 
+    public async Task<Tender?> GetByIdWithComparisonDataAsync(Guid id) =>
+        await dbContext.Tenders
+            .Include(t => t.Questions)
+            .Include(t => t.Reviewers)
+            .Include(t => t.Submissions)
+            .ThenInclude(submission => submission.Supplier)
+            .Include(t => t.Submissions)
+            .ThenInclude(submission => submission.Reviews)
+            .ThenInclude(review => review.QuestionReviews)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
     public async Task<List<Tender>> GetByOrganisationAsync(Guid organisationId) =>
         await dbContext.Tenders
             .Where(t => t.OrganisationId == organisationId)

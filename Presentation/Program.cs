@@ -78,6 +78,7 @@ builder.Services.Configure<TenderSubmissionEncryptionOptions>(
     builder.Configuration.GetSection(TenderSubmissionEncryptionOptions.SectionName));
 
 builder.Services.AddScoped<ITenderService, TenderService>();
+builder.Services.AddScoped<ITenderComparisonService, TenderComparisonService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
 builder.Services.AddScoped<ITenderReviewerService, TenderReviewerService>();
