@@ -3,6 +3,7 @@ using Application.Interfaces.Services;
 using Application.Services;
 using Domain.Constants;
 using Domain.Entities;
+using Domain.Entities.TenderAnswers;
 using Domain.Entities.TenderQuestions;
 using Domain.Enums;
 using Domain.Exceptions;
@@ -15,7 +16,9 @@ public class TenderComparisonServiceTests
     private const string UserId = "user-1";
 
     private readonly Mock<ITenderRepository> tenderRepository = new();
+    private readonly Mock<ITenderSubmissionRepository> tenderSubmissionRepository = new();
     private readonly Mock<ICurrentUserService> currentUserService = new();
+    private readonly Mock<ITenderSubmissionEncryptionService> tenderSubmissionEncryptionService = new();
 
     [Fact]
     public async Task GetTenderComparisonDashboardAsync_WhenTenderIsNotCompleted_ThrowsBusinessRuleViolationException()
@@ -120,9 +123,94 @@ public class TenderComparisonServiceTests
             });
     }
 
+    [Fact]
+    public async Task GetTenderSubmissionComparisonDetailsAsync_WhenTenderIsCompleted_ReturnsAnswersAndReviewerScores()
+    {
+        // Arrange
+        var organisationId = Guid.NewGuid();
+        var scoredQuestion = CreateScoredQuestion(order: 0, score: 10);
+        var unscoredQuestion = new NumberQuestion
+        {
+            Id = Guid.NewGuid(),
+            TenderId = Guid.NewGuid(),
+            Order = 1,
+            Text = "Levertijd",
+            Score = null,
+            MinValue = 1,
+            MaxValue = 90
+        };
+        var submission = CreateSubmission("Alpha BV", DateTime.UtcNow.AddMinutes(-2));
+        submission.TenderId = Guid.NewGuid();
+        submission.Tender = CreateTender(
+            organisationId: organisationId,
+            status: TenderStatus.Completed,
+            questions: [scoredQuestion, unscoredQuestion]);
+        submission.Tender.Id = submission.TenderId;
+        submission.Answers.Add(new TextAnswer
+        {
+            Id = Guid.NewGuid(),
+            SubmissionId = submission.Id,
+            QuestionId = scoredQuestion.Id,
+            Type = AnswerType.Text,
+            TextValue = "Wij leveren ergonomische stoelen."
+        });
+        submission.Answers.Add(new NumberAnswer
+        {
+            Id = Guid.NewGuid(),
+            SubmissionId = submission.Id,
+            QuestionId = unscoredQuestion.Id,
+            Type = AnswerType.Numeric,
+            NumericValue = 14
+        });
+        var review = new TenderSubmissionReview(submission.Id, "reviewer-1");
+        review.SetQuestionRating(scoredQuestion.Id, TenderReviewRating.Good);
+        review.MarkReviewed(DateTime.UtcNow);
+        submission.Reviews.Add(review);
+
+        tenderSubmissionRepository
+            .Setup(repository => repository.GetComparisonDetailsAsync(submission.Id))
+            .ReturnsAsync(submission);
+        SetupCurrentUser(Roles.Inkoper, organisationId);
+
+        var service = CreateTenderComparisonService();
+
+        // Act
+        var details = await service.GetTenderSubmissionComparisonDetailsAsync(submission.TenderId, submission.Id, UserId);
+
+        // Assert
+        Assert.Equal(submission.TenderId, details.TenderId);
+        Assert.Equal(submission.Id, details.SubmissionId);
+        Assert.Equal("Alpha BV", details.SupplierName);
+        Assert.Equal(10, details.MaximumScore);
+        Assert.Equal(8, details.AwardedScore);
+        tenderSubmissionEncryptionService.Verify(service => service.Decrypt(submission), Times.Once);
+        Assert.Collection(
+            details.Questions,
+            question =>
+            {
+                Assert.Equal(scoredQuestion.Id, question.QuestionId);
+                Assert.Equal(10, question.MaximumScore);
+                Assert.Equal("Wij leveren ergonomische stoelen.", question.Answer.TextValue);
+                var reviewerScore = Assert.Single(question.ReviewerScores);
+                Assert.Equal(TenderReviewRating.Good, reviewerScore.Rating);
+                Assert.Equal(8, reviewerScore.AwardedScore);
+            },
+            question =>
+            {
+                Assert.Equal(unscoredQuestion.Id, question.QuestionId);
+                Assert.Null(question.MaximumScore);
+                Assert.Equal(14, question.Answer.NumericValue);
+                Assert.Empty(question.ReviewerScores);
+            });
+    }
+
     private TenderComparisonService CreateTenderComparisonService()
     {
-        return new TenderComparisonService(tenderRepository.Object, currentUserService.Object);
+        return new TenderComparisonService(
+            tenderRepository.Object,
+            tenderSubmissionRepository.Object,
+            currentUserService.Object,
+            tenderSubmissionEncryptionService.Object);
     }
 
     private void SetupCurrentUser(string role, Guid? organisationId = null)
