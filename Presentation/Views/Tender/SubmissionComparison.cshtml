@@ -102,73 +102,82 @@
 </section>
 
 <section aria-labelledby="submission-answers-heading">
-    <h2 id="submission-answers-heading" class="h4 mb-3">Antwoorden en beoordelingen</h2>
-
-    <div class="vstack gap-4">
+    <div class="vstack gap-2">
         @foreach (var question in Model.Questions)
         {
-            <article class="border rounded p-3">
-                <header class="mb-3">
-                    <div class="d-flex align-items-start justify-content-between gap-3">
-                        <h3 class="h5 mb-0">@question.Text</h3>
-                        @if (question.MaximumScore.HasValue)
-                        {
-                            <span class="badge text-bg-secondary">@question.MaximumScore.Value punten</span>
-                        }
-                        else
-                        {
-                            <span class="badge text-bg-light">Geen score</span>
-                        }
-                    </div>
-                </header>
+            <article class="card">
+                <div class="card-body">
+                    <div class="row g-4">
+                        <section class="col-lg-6" aria-label="Vraag en antwoord">
+                            <header class="border-bottom pb-3 mb-3">
+                                <div class="d-flex align-items-start justify-content-between gap-3">
+                                    <div>
+                                        <p class="small text-body-secondary mb-1">Vraag @(question.Order + 1)</p>
+                                        <h3 class="h5 mb-0">@question.Text</h3>
+                                    </div>
 
-                <section class="mb-3" aria-label="Antwoord">
-                    <h4 class="h6">Antwoord</h4>
-                    @if (string.IsNullOrWhiteSpace(question.Answer))
-                    {
-                        <p class="mb-0 text-body-secondary">Geen antwoord beschikbaar.</p>
-                    }
-                    else
-                    {
-                        <p class="mb-0">@question.Answer</p>
-                    }
-                </section>
-
-                @if (question.MaximumScore.HasValue)
-                {
-                    <section aria-label="Beoordelingen">
-                        <h4 class="h6">Beoordelingen</h4>
-
-                        @if (question.ReviewerScores.Count == 0)
-                        {
-                            <p class="mb-0 text-body-secondary">Er zijn geen beoordelingen voor deze vraag.</p>
-                        }
-                        else
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">Beoordelaar</th>
-                                            <th scope="col">Beoordeling</th>
-                                            <th scope="col">Punten</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var score in question.ReviewerScores)
-                                        {
-                                            <tr>
-                                                <td>@score.ReviewerName</td>
-                                                <td>@score.RatingLabel</td>
-                                                <td>@score.AwardedScore.ToString("0.##") / @question.MaximumScore.Value.ToString("0.##")</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                                    @if (question.MaximumScore.HasValue)
+                                    {
+                                        <span class="badge text-bg-secondary">@question.MaximumScore.Value punten</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-light border">Geen score</span>
+                                    }
+                                </div>
+                            </header>
+                            <h4 class="h6 text-body-secondary">Antwoord van leverancier</h4>
+                            <div class="border rounded bg-body-primary p-3">
+                                @if (string.IsNullOrWhiteSpace(question.Answer))
+                                {
+                                    <p class="mb-0 text-body-secondary">Geen antwoord beschikbaar.</p>
+                                }
+                                else
+                                {
+                                    <p class="mb-0">@question.Answer</p>
+                                }
                             </div>
-                        }
-                    </section>
-                }
+                        </section>
+
+                        <section class="col-lg-6" aria-label="Beoordelingen">
+                            @if (question.MaximumScore.HasValue)
+                            {
+                                @if (question.ReviewerScores.Count == 0)
+                                {
+                                    <p class="mb-0 text-body-secondary">Er zijn geen beoordelingen voor deze vraag.</p>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive border rounded">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th scope="col" style="font-weight: 600 !important;">Beoordelaar</th>
+                                                    <th scope="col" style="font-weight: 600 !important;">Beoordeling</th>
+                                                    <th scope="col" style="font-weight: 600 !important;">Punten</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var score in question.ReviewerScores)
+                                                {
+                                                    <tr>
+                                                        <td>@score.ReviewerName</td>
+                                                        <td>@score.RatingLabel</td>
+                                                        <td>@score.AwardedScore.ToString("0.##") / @question.MaximumScore.Value.ToString("0.##")</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="mb-0 text-body-secondary">Deze vraag telt niet mee in de score.</p>
+                            }
+                        </section>
+                    </div>
+                </div>
             </article>
         }
     </div>
