@@ -27,7 +27,7 @@ public class TenderComparisonService(
             throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
 
         if (tender.Status != TenderStatus.Completed)
-            throw new BusinessRuleViolationException("Inschrijvingen kunnen pas worden vergeleken zodra het offertetraject is afgerond.");
+            throw new BusinessRuleViolationException("Offertes kunnen pas worden vergeleken zodra het offertetraject is afgerond.");
 
         var scoredQuestions = tender.Questions
             .Where(question => question.Score.HasValue)
@@ -54,13 +54,13 @@ public class TenderComparisonService(
         string userId)
     {
         var submission = await tenderSubmissionRepository.GetComparisonDetailsAsync(submissionId)
-            ?? throw new KeyNotFoundException("De inschrijving kon niet worden gevonden.");
+            ?? throw new KeyNotFoundException("De offerte kon niet worden gevonden.");
 
         if (submission.TenderId != tenderId)
-            throw new KeyNotFoundException("De inschrijving kon niet worden gevonden.");
+            throw new KeyNotFoundException("De offerte kon niet worden gevonden.");
 
         var tender = submission.Tender
-            ?? throw new InvalidOperationException("De inschrijving is niet volledig geladen voor vergelijking.");
+            ?? throw new InvalidOperationException("De offerte is niet volledig geladen voor vergelijking.");
 
         var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
 
@@ -68,7 +68,7 @@ public class TenderComparisonService(
             throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
 
         if (tender.Status != TenderStatus.Completed)
-            throw new BusinessRuleViolationException("Inschrijvingen kunnen pas worden vergeleken zodra het offertetraject is afgerond.");
+            throw new BusinessRuleViolationException("Offertes kunnen pas worden vergeleken zodra het offertetraject is afgerond.");
 
         tenderSubmissionEncryptionService.Decrypt(submission);
 
@@ -164,7 +164,7 @@ public class TenderComparisonService(
             .Select(question =>
             {
                 if (!answersByQuestionId.TryGetValue(question.Id, out var answer))
-                    throw new InvalidOperationException("De inschrijving bevat niet voor elke vraag een antwoord.");
+                    throw new InvalidOperationException("De offerte bevat niet voor elke vraag een antwoord.");
 
                 return new TenderSubmissionComparisonQuestion
                 {

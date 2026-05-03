@@ -85,7 +85,7 @@ public class Tender
     public void EnsureCanReceiveSubmission(DateOnly today)
     {
         if (Status != TenderStatus.Open)
-            throw new BusinessRuleViolationException("Alleen openstaande offertetrajecten kunnen inschrijvingen ontvangen.");
+            throw new BusinessRuleViolationException("Alleen openstaande offertetrajecten kunnen offertes ontvangen.");
 
         if (EndDate < today)
             throw new BusinessRuleViolationException("De inschrijftermijn is verstreken.");
