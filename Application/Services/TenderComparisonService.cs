@@ -34,11 +34,7 @@ public class TenderComparisonService(
             .OrderBy(question => question.Order)
             .ToList();
         var maximumScore = TenderReviewScoreCalculator.CalculateMaximumPoints(scoredQuestions);
-        var submissions = tender.Submissions
-            .OrderBy(submission => submission.Supplier?.Name ?? string.Empty)
-            .ThenBy(submission => submission.SubmittedAt)
-            .ToList();
-        var submissionRows = CreateSubmissionRows(submissions, scoredQuestions, maximumScore, tender.Reviewers.Count);
+        var submissionRows = CreateSubmissionRows(tender.Submissions, scoredQuestions, maximumScore, tender.Reviewers.Count);
 
         return new TenderComparisonDashboard
         {
