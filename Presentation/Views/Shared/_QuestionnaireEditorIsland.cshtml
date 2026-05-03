@@ -40,10 +40,10 @@
             <ol v-if="questionnaire.questions.length" class="questionnaire-editor__list">
                 <li v-for="(question, index) in questionnaire.questions" :key="question.id" class="questionnaire-editor__card">
                     <div class="questionnaire-editor__card-top">
-                        <div class="questionnaire-editor__card-order">
+                        <div v-show="questionnaire.canManageQuestions" class="questionnaire-editor__card-order">
                             <button type="button"
                                     class="btn btn-link btn-sm"
-                                    :disabled="!questionnaire.canManageQuestions || questionnaire.isSaving || index === 0"
+                                    :disabled="questionnaire.isSaving || index === 0"
                                     v-on:click="moveQuestion(index, -1)"
                                     aria-label="Vraag omhoog verplaatsen">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -59,7 +59,7 @@
                             </button>
                             <button type="button"
                                     class="btn btn-link btn-sm"
-                                    :disabled="!questionnaire.canManageQuestions || questionnaire.isSaving || index === questionnaire.questions.length - 1"
+                                    :disabled="questionnaire.isSaving || index === questionnaire.questions.length - 1"
                                     v-on:click="moveQuestion(index, 1)"
                                     aria-label="Vraag omlaag verplaatsen">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
