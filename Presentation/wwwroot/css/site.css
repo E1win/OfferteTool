@@ -54,6 +54,27 @@ body {
   display: none;
 }
 
+.comparison-row {
+  cursor: pointer;
+}
+
+.comparison-row__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #212529;
+  text-decoration: none;
+}
+
+.comparison-row__link:hover,
+.comparison-row__link:focus {
+  color: #000;
+}
+
+.comparison-row__link svg {
+  pointer-events: none;
+}
+
 .questionnaire-editor__list {
   list-style: none;
   margin: 0;

@@ -66,7 +66,7 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th scope="col">Rang</th>
+                        <th scope="col">#</th>
                         <th scope="col">Leverancier</th>
                         <th scope="col">Score</th>
                         <th scope="col">Percentage</th>
@@ -80,7 +80,12 @@
                 <tbody>
                     @foreach (var submission in Model.Submissions)
                     {
-                        <tr>
+                        var submissionUrl = Url.Action(
+                            "SubmissionComparison",
+                            "Tender",
+                            new { tenderId = Model.TenderId, submissionId = submission.SubmissionId });
+
+                        <tr class="comparison-row" data-href="@submissionUrl">
                             <td class="fw-semibold">@submission.Rank</td>
                             <td>@submission.SupplierName</td>
                             <td>@submission.AwardedScore.ToString("0.##") / @Model.MaximumScore.ToString("0.##")</td>
@@ -88,13 +93,12 @@
                             <td>@submission.CompletedReviewCount / @submission.ReviewerCount</td>
                             <td>@submission.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</td>
                             <td class="text-end">
-                                <a asp-controller="Tender"
-                                   asp-action="SubmissionComparison"
-                                   asp-route-tenderId="@Model.TenderId"
-                                   asp-route-submissionId="@submission.SubmissionId"
-                                   class="btn btn-sm btn-outline-secondary"
-                                   aria-label="Inschrijving van @submission.SupplierName openen">
-                                    &rsaquo;
+                                <a href="@submissionUrl"
+                                   class="comparison-row__link"
+                                   aria-label="Offerte van @submission.SupplierName openen">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M16.0599 10.94C16.3408 11.2212 16.4986 11.6025 16.4986 12C16.4986 12.3975 16.3408 12.7787 16.0599 13.06L10.4039 18.718C10.1225 18.9992 9.74089 19.1572 9.34304 19.1571C8.94518 19.157 8.56365 18.9989 8.28239 18.7175C8.00113 18.4361 7.84317 18.0545 7.84326 17.6566C7.84336 17.2588 8.00149 16.8772 8.28289 16.596L12.8789 12L8.28289 7.40398C8.00952 7.1212 7.85814 6.74237 7.86137 6.34907C7.8646 5.95577 8.02218 5.57948 8.30016 5.30123C8.57815 5.02299 8.95429 4.86506 9.34759 4.86146C9.74088 4.85785 10.1199 5.00887 10.4029 5.28198L16.0609 10.939L16.0599 10.94Z" fill="currentColor" />
+                                    </svg>
                                 </a>
                             </td>
                         </tr>
@@ -104,3 +108,19 @@
         </div>
     }
 </section>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll(".comparison-row[data-href]").forEach(function (row) {
+            row.addEventListener("click", function (event) {
+                if (event.target.closest("a, button, input, select, textarea")) {
+                    return;
+                }
+
+                if (row.dataset.href) {
+                    window.location.href = row.dataset.href;
+                }
+            });
+        });
+    </script>
+}
