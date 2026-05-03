@@ -25,7 +25,7 @@ public class TenderSubmission
         ArgumentNullException.ThrowIfNull(answers);
 
         if (tender.Id != TenderId)
-            throw new BusinessRuleViolationException("Deze inschrijving hoort niet bij het opgegeven offertetraject.");
+            throw new BusinessRuleViolationException("Deze offerte hoort niet bij het opgegeven offertetraject.");
 
         var tenderQuestions = tender.Questions
             .ToDictionary(question => question.Id);
@@ -33,7 +33,7 @@ public class TenderSubmission
         var submittedAnswers = answers.ToList();
 
         if (submittedAnswers.Count != tenderQuestions.Count)
-            throw new BusinessRuleViolationException("Beantwoord alle vragen voordat u de inschrijving verzendt.");
+            throw new BusinessRuleViolationException("Beantwoord alle vragen voordat u de offerte verzendt.");
 
         var duplicateAnswer = submittedAnswers
             .GroupBy(answer => answer.QuestionId)
