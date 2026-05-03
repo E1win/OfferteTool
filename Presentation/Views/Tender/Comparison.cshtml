@@ -1,4 +1,5 @@
 @model TenderComparisonPageViewModel
+@using System.Globalization
 
 @{
     ViewData["Title"] = $"{Model.TenderTitle} - vergelijking";
@@ -17,6 +18,42 @@
     <h1 class="mb-1">Inschrijvingen vergelijken</h1>
     <p class="mb-0 text-body-secondary">@Model.TenderTitle</p>
 </header>
+
+@if (Model.Submissions.Count > 0)
+{
+    <section aria-labelledby="score-chart-heading" class="mb-5">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+            <h2 id="score-chart-heading" class="h4 mb-0">Totaalscore per leverancier</h2>
+            <span class="text-body-secondary">Max score: @Model.MaximumScore.ToString("0.##")</span>
+        </div>
+
+        <div class="vstack gap-3" role="img" aria-label="Staafdiagram met totaalscore per leverancier">
+            @foreach (var submission in Model.Submissions)
+            {
+                var barWidth = Math.Min(submission.ScorePercentage, 100);
+                var barWidthValue = barWidth.ToString("0.##", CultureInfo.InvariantCulture);
+
+                <div>
+                    <div class="d-flex justify-content-between gap-3 mb-1">
+                        <span class="fw-semibold">@submission.SupplierName</span>
+                        <span class="text-body-secondary">
+                            @submission.AwardedScore.ToString("0.##") / @Model.MaximumScore.ToString("0.##")
+                        </span>
+                    </div>
+                    <div class="progress"
+                         role="progressbar"
+                         aria-label="Score van @submission.SupplierName"
+                         aria-valuenow="@barWidthValue"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         style="height: 1.25rem;">
+                        <div class="progress-bar bg-success" style="width: @barWidthValue%;"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+}
 
 <section aria-labelledby="submission-ranking-heading">
     <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
