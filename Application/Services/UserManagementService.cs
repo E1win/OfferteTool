@@ -117,12 +117,14 @@ public class UserManagementService(
 
         await ValidateExistingOrganisationAssignmentAsync(user, request.Role);
         var email = NormalizeRequiredText(request.Email);
+        var emailChanged = !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase);
 
-        user.UserName = email;
-        user.Email = email;
         user.FirstName = NormalizeRequiredText(request.FirstName);
         user.LastName = NormalizeRequiredText(request.LastName);
         user.IsActive = request.IsActive;
+
+        if (emailChanged)
+            await UpdateEmailAsync(user, email);
 
         var updateResult = await userManager.UpdateAsync(user);
         EnsureIdentitySucceeded(updateResult, "De gebruiker kon niet worden bijgewerkt.");
@@ -137,6 +139,17 @@ public class UserManagementService(
         }
 
         return await MapToManagedUserAsync(user);
+    }
+
+    private async Task UpdateEmailAsync(ApplicationUser user, string email)
+    {
+        var emailResult = await userManager.SetEmailAsync(user, email);
+        EnsureIdentitySucceeded(emailResult, "Het e-mailadres kon niet worden bijgewerkt.");
+
+        var userNameResult = await userManager.SetUserNameAsync(user, email);
+        EnsureIdentitySucceeded(userNameResult, "De gebruikersnaam kon niet worden bijgewerkt.");
+
+        user.EmailConfirmed = true;
     }
 
     public async Task DisableUserAsync(string userId, string actorUserId)
