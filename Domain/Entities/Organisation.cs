@@ -14,4 +14,6 @@ public class Organisation
     public required string KvkNumber { get; set; }
 
     public required OrganisationType OrganisationType { get; set; }
+
+    public bool IsActive { get; set; } = true;
 }
