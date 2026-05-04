@@ -8,11 +8,36 @@
     <h1 class="mb-0">Gebruikers</h1>
 </header>
 
+<form method="get" asp-controller="UserManagement" asp-action="Index" class="mb-4">
+    <label for="search" class="form-label">Zoeken</label>
+    <div class="input-group">
+        <input id="search"
+               name="search"
+               value="@Model.Search"
+               class="form-control"
+               placeholder="Naam, e-mail, rol of organisatie" />
+        <button type="submit" class="btn btn-dark">Zoeken</button>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Search))
+        {
+            <a asp-controller="UserManagement"
+               asp-action="Index"
+               class="btn btn-outline-secondary">
+                Wissen
+            </a>
+        }
+    </div>
+</form>
+
 @if (Model.Users.Count == 0)
 {
     <section aria-labelledby="empty-users-heading">
         <h2 id="empty-users-heading" class="visually-hidden">Geen gebruikers beschikbaar</h2>
-        <p class="text-muted mb-0">Er zijn geen gebruikers beschikbaar.</p>
+        <p class="text-muted mb-0">
+            @(string.IsNullOrWhiteSpace(Model.Search)
+                ? "Er zijn geen gebruikers beschikbaar."
+                : "Er zijn geen gebruikers gevonden die aan uw zoekopdracht voldoen.")
+        </p>
     </section>
 }
 else

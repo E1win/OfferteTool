@@ -24,15 +24,17 @@ public class UserManagementService(
         Roles.Leverancier
     ];
 
-    public async Task<List<ManagedUser>> GetUsersAsync()
+    public async Task<List<ManagedUser>> GetUsersAsync(UserManagementQuery query)
     {
+        ArgumentNullException.ThrowIfNull(query);
+
         var users = await applicationUserRepository.GetAllAsync();
         var managedUsers = new List<ManagedUser>();
 
         foreach (var user in users)
             managedUsers.Add(await MapToManagedUserAsync(user));
 
-        return managedUsers;
+        return ApplySearch(managedUsers, query.Search);
     }
 
     public async Task<ManagedUser> GetUserAsync(string userId)
@@ -305,4 +307,24 @@ public class UserManagementService(
                 """
         };
     }
+
+    private static List<ManagedUser> ApplySearch(List<ManagedUser> users, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return users;
+
+        var normalizedSearch = search.Trim();
+
+        return users
+            .Where(user =>
+                Contains(user.FirstName, normalizedSearch)
+                || Contains(user.LastName, normalizedSearch)
+                || Contains(user.Email, normalizedSearch)
+                || Contains(user.Role, normalizedSearch)
+                || Contains(user.OrganisationName, normalizedSearch))
+            .ToList();
+    }
+
+    private static bool Contains(string? value, string search) =>
+        value?.Contains(search, StringComparison.OrdinalIgnoreCase) == true;
 }
