@@ -115,14 +115,13 @@ public class UserManagementService(
 
         await EnsureBeheerderCanBeChangedAsync(user, currentRole, request.Role, request.IsActive);
 
-        var organisationId = await ValidateOrganisationAssignmentAsync(request.Role, request.OrganisationId);
+        await ValidateExistingOrganisationAssignmentAsync(user, request.Role);
         var email = NormalizeRequiredText(request.Email);
 
         user.UserName = email;
         user.Email = email;
         user.FirstName = NormalizeRequiredText(request.FirstName);
         user.LastName = NormalizeRequiredText(request.LastName);
-        user.OrganisationId = organisationId;
         user.IsActive = request.IsActive;
 
         var updateResult = await userManager.UpdateAsync(user);
@@ -193,6 +192,29 @@ public class UserManagementService(
             throw new BusinessRuleViolationException("De gekozen organisatie past niet bij deze rol.");
 
         return organisation.Id;
+    }
+
+    private async Task ValidateExistingOrganisationAssignmentAsync(ApplicationUser user, string role)
+    {
+        if (!ManageableRoles.Contains(role))
+            throw new BusinessRuleViolationException("De opgegeven rol is ongeldig.");
+
+        if (!user.RequiresOrganisation(role))
+        {
+            if (user.OrganisationId is not null)
+                throw new BusinessRuleViolationException("Een beheerder kan niet aan een organisatie gekoppeld blijven.");
+
+            return;
+        }
+
+        if (user.OrganisationId is null)
+            throw new BusinessRuleViolationException("Deze gebruiker heeft geen organisatie. Maak een nieuwe gebruiker aan met de juiste organisatie.");
+
+        var organisation = await organisationRepository.GetByIdAsync(user.OrganisationId.Value)
+            ?? throw new BusinessRuleViolationException("De gekoppelde organisatie bestaat niet.");
+
+        if (!user.CanAttachToOrganisation(role, organisation.OrganisationType))
+            throw new BusinessRuleViolationException("De bestaande organisatie past niet bij deze rol.");
     }
 
     private async Task EnsureBeheerderCanBeChangedAsync(

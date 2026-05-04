@@ -12,7 +12,10 @@ public class UserManagementPageModelBuilder(IUserManagementService userManagemen
         string? search = null,
         UserFormViewModel? createUser = null,
         bool openCreateUserModal = false,
-        string? errorMessage = null)
+        string? createErrorMessage = null,
+        UserFormViewModel? editUser = null,
+        bool openEditUserModal = false,
+        string? editErrorMessage = null)
     {
         var users = await userManagementService.GetUsersAsync(new UserManagementQuery
         {
@@ -23,7 +26,8 @@ public class UserManagementPageModelBuilder(IUserManagementService userManagemen
         {
             Search = search?.Trim() ?? string.Empty,
             Users = users,
-            CreateUserModal = await CreateUserModalAsync(createUser, openCreateUserModal, errorMessage)
+            CreateUserModal = await CreateUserModalAsync(createUser, openCreateUserModal, createErrorMessage),
+            EditUserModal = await EditUserModalAsync(editUser, openEditUserModal, editErrorMessage)
         };
     }
 
@@ -40,6 +44,27 @@ public class UserManagementPageModelBuilder(IUserManagementService userManagemen
             SubmitButtonText = "Gebruiker aanmaken",
             ErrorMessage = errorMessage,
             ShowOnLoad = showOnLoad,
+            ShowIsActive = false,
+            AllowOrganisationChange = true,
+            Form = await BuildUserFormAsync(form)
+        };
+    }
+
+    private async Task<UserFormModalViewModel> EditUserModalAsync(
+        UserFormViewModel? form,
+        bool showOnLoad,
+        string? errorMessage)
+    {
+        return new UserFormModalViewModel
+        {
+            ModalId = "editUserModal",
+            ModalTitle = "Gebruiker wijzigen",
+            SubmitAction = "Edit",
+            SubmitButtonText = "Wijzigingen opslaan",
+            ErrorMessage = errorMessage,
+            ShowOnLoad = showOnLoad,
+            ShowIsActive = true,
+            AllowOrganisationChange = false,
             Form = await BuildUserFormAsync(form)
         };
     }

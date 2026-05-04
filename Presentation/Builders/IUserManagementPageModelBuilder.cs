@@ -8,5 +8,8 @@ public interface IUserManagementPageModelBuilder
         string? search = null,
         UserFormViewModel? createUser = null,
         bool openCreateUserModal = false,
-        string? errorMessage = null);
+        string? createErrorMessage = null,
+        UserFormViewModel? editUser = null,
+        bool openEditUserModal = false,
+        string? editErrorMessage = null);
 }

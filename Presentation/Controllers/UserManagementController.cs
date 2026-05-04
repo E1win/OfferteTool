@@ -47,7 +47,40 @@ public class UserManagementController(
             return View(nameof(Index), await userManagementPageModelBuilder.BuildIndexAsync(
                 createUser: model,
                 openCreateUserModal: true,
-                errorMessage: ex.Message));
+                createErrorMessage: ex.Message));
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit([Bind(Prefix = "EditUserModal.Form")] UserFormViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(nameof(Index), await userManagementPageModelBuilder.BuildIndexAsync(
+                editUser: model,
+                openEditUserModal: true));
+
+        try
+        {
+            await userManagementService.UpdateUserAsync(new UpdateUserRequest
+            {
+                UserId = model.UserId ?? string.Empty,
+                Email = model.Email,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Role = model.Role,
+                IsActive = model.IsActive
+            }, UserId);
+
+            TempData["UserManagementSuccess"] = "De gebruiker is bijgewerkt.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessRuleViolationException ex)
+        {
+            return View(nameof(Index), await userManagementPageModelBuilder.BuildIndexAsync(
+                editUser: model,
+                openEditUserModal: true,
+                editErrorMessage: ex.Message));
         }
     }
 }

@@ -5,6 +5,8 @@ namespace Presentation.Models.UserManagement;
 
 public class UserFormViewModel
 {
+    public string? UserId { get; set; }
+
     [Required(ErrorMessage = "Vul een e-mailadres in.")]
     [EmailAddress(ErrorMessage = "Vul een geldig e-mailadres in.")]
     [Display(Name = "E-mailadres")]
@@ -24,6 +26,11 @@ public class UserFormViewModel
 
     [Display(Name = "Organisatie")]
     public Guid? OrganisationId { get; set; }
+
+    public string? OrganisationName { get; set; }
+
+    [Display(Name = "Actief")]
+    public bool IsActive { get; set; } = true;
 
     public List<SelectListItem> RoleOptions { get; set; } = [];
     public List<SelectListItem> OrganisationOptions { get; set; } = [];

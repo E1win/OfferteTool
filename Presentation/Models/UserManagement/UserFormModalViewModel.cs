@@ -9,5 +9,7 @@ public class UserFormModalViewModel
     public string? ErrorMessage { get; set; }
     public bool ShowOnLoad { get; set; }
     public string? UserId { get; set; }
+    public bool ShowIsActive { get; set; }
+    public bool AllowOrganisationChange { get; set; } = true;
     public UserFormViewModel Form { get; set; } = new();
 }

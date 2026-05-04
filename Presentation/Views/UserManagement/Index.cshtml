@@ -76,7 +76,19 @@ else
                 <tbody>
                     @foreach (var user in Model.Users)
                     {
-                        <tr>
+                        <tr class="user-management-row"
+                            role="button"
+                            tabindex="0"
+                            title="Gebruiker wijzigen"
+                            aria-label="Gebruiker @($"{user.FirstName} {user.LastName}".Trim()) wijzigen"
+                            data-user-id="@user.Id"
+                            data-user-email="@user.Email"
+                            data-user-first-name="@user.FirstName"
+                            data-user-last-name="@user.LastName"
+                            data-user-role="@user.Role"
+                            data-user-organisation-id="@user.OrganisationId"
+                            data-user-organisation-name="@user.OrganisationName"
+                            data-user-is-active="@user.IsActive.ToString().ToLowerInvariant()">
                             <th scope="row" class="fw-normal">
                                 @($"{user.FirstName} {user.LastName}".Trim())
                             </th>
@@ -108,15 +120,65 @@ else
 }
 
 <partial name="_UserFormModal" for="CreateUserModal" />
+<partial name="_UserFormModal" for="EditUserModal" />
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
-    @if (Model.CreateUserModal.ShowOnLoad)
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const editModalElement = document.getElementById("@Model.EditUserModal.ModalId");
+            const editModal = editModalElement ? bootstrap.Modal.getOrCreateInstance(editModalElement) : null;
+
+            const setValue = (name, value) => {
+                const field = editModalElement?.querySelector(`[name="${name}"]`);
+                if (field) {
+                    field.value = value ?? "";
+                }
+            };
+
+            const setChecked = (name, value) => {
+                const field = editModalElement?.querySelector(`[name="${name}"]`);
+                if (field) {
+                    field.checked = value === "true";
+                }
+            };
+
+            const openEditModal = (row) => {
+                if (!editModalElement || !editModal) {
+                    return;
+                }
+
+                setValue("EditUserModal.Form.UserId", row.dataset.userId);
+                setValue("EditUserModal.Form.FirstName", row.dataset.userFirstName);
+                setValue("EditUserModal.Form.LastName", row.dataset.userLastName);
+                setValue("EditUserModal.Form.Email", row.dataset.userEmail);
+                setValue("EditUserModal.Form.Role", row.dataset.userRole);
+                setValue("EditUserModal.Form.OrganisationId", row.dataset.userOrganisationId);
+                setValue("EditUserModal.Form.OrganisationName", row.dataset.userOrganisationName || "Geen organisatie");
+                setChecked("EditUserModal.Form.IsActive", row.dataset.userIsActive);
+
+                editModal.show();
+            };
+
+            document.querySelectorAll(".user-management-row").forEach((row) => {
+                row.addEventListener("click", () => openEditModal(row));
+                row.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openEditModal(row);
+                    }
+                });
+            });
+        });
+    </script>
+
+    @if (Model.CreateUserModal.ShowOnLoad || Model.EditUserModal.ShowOnLoad)
     {
         <script>
             document.addEventListener("DOMContentLoaded", function () {
-                const modalElement = document.getElementById("@Model.CreateUserModal.ModalId");
+                const modalId = "@(Model.EditUserModal.ShowOnLoad ? Model.EditUserModal.ModalId : Model.CreateUserModal.ModalId)";
+                const modalElement = document.getElementById(modalId);
                 if (modalElement) {
                     bootstrap.Modal.getOrCreateInstance(modalElement).show();
                 }

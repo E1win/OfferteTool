@@ -5,6 +5,7 @@
         <div class="modal-content">
             <form asp-controller="UserManagement" asp-action="@Model.SubmitAction" asp-route-id="@Model.UserId" method="post">
                 @Html.AntiForgeryToken()
+                <input asp-for="Form.UserId" type="hidden" />
 
                 <div class="modal-header">
                     <h2 class="modal-title fs-5" id="@(Model.ModalId)Label">@Model.ModalTitle</h2>
@@ -56,13 +57,32 @@
                             <span asp-validation-for="Form.Role" class="text-danger" aria-live="polite"></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="Form.OrganisationId" class="form-label"></label>
-                            <select asp-for="Form.OrganisationId" asp-items="Model.Form.OrganisationOptions" class="form-select">
-                                <option value="">Geen organisatie</option>
-                            </select>
-                            <span asp-validation-for="Form.OrganisationId" class="text-danger" aria-live="polite"></span>
-                        </div>
+                        @if (Model.AllowOrganisationChange)
+                        {
+                            <div class="mb-3">
+                                <label asp-for="Form.OrganisationId" class="form-label"></label>
+                                <select asp-for="Form.OrganisationId" asp-items="Model.Form.OrganisationOptions" class="form-select">
+                                    <option value="">Geen organisatie</option>
+                                </select>
+                                <span asp-validation-for="Form.OrganisationId" class="text-danger" aria-live="polite"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-3">
+                                <label asp-for="Form.OrganisationId" class="form-label"></label>
+                                <input asp-for="Form.OrganisationName" class="form-control" readonly value="@(Model.Form.OrganisationName ?? "Geen organisatie")" />
+                                <input asp-for="Form.OrganisationId" type="hidden" />
+                            </div>
+                        }
+
+                        @if (Model.ShowIsActive)
+                        {
+                            <div class="form-check">
+                                <input asp-for="Form.IsActive" class="form-check-input" />
+                                <label asp-for="Form.IsActive" class="form-check-label"></label>
+                            </div>
+                        }
                     </fieldset>
                 </div>
 
