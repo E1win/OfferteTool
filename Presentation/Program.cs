@@ -26,7 +26,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+{
+    // Currently set to false, because accounts are all created by administrator
+    options.SignIn.RequireConfirmedAccount = false;
+})
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>();
 
@@ -53,6 +57,11 @@ builder.Services.ConfigureApplicationCookie(options =>
     // Set expiration to 4 hours with sliding expiration, so users won't be logged out in the middle of filling out a tender form
     options.ExpireTimeSpan = TimeSpan.FromHours(4);
     options.SlidingExpiration = true;
+
+    // Set secure cookie settings
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 
     // Return JSON responses for API requests instead of redirecting to login or access denied pages
     options.Events.OnRedirectToLogin = context =>
