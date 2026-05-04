@@ -129,6 +129,7 @@ builder.Services.AddScoped<ITenderPageModelBuilder, TenderPageModelBuilder>();
 builder.Services.AddScoped<ITenderComparisonPageModelBuilder, TenderComparisonPageModelBuilder>();
 builder.Services.AddScoped<ITenderReviewPageModelBuilder, TenderReviewPageModelBuilder>();
 builder.Services.AddScoped<IUserManagementPageModelBuilder, UserManagementPageModelBuilder>();
+builder.Services.AddScoped<IOrganisationManagementPageModelBuilder, OrganisationManagementPageModelBuilder>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 
 builder.Services.AddControllersWithViews(options =>
