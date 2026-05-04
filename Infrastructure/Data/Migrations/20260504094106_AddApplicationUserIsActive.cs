@@ -15,7 +15,7 @@ namespace Infrastructure.Data.Migrations
                 table: "AspNetUsers",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: true);
         }
 
         /// <inheritdoc />
