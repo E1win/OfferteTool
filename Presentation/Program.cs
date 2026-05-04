@@ -106,6 +106,7 @@ builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>(
 builder.Services.AddScoped<ITenderSubmissionRepository, TenderSubmissionRepository>();
 builder.Services.AddScoped<ITenderSubmissionReviewRepository, TenderSubmissionReviewRepository>();
 builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
+builder.Services.AddScoped<IOrganisationRepository, OrganisationRepository>();
 builder.Services.Configure<TenderSubmissionEncryptionOptions>(
     builder.Configuration.GetSection(TenderSubmissionEncryptionOptions.SectionName));
 
