@@ -45,6 +45,30 @@ public class UserManagementService(
         return await MapToManagedUserAsync(user);
     }
 
+    public async Task<UserManagementFormOptions> GetFormOptionsAsync()
+    {
+        var organisations = await organisationRepository.GetAllAsync();
+
+        return new UserManagementFormOptions
+        {
+            Roles = ManageableRoles
+                .Select(role => new UserRoleOption
+                {
+                    Value = role,
+                    Label = role
+                })
+                .ToList(),
+            Organisations = organisations
+                .Select(organisation => new UserOrganisationOption
+                {
+                    Id = organisation.Id,
+                    Name = organisation.Name,
+                    OrganisationType = organisation.OrganisationType
+                })
+                .ToList()
+        };
+    }
+
     public async Task<CreateUserResult> CreateUserAsync(CreateUserRequest request, string actorUserId)
     {
         await EnsureActorIsBeheerderAsync(actorUserId);

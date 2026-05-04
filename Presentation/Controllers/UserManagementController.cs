@@ -1,26 +1,53 @@
 using Application.Interfaces.Services;
 using Application.Models.UserManagement;
 using Domain.Constants;
+using Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Presentation.Builders;
 using Presentation.Models.UserManagement;
 
 namespace Presentation.Controllers;
 
 [Authorize(Roles = Roles.Beheerder)]
-public class UserManagementController(IUserManagementService userManagementService) : AuthenticatedControllerBase
+public class UserManagementController(
+    IUserManagementService userManagementService,
+    IUserManagementPageModelBuilder userManagementPageModelBuilder) : AuthenticatedControllerBase
 {
     public async Task<IActionResult> Index(string? search)
     {
-        var users = await userManagementService.GetUsersAsync(new UserManagementQuery
-        {
-            Search = search
-        });
+        return View(await userManagementPageModelBuilder.BuildIndexAsync(search));
+    }
 
-        return View(new UserManagementIndexViewModel
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind(Prefix = "CreateUserModal.Form")] UserFormViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(nameof(Index), await userManagementPageModelBuilder.BuildIndexAsync(
+                createUser: model,
+                openCreateUserModal: true));
+
+        try
         {
-            Search = search?.Trim() ?? string.Empty,
-            Users = users
-        });
+            await userManagementService.CreateUserAsync(new CreateUserRequest
+            {
+                Email = model.Email,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Role = model.Role,
+                OrganisationId = model.OrganisationId
+            }, UserId);
+
+            TempData["UserManagementSuccess"] = "De gebruiker is aangemaakt en heeft een e-mail met inloggegevens ontvangen.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessRuleViolationException ex)
+        {
+            return View(nameof(Index), await userManagementPageModelBuilder.BuildIndexAsync(
+                createUser: model,
+                openCreateUserModal: true,
+                errorMessage: ex.Message));
+        }
     }
 }

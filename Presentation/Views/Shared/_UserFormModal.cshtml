@@ -1,0 +1,76 @@
+@model UserFormModalViewModel
+
+<div class="modal fade" id="@Model.ModalId" tabindex="-1" aria-labelledby="@(Model.ModalId)Label" aria-describedby="@(Model.ModalId)Description" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="UserManagement" asp-action="@Model.SubmitAction" asp-route-id="@Model.UserId" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="@(Model.ModalId)Label">@Model.ModalTitle</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p id="@(Model.ModalId)Description" class="visually-hidden">
+                        Vul de gegevens van de gebruiker in en kies daarna @Model.SubmitButtonText.ToLowerInvariant().
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert" aria-live="assertive">
+                            @Model.ErrorMessage
+                        </div>
+                    }
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert" aria-live="assertive"></div>
+
+                    <fieldset>
+                        <legend class="visually-hidden">@Model.ModalTitle</legend>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Form.FirstName" class="form-label"></label>
+                                <input asp-for="Form.FirstName" class="form-control" autocomplete="given-name" />
+                                <span asp-validation-for="Form.FirstName" class="text-danger" aria-live="polite"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Form.LastName" class="form-label"></label>
+                                <input asp-for="Form.LastName" class="form-control" autocomplete="family-name" />
+                                <span asp-validation-for="Form.LastName" class="text-danger" aria-live="polite"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Form.Email" class="form-label"></label>
+                            <input asp-for="Form.Email" class="form-control" autocomplete="email" />
+                            <span asp-validation-for="Form.Email" class="text-danger" aria-live="polite"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Form.Role" class="form-label"></label>
+                            <select asp-for="Form.Role" asp-items="Model.Form.RoleOptions" class="form-select">
+                                <option value="">Kies een rol</option>
+                            </select>
+                            <span asp-validation-for="Form.Role" class="text-danger" aria-live="polite"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Form.OrganisationId" class="form-label"></label>
+                            <select asp-for="Form.OrganisationId" asp-items="Model.Form.OrganisationOptions" class="form-select">
+                                <option value="">Geen organisatie</option>
+                            </select>
+                            <span asp-validation-for="Form.OrganisationId" class="text-danger" aria-live="polite"></span>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuleren</button>
+                    <button type="submit" class="btn btn-dark">@Model.SubmitButtonText</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

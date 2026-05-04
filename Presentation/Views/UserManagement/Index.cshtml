@@ -6,7 +6,23 @@
 
 <header class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="mb-0">Gebruikers</h1>
+
+    <button type="button"
+            class="btn btn-dark"
+            aria-controls="@Model.CreateUserModal.ModalId"
+            aria-haspopup="dialog"
+            data-bs-toggle="modal"
+            data-bs-target="#@Model.CreateUserModal.ModalId">
+        Nieuwe gebruiker
+    </button>
 </header>
+
+@if (TempData["UserManagementSuccess"] is string successMessage)
+{
+    <div class="alert alert-success" role="status">
+        @successMessage
+    </div>
+}
 
 <form method="get" asp-controller="UserManagement" asp-action="Index" class="mb-4">
     <label for="search" class="form-label">Zoeken</label>
@@ -89,4 +105,22 @@ else
             </table>
         </div>
     </section>
+}
+
+<partial name="_UserFormModal" for="CreateUserModal" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    @if (Model.CreateUserModal.ShowOnLoad)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const modalElement = document.getElementById("@Model.CreateUserModal.ModalId");
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
 }
