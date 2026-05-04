@@ -9,6 +9,7 @@ namespace Presentation.Areas.Identity.Pages.Account;
 
 public class LoginModel(
     SignInManager<ApplicationUser> signInManager,
+    UserManager<ApplicationUser> userManager,
     ILogger<LoginModel> logger) : PageModel
 {
     [BindProperty]
@@ -51,6 +52,15 @@ public class LoginModel(
 
         if (result.Succeeded)
         {
+            var user = await userManager.FindByEmailAsync(Input.Email);
+
+            if (user is null || !user.IsActive)
+            {
+                await signInManager.SignOutAsync();
+                ModelState.AddModelError(string.Empty, "Ongeldige inlogpoging.");
+                return Page();
+            }
+
             logger.LogInformation("User logged in.");
             return LocalRedirect(ReturnUrl);
         }
