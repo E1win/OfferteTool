@@ -27,6 +27,12 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Tender" asp-action="Index">Offertetrajecten</a>
                             </li>
                         }
+                        @if (User.IsInRole(Domain.Constants.Roles.Beheerder))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="UserManagement" asp-action="Index">Gebruikers</a>
+                            </li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>

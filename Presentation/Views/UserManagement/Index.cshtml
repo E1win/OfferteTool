@@ -1,0 +1,67 @@
+@model UserManagementIndexViewModel
+
+@{
+    ViewData["Title"] = "Gebruikers";
+}
+
+<header class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Gebruikers</h1>
+</header>
+
+@if (Model.Users.Count == 0)
+{
+    <section aria-labelledby="empty-users-heading">
+        <h2 id="empty-users-heading" class="visually-hidden">Geen gebruikers beschikbaar</h2>
+        <p class="text-muted mb-0">Er zijn geen gebruikers beschikbaar.</p>
+    </section>
+}
+else
+{
+    <section aria-labelledby="users-table-heading">
+        <h2 id="users-table-heading" class="visually-hidden">Gebruikersoverzicht</h2>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <caption class="visually-hidden">Overzicht van gebruikers</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Naam</th>
+                        <th scope="col">E-mailadres</th>
+                        <th scope="col">Rol</th>
+                        <th scope="col">Organisatie</th>
+                        <th scope="col">Actief</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <th scope="row" class="fw-normal">
+                                @($"{user.FirstName} {user.LastName}".Trim())
+                            </th>
+                            <td>@user.Email</td>
+                            <td>@user.Role</td>
+                            <td>@(user.OrganisationName ?? "-")</td>
+                            <td>
+                                <span role="img" aria-label="@(user.IsActive ? "Actief" : "Inactief")">
+                                    @if (user.IsActive)
+                                    {
+                                        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M22 5L10.0555 16.6321C9.81351 16.8677 9.48537 17 9.14323 17C8.80108 17 8.47294 16.8677 8.23097 16.6321L2 10.5641" stroke="#84CB7C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M20 20L4 4M20 4L4 20" stroke="#E12E2E" stroke-width="3" stroke-linecap="round" />
+                                        </svg>
+                                    }
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
