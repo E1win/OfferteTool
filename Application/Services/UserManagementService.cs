@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
+using Application.Models.Email;
 using Application.Models.UserManagement;
 using Domain.Constants;
 using Domain.Entities;
@@ -12,6 +13,7 @@ namespace Application.Services;
 public class UserManagementService(
     IApplicationUserRepository applicationUserRepository,
     IOrganisationRepository organisationRepository,
+    IEmailSender emailSender,
     UserManager<ApplicationUser> userManager) : IUserManagementService
 {
     private static readonly string[] ManageableRoles =
@@ -65,10 +67,11 @@ public class UserManagementService(
         var roleResult = await userManager.AddToRoleAsync(user, request.Role);
         EnsureIdentitySucceeded(roleResult, "De rol kon niet aan de gebruiker worden gekoppeld.");
 
+        await emailSender.SendAsync(CreateAccountCreatedEmail(user, password));
+
         return new CreateUserResult
         {
-            User = await MapToManagedUserAsync(user),
-            InitialPassword = password
+            User = await MapToManagedUserAsync(user)
         };
     }
 
@@ -263,5 +266,43 @@ public class UserManagementService(
         throw new BusinessRuleViolationException(errors.Count == 0
             ? fallbackMessage
             : string.Join(" ", errors));
+    }
+
+    private static EmailMessage CreateAccountCreatedEmail(ApplicationUser user, string password)
+    {
+        var name = string.IsNullOrWhiteSpace(user.FirstName)
+            ? "gebruiker"
+            : user.FirstName;
+
+        return new EmailMessage
+        {
+            To = user.Email ?? throw new BusinessRuleViolationException("De gebruiker heeft geen e-mailadres."),
+            Subject = "Er is een account voor u aangemaakt in OfferteTool",
+            TextBody = $"""
+                Beste {name},
+
+                Er is een account voor u aangemaakt in OfferteTool.
+
+                U kunt inloggen met:
+                E-mailadres: {user.Email}
+                Wachtwoord: {password}
+
+                Er wordt aangeraden om het wachtwoord z.s.m. na het inloggen via uw profiel te wijzigen. Bewaar dit bericht zorgvuldig en deel uw wachtwoord niet met anderen.
+
+                Met vriendelijke groet,
+                OfferteTool
+                """,
+            HtmlBody = $"""
+                <p>Beste {System.Net.WebUtility.HtmlEncode(name)},</p>
+                <p>Er is een account voor u aangemaakt in OfferteTool.</p>
+                <p>
+                    U kunt inloggen met:<br>
+                    E-mailadres: {System.Net.WebUtility.HtmlEncode(user.Email)}<br>
+                    Wachtwoord: {System.Net.WebUtility.HtmlEncode(password)}
+                </p>
+                <p>Er wordt aangeraden om het wachtwoord z.s.m. na het inloggen via uw profiel te wijzigen. Bewaar dit bericht zorgvuldig en deel uw wachtwoord niet met anderen.</p>
+                <p>Met vriendelijke groet,<br>OfferteTool</p>
+                """
+        };
     }
 }
