@@ -21,14 +21,10 @@ public class SmtpEmailSender(IOptions<SmtpEmailOptions> options) : IEmailSender
             From = new MailAddress(smtpOptions.FromAddress, smtpOptions.FromName),
             Subject = message.Subject,
             Body = message.HtmlBody ?? message.TextBody,
-            IsBodyHtml = !string.IsNullOrWhiteSpace(message.HtmlBody)
+            IsBodyHtml = true
         };
 
         mailMessage.To.Add(message.To);
-
-        // For accessibility/compatibility reasons, add plain text alternative view if HTML body is provided
-        if (!string.IsNullOrWhiteSpace(message.HtmlBody))
-            mailMessage.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(message.TextBody, null, "text/plain"));
 
         using var smtpClient = new SmtpClient(smtpOptions.Host, smtpOptions.Port)
         {
