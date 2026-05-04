@@ -10,8 +10,18 @@ public class ApplicationUserRepository(
     AppDbContext dbContext,
     UserManager<ApplicationUser> userManager) : IApplicationUserRepository
 {
+    public async Task<List<ApplicationUser>> GetAllAsync() =>
+        await dbContext.Users
+            .Include(user => user.Organisation)
+            .OrderBy(user => user.LastName)
+            .ThenBy(user => user.FirstName)
+            .ThenBy(user => user.Email)
+            .ToListAsync();
+
     public async Task<ApplicationUser?> GetByIdAsync(string userId) =>
-        await userManager.FindByIdAsync(userId);
+        await dbContext.Users
+            .Include(user => user.Organisation)
+            .FirstOrDefaultAsync(user => user.Id == userId);
 
     public async Task<List<ApplicationUser>> GetByOrganisationAsync(Guid organisationId) =>
         await dbContext.Users

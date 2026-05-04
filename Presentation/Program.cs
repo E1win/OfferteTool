@@ -4,6 +4,7 @@ using Application.Services;
 using Domain.Entities;
 using Infrastructure.Data;
 using Infrastructure.Configuration;
+using Infrastructure.Email;
 using Infrastructure.Repositories;
 using Infrastructure.Security;
 using Microsoft.AspNetCore.Antiforgery;
@@ -106,8 +107,11 @@ builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>(
 builder.Services.AddScoped<ITenderSubmissionRepository, TenderSubmissionRepository>();
 builder.Services.AddScoped<ITenderSubmissionReviewRepository, TenderSubmissionReviewRepository>();
 builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
+builder.Services.AddScoped<IOrganisationRepository, OrganisationRepository>();
 builder.Services.Configure<TenderSubmissionEncryptionOptions>(
     builder.Configuration.GetSection(TenderSubmissionEncryptionOptions.SectionName));
+builder.Services.Configure<SmtpEmailOptions>(
+    builder.Configuration.GetSection(SmtpEmailOptions.SectionName));
 
 builder.Services.AddScoped<ITenderService, TenderService>();
 builder.Services.AddScoped<ITenderComparisonService, TenderComparisonService>();
@@ -116,11 +120,14 @@ builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
 builder.Services.AddScoped<ITenderReviewerService, TenderReviewerService>();
 builder.Services.AddScoped<ITenderReviewService, TenderReviewService>();
 builder.Services.AddScoped<ITenderSubmissionService, TenderSubmissionService>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<ITenderSubmissionEncryptionService, AesTenderSubmissionEncryptionService>();
 builder.Services.AddSingleton<TenderAnswerPayloadSerializer>();
 builder.Services.AddScoped<ITenderPageModelBuilder, TenderPageModelBuilder>();
 builder.Services.AddScoped<ITenderComparisonPageModelBuilder, TenderComparisonPageModelBuilder>();
 builder.Services.AddScoped<ITenderReviewPageModelBuilder, TenderReviewPageModelBuilder>();
+builder.Services.AddScoped<IUserManagementPageModelBuilder, UserManagementPageModelBuilder>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 
 builder.Services.AddControllersWithViews(options =>

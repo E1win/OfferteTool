@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Presentation.Models.Shared;
 using System.Diagnostics;
+using Domain.Constants;
 
 namespace Presentation.Controllers
 {
@@ -10,6 +11,9 @@ namespace Presentation.Controllers
         {
             if (User.Identity?.IsAuthenticated == true)
             {
+                if (User.IsInRole(Roles.Beheerder))
+                    return RedirectToAction("Index", "UserManagement");
+
                 return RedirectToAction("Index", "Tender");
             }
 
