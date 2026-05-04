@@ -1,0 +1,65 @@
+@page
+@model Presentation.Areas.Identity.Pages.Account.LoginModel
+
+@{
+    ViewData["Title"] = "Inloggen";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <h1 class="mb-4">Inloggen</h1>
+
+        <form id="account" method="post" asp-route-returnUrl="@Model.ReturnUrl">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="naam@voorbeeld.nl" />
+                <label asp-for="Input.Email">E-mailadres</label>
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label">Wachtwoord</label>
+                <div class="input-group">
+                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Wachtwoord" type="password" />
+                    <button class="btn btn-outline-secondary" type="button" id="toggle-password" aria-controls="Input_Password" aria-label="Wachtwoord tonen">
+                        Tonen
+                    </button>
+                </div>
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            <div class="checkbox mb-3">
+                <label asp-for="Input.RememberMe" class="form-label">
+                    <input class="form-check-input" asp-for="Input.RememberMe" />
+                    Onthoud mij
+                </label>
+            </div>
+
+            <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Inloggen</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const passwordInput = document.getElementById("Input_Password");
+            const toggleButton = document.getElementById("toggle-password");
+
+            if (!passwordInput || !toggleButton) {
+                return;
+            }
+
+            toggleButton.addEventListener("click", () => {
+                const shouldShowPassword = passwordInput.type === "password";
+                passwordInput.type = shouldShowPassword ? "text" : "password";
+                toggleButton.textContent = shouldShowPassword ? "Verbergen" : "Tonen";
+                toggleButton.setAttribute(
+                    "aria-label",
+                    shouldShowPassword ? "Wachtwoord verbergen" : "Wachtwoord tonen");
+            });
+        })();
+    </script>
+}

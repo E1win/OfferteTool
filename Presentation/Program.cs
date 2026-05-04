@@ -30,8 +30,31 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.R
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>();
 
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    // Password options
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequiredUniqueChars = 1;
+
+    // User options
+    options.User.RequireUniqueEmail = true;
+
+    // Account lockout options
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+});
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    // Set expiration to 4 hours with sliding expiration, so users won't be logged out in the middle of filling out a tender form
+    options.ExpireTimeSpan = TimeSpan.FromHours(4);
+    options.SlidingExpiration = true;
+
+    // Return JSON responses for API requests instead of redirecting to login or access denied pages
     options.Events.OnRedirectToLogin = context =>
     {
         if (!context.Request.Path.StartsWithSegments("/api"))
