@@ -115,7 +115,7 @@ public class UserManagementService(
 
         await EnsureBeheerderCanBeChangedAsync(user, currentRole, request.Role, request.IsActive);
 
-        await ValidateExistingOrganisationAssignmentAsync(user, request.Role);
+        await ValidateExistingOrganisationAssignmentAsync(user, request.Role, request.IsActive);
         var email = NormalizeRequiredText(request.Email);
         var emailChanged = !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase);
 
@@ -201,13 +201,16 @@ public class UserManagementService(
         var organisation = await organisationRepository.GetByIdAsync(organisationId.Value)
             ?? throw new BusinessRuleViolationException("De gekozen organisatie bestaat niet.");
 
+        if (!organisation.IsActive)
+            throw new BusinessRuleViolationException("Kies een actieve organisatie voor deze gebruiker.");
+
         if (!user.CanAttachToOrganisation(role, organisation.OrganisationType))
             throw new BusinessRuleViolationException("De gekozen organisatie past niet bij deze rol.");
 
         return organisation.Id;
     }
 
-    private async Task ValidateExistingOrganisationAssignmentAsync(ApplicationUser user, string role)
+    private async Task ValidateExistingOrganisationAssignmentAsync(ApplicationUser user, string role, bool isActive)
     {
         if (!ManageableRoles.Contains(role))
             throw new BusinessRuleViolationException("De opgegeven rol is ongeldig.");
@@ -225,6 +228,9 @@ public class UserManagementService(
 
         var organisation = await organisationRepository.GetByIdAsync(user.OrganisationId.Value)
             ?? throw new BusinessRuleViolationException("De gekoppelde organisatie bestaat niet.");
+
+        if (isActive && !organisation.IsActive)
+            throw new BusinessRuleViolationException("Deze gebruiker kan niet worden geactiveerd zolang de gekoppelde organisatie inactief is.");
 
         if (!user.CanAttachToOrganisation(role, organisation.OrganisationType))
             throw new BusinessRuleViolationException("De bestaande organisatie past niet bij deze rol.");

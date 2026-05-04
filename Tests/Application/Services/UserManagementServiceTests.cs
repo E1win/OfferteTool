@@ -139,6 +139,34 @@ public class UserManagementServiceTests
     }
 
     [Fact]
+    public async Task CreateUserAsync_WhenOrganisationIsInactive_ThrowsBusinessRuleViolationException()
+    {
+        // Arrange
+        var client = CreateOrganisation("Gemeente Utrecht", OrganisationType.Client, isActive: false);
+        SetupActiveBeheerderActor();
+        organisationRepository
+            .Setup(repository => repository.GetByIdAsync(client.Id))
+            .ReturnsAsync(client);
+
+        var service = CreateService();
+        var request = new CreateUserRequest
+        {
+            Email = "inkoper@example.com",
+            FirstName = "Iris",
+            LastName = "Inkoper",
+            Role = Roles.Inkoper,
+            OrganisationId = client.Id
+        };
+
+        // Act
+        await Assert.ThrowsAsync<BusinessRuleViolationException>(() => service.CreateUserAsync(request, ActorUserId));
+
+        // Assert
+        userManager.Verify(manager => manager.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never);
+        emailSender.Verify(sender => sender.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task CreateUserAsync_WhenValid_CreatesIdentityUserAssignsRoleAndSendsEmail()
     {
         // Arrange
@@ -228,6 +256,41 @@ public class UserManagementServiceTests
         userManager.Verify(manager => manager.SetEmailAsync(user, "new@example.com"), Times.Once);
         userManager.Verify(manager => manager.SetUserNameAsync(user, "new@example.com"), Times.Once);
         userManager.Verify(manager => manager.UpdateAsync(user), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_WhenLinkedOrganisationIsInactiveAndUserIsActivated_ThrowsBusinessRuleViolationException()
+    {
+        // Arrange
+        var client = CreateOrganisation("Gemeente Utrecht", OrganisationType.Client, isActive: false);
+        var user = CreateUser("user-1", "user@example.com", "Inactive", "User", client, isActive: false);
+
+        SetupActiveBeheerderActor();
+        SetupRole(user, Roles.Inkoper);
+        applicationUserRepository
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        organisationRepository
+            .Setup(repository => repository.GetByIdAsync(client.Id))
+            .ReturnsAsync(client);
+
+        var service = CreateService();
+        var request = new UpdateUserRequest
+        {
+            UserId = user.Id,
+            Email = user.Email!,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Role = Roles.Inkoper,
+            IsActive = true
+        };
+
+        // Act
+        await Assert.ThrowsAsync<BusinessRuleViolationException>(() => service.UpdateUserAsync(request, ActorUserId));
+
+        // Assert
+        Assert.False(user.IsActive);
+        userManager.Verify(manager => manager.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Never);
     }
 
     [Fact]
@@ -390,14 +453,15 @@ public class UserManagementServiceTests
         };
     }
 
-    private static Organisation CreateOrganisation(string name, OrganisationType organisationType)
+    private static Organisation CreateOrganisation(string name, OrganisationType organisationType, bool isActive = true)
     {
         return new Organisation
         {
             Id = Guid.NewGuid(),
             Name = name,
             KvkNumber = "12345678",
-            OrganisationType = organisationType
+            OrganisationType = organisationType,
+            IsActive = isActive
         };
     }
 }

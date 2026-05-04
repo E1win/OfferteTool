@@ -121,6 +121,7 @@ builder.Services.AddScoped<ITenderReviewerService, TenderReviewerService>();
 builder.Services.AddScoped<ITenderReviewService, TenderReviewService>();
 builder.Services.AddScoped<ITenderSubmissionService, TenderSubmissionService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<IOrganisationManagementService, OrganisationManagementService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<ITenderSubmissionEncryptionService, AesTenderSubmissionEncryptionService>();
 builder.Services.AddSingleton<TenderAnswerPayloadSerializer>();
@@ -128,6 +129,7 @@ builder.Services.AddScoped<ITenderPageModelBuilder, TenderPageModelBuilder>();
 builder.Services.AddScoped<ITenderComparisonPageModelBuilder, TenderComparisonPageModelBuilder>();
 builder.Services.AddScoped<ITenderReviewPageModelBuilder, TenderReviewPageModelBuilder>();
 builder.Services.AddScoped<IUserManagementPageModelBuilder, UserManagementPageModelBuilder>();
+builder.Services.AddScoped<IOrganisationManagementPageModelBuilder, OrganisationManagementPageModelBuilder>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 
 builder.Services.AddControllersWithViews(options =>

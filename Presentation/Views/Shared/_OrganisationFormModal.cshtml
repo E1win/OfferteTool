@@ -1,0 +1,71 @@
+@model OrganisationFormModalViewModel
+
+<div class="modal fade" id="@Model.ModalId" tabindex="-1" aria-labelledby="@(Model.ModalId)Label" aria-describedby="@(Model.ModalId)Description" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="OrganisationManagement" asp-action="@Model.SubmitAction" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="Form.Id" type="hidden" />
+
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="@(Model.ModalId)Label">@Model.ModalTitle</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p id="@(Model.ModalId)Description" class="visually-hidden">
+                        Vul de gegevens van de organisatie in en kies daarna @Model.SubmitButtonText.ToLowerInvariant().
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert" aria-live="assertive">
+                            @Model.ErrorMessage
+                        </div>
+                    }
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert" aria-live="assertive"></div>
+
+                    <fieldset>
+                        <legend class="visually-hidden">@Model.ModalTitle</legend>
+
+                        <div class="mb-3">
+                            <label asp-for="Form.Name" class="form-label"></label>
+                            <input asp-for="Form.Name" class="form-control" autocomplete="organization" />
+                            <span asp-validation-for="Form.Name" class="text-danger" aria-live="polite"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Form.KvkNumber" class="form-label"></label>
+                                <input asp-for="Form.KvkNumber" class="form-control" inputmode="numeric" maxlength="8" />
+                                <span asp-validation-for="Form.KvkNumber" class="text-danger" aria-live="polite"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Form.OrganisationType" class="form-label"></label>
+                                <select asp-for="Form.OrganisationType" asp-items="Model.Form.OrganisationTypeOptions" class="form-select">
+                                    <option value="">Kies een type</option>
+                                </select>
+                                <span asp-validation-for="Form.OrganisationType" class="text-danger" aria-live="polite"></span>
+                            </div>
+                        </div>
+
+                        @if (Model.ShowIsActive)
+                        {
+                            <div class="form-check">
+                                <input asp-for="Form.IsActive" class="form-check-input" />
+                                <label asp-for="Form.IsActive" class="form-check-label"></label>
+                            </div>
+                        }
+                    </fieldset>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuleren</button>
+                    <button type="submit" class="btn btn-dark">@Model.SubmitButtonText</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
