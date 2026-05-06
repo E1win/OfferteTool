@@ -22,6 +22,8 @@ public interface ITenderPageModelBuilder
         string? reviewerErrorMessage = null,
         string? actionErrorMessage = null);
 
+    Task<TenderChangeLogPageViewModel> BuildChangeLogAsync(Guid id, string userId);
+
     Task<TenderSubmissionPageViewModel> BuildSubmissionAsync(
         Guid id,
         string userId,

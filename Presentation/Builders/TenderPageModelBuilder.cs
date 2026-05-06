@@ -14,7 +14,8 @@ public class TenderPageModelBuilder(
     ITenderService tenderService,
     ITenderQuestionService tenderQuestionService,
     ITenderReviewerService tenderReviewerService,
-    ITenderSubmissionService tenderSubmissionService) : ITenderPageModelBuilder
+    ITenderSubmissionService tenderSubmissionService,
+    ITenderChangeLogService tenderChangeLogService) : ITenderPageModelBuilder
 {
     public async Task<TenderIndexViewModel> BuildIndexAsync(
         string userId,
@@ -53,6 +54,7 @@ public class TenderPageModelBuilder(
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
         var canReviewTender = await tenderReviewerService.CanReviewTenderAsync(id, userId);
         var canEditTender = canManageTender && tender.CanBeEdited();
+        var canAmendQuestionText = canManageTender && tender.CanBeAmended();
         var canCloseTender = canManageTender && tender.CanBeClosed();
         var canCompleteTender = canManageTender && tender.CanBeCompleted();
         var showSupplierSubmissionSelection = canReviewTender && tender.Status == TenderStatus.Closed;
@@ -122,6 +124,7 @@ public class TenderPageModelBuilder(
             {
                 ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",
                 CanManageQuestions = canEditTender,
+                CanAmendQuestionText = canAmendQuestionText,
                 AntiforgeryHeaderName = "X-CSRF-TOKEN",
                 QuestionTypes = new QuestionnaireQuestionTypeLookupViewModel
                 {
@@ -189,6 +192,31 @@ public class TenderPageModelBuilder(
             Form = normalizedForm,
             ErrorMessage = errorMessage
         };
+    }
+
+    public async Task<TenderChangeLogPageViewModel> BuildChangeLogAsync(Guid id, string userId)
+    {
+        var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
+
+        return new TenderChangeLogPageViewModel
+        {
+            Tender = tender,
+            ChangeLogs = await BuildChangeLogsAsync(id, userId)
+        };
+    }
+
+    private async Task<IReadOnlyList<TenderChangeLogViewModel>> BuildChangeLogsAsync(Guid tenderId, string userId)
+    {
+        var changeLogs = await tenderChangeLogService.GetVisibleTenderChangesAsync(tenderId, userId);
+
+        return changeLogs
+            .Select(changeLog => new TenderChangeLogViewModel
+            {
+                ChangedAtUtc = changeLog.ChangedAtUtc,
+                Message = changeLog.SupplierVisibleMessage,
+                ChangedByDisplayName = changeLog.ChangedByDisplayName
+            })
+            .ToList();
     }
 
     private static ConfirmationModalViewModel? CreateOpenTenderModal(Tender tender, bool canEditTender)

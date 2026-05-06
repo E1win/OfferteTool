@@ -83,20 +83,29 @@
                             </div>
                         </div>
 
-                        <div v-if="questionnaire.canManageQuestions" class="questionnaire-editor__card-actions">
-                            <button type="button"
+                        <div v-if="questionnaire.canManageQuestions || questionnaire.canAmendQuestionText" class="questionnaire-editor__card-actions">
+                            <template v-if="questionnaire.canManageQuestions">
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm"
+                                        :disabled="questionnaire.isSaving"
+                                        v-on:click="openEditDialog(question)"
+                                        aria-label="Vraag wijzigen">
+                                    Wijzig
+                                </button>
+                                <button type="button"
+                                        class="btn btn-outline-danger btn-sm"
+                                        :disabled="questionnaire.isSaving"
+                                        v-on:click="deleteQuestion(question.id)"
+                                        aria-label="Vraag verwijderen">
+                                    Verwijder
+                                </button>
+                            </template>
+                            <button v-else type="button"
                                     class="btn btn-outline-secondary btn-sm"
                                     :disabled="questionnaire.isSaving"
-                                    v-on:click="openEditDialog(question)"
-                                    aria-label="Vraag wijzigen">
-                                Wijzig
-                            </button>
-                            <button type="button"
-                                    class="btn btn-outline-danger btn-sm"
-                                    :disabled="questionnaire.isSaving"
-                                    v-on:click="deleteQuestion(question.id)"
-                                    aria-label="Vraag verwijderen">
-                                Verwijder
+                                    v-on:click="openAmendTextDialog(question)"
+                                    aria-label="Vraagtekst wijzigen">
+                                Wijzig tekst
                             </button>
                         </div>
                     </div>
@@ -126,7 +135,7 @@
 
                 <div class="questionnaire-editor__modal-body">
                     <p id="questionnaire-dialog-description" class="text-muted">
-                        Voeg een vraag toe of pas de eigenschappen van een bestaande vraag aan.
+                        [[ dialog.description ]]
                     </p>
 
                     <div v-if="dialog.errorMessage" class="alert alert-danger" role="alert">
@@ -143,12 +152,12 @@
                         <input id="questionnaire-text" v-model="dialog.form.text" type="text" class="form-control" />
                     </div>
 
-                    <div class="mb-3">
+                    <div v-if="dialog.mode !== 'amendText'" class="mb-3">
                         <label class="form-label" for="questionnaire-score">Score</label>
                         <input id="questionnaire-score" v-model="dialog.form.score" type="number" min="0" class="form-control" placeholder="Optioneel" />
                     </div>
 
-                    <div class="mb-3">
+                    <div v-if="dialog.mode !== 'amendText'" class="mb-3">
                         <label class="form-label" for="questionnaire-type">Vraagtype</label>
                         <select id="questionnaire-type"
                                 v-model="dialog.form.type"
@@ -164,7 +173,7 @@
                         </p>
                     </div>
 
-                    <div v-if="dialog.form.type === questionTypes.choice" class="mb-3">
+                    <div v-if="dialog.mode !== 'amendText' && dialog.form.type === questionTypes.choice" class="mb-3">
                         <div class="form-check mb-3">
                             <input id="questionnaire-multiple" v-model="dialog.form.allowMultipleSelection" class="form-check-input" type="checkbox" />
                             <label class="form-check-label" for="questionnaire-multiple">Meerdere antwoorden toestaan</label>
@@ -187,7 +196,7 @@
                         </button>
                     </div>
 
-                    <div v-else-if="dialog.form.type === questionTypes.text" class="row">
+                    <div v-else-if="dialog.mode !== 'amendText' && dialog.form.type === questionTypes.text" class="row">
                         <div class="col-sm-6 mb-3">
                             <label class="form-label" for="questionnaire-rows">Aantal regels</label>
                             <input id="questionnaire-rows" v-model="dialog.form.rows" type="number" min="1" class="form-control" />
@@ -198,7 +207,7 @@
                         </div>
                     </div>
 
-                    <div v-else class="row">
+                    <div v-else-if="dialog.mode !== 'amendText'" class="row">
                         <div class="col-sm-6 mb-3">
                             <label class="form-label" for="questionnaire-min-value">Minimumwaarde</label>
                             <input id="questionnaire-min-value" v-model="dialog.form.minValue" type="number" step="any" class="form-control" placeholder="Optioneel" />

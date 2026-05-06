@@ -233,6 +233,15 @@
             </div>
         }
 
+        <div class="d-grid mb-3">
+            <a asp-controller="Tender"
+               asp-action="Changes"
+               asp-route-id="@Model.Tender.Id"
+               class="btn btn-outline-secondary">
+                Wijzigingen bekijken
+            </a>
+        </div>
+
         @if (Model.EditTenderModal is not null)
         {
             <div class="d-grid mb-3">

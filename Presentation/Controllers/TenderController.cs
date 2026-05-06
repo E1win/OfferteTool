@@ -153,6 +153,12 @@ public class TenderController(
     }
 
     [HttpGet]
+    public async Task<IActionResult> Changes(Guid id)
+    {
+        return View(await tenderPageModelBuilder.BuildChangeLogAsync(id, UserId));
+    }
+
+    [HttpGet]
     [Authorize(Roles = Roles.Inkoper)]
     public async Task<IActionResult> Comparison(Guid id)
     {

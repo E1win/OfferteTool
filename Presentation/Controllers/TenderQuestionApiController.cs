@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models.Questionnaire;
 using Domain.Entities.TenderQuestions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -41,6 +42,22 @@ public class TenderQuestionApiController(
 
         var updatedQuestion = await tenderQuestionService.UpdateQuestionAsync(tenderId, questionId, TenderQuestionMapper.ToEntity(model), UserId);
         return Ok(CreateSuccessResponse(TenderQuestionMapper.ToViewModel(updatedQuestion), "De vraag is bijgewerkt."));
+    }
+
+    [HttpPatch("questions/{questionId:guid}/text")]
+    [ValidateAntiForgeryToken]
+    public async Task<ActionResult<ApiResponse<QuestionnaireQuestionViewModel>>> AmendText(Guid tenderId, Guid questionId, [FromBody] QuestionnaireQuestionTextAmendmentInputModel model)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(CreateValidationErrorResponse(ModelState));
+
+        var updatedQuestion = await tenderQuestionService.AmendQuestionTextAsync(
+            tenderId,
+            questionId,
+            new QuestionTextAmendment { Text = model.Text },
+            UserId);
+
+        return Ok(CreateSuccessResponse(TenderQuestionMapper.ToViewModel(updatedQuestion), "De vraagtekst is bijgewerkt en vastgelegd."));
     }
 
     [HttpDelete("questions/{questionId:guid}")]

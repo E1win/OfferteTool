@@ -1,0 +1,37 @@
+@model TenderChangeLogPageViewModel
+
+@{
+    ViewData["Title"] = $"{Model.Tender.Title} - Wijzigingen";
+}
+
+<nav aria-label="Terug navigatie" class="mb-3">
+    <a asp-controller="Tender" asp-action="Details" asp-route-id="@Model.Tender.Id" class="btn btn-outline-secondary btn-sm">
+        &larr; Terug naar offertetraject
+    </a>
+</nav>
+
+<section aria-labelledby="tender-changes-heading">
+    <header class="mb-4">
+        <h1 id="tender-changes-heading" class="mb-1">Wijzigingen</h1>
+        <p class="mb-0 text-body-secondary">@Model.Tender.Title</p>
+    </header>
+
+    @if (Model.ChangeLogs.Count == 0)
+    {
+        <p class="mb-0 text-body-secondary">Er zijn nog geen wijzigingen vastgelegd.</p>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var changeLog in Model.ChangeLogs)
+            {
+                <article class="list-group-item">
+                    <p class="mb-1">@changeLog.Message</p>
+                    <p class="mb-0 small text-body-secondary">
+                        @changeLog.ChangedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm") door @changeLog.ChangedByDisplayName
+                    </p>
+                </article>
+            }
+        </div>
+    }
+</section>
