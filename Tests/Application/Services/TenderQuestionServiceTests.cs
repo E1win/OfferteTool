@@ -19,6 +19,7 @@ public class TenderQuestionServiceTests
     private readonly Mock<ICurrentUserService> currentUserService = new();
     private readonly Mock<ITenderQuestionRepository> tenderQuestionRepository = new();
     private readonly Mock<ITenderChangeLogRepository> tenderChangeLogRepository = new();
+    private readonly Mock<ITenderChangeNotificationService> tenderChangeNotificationService = new();
 
     [Fact]
     public async Task GetQuestionsAsync_WhenUserHasAccess_ReturnsQuestionsOrderedByOrder()
@@ -159,6 +160,9 @@ public class TenderQuestionServiceTests
             && changeLog.NewValue == "Nieuwe vraag"
             && changeLog.SupplierVisibleMessage.Contains("Vraag 2"))), Times.Once);
         tenderChangeLogRepository.Verify(repository => repository.SaveChangesAsync(), Times.Once);
+        tenderChangeNotificationService.Verify(service => service.NotifySubmittedSuppliersAsync(
+            tender,
+            It.Is<IReadOnlyCollection<TenderChangeLog>>(changes => changes.Count == 1)), Times.Once);
     }
 
     [Fact]
@@ -191,6 +195,9 @@ public class TenderQuestionServiceTests
         Assert.Equal("Oude vraag", existingQuestion.Text);
         tenderChangeLogRepository.Verify(repository => repository.AddAsync(It.IsAny<TenderChangeLog>()), Times.Never);
         tenderChangeLogRepository.Verify(repository => repository.SaveChangesAsync(), Times.Never);
+        tenderChangeNotificationService.Verify(service => service.NotifySubmittedSuppliersAsync(
+            It.IsAny<Tender>(),
+            It.IsAny<IReadOnlyCollection<TenderChangeLog>>()), Times.Never);
     }
 
     [Fact]
@@ -256,7 +263,8 @@ public class TenderQuestionServiceTests
             tenderRepository.Object,
             currentUserService.Object,
             tenderQuestionRepository.Object,
-            tenderChangeLogRepository.Object);
+            tenderChangeLogRepository.Object,
+            tenderChangeNotificationService.Object);
     }
 
     private void SetupCurrentUser(string role, Guid? organisationId = null)

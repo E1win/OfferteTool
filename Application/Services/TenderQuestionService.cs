@@ -12,7 +12,8 @@ public class TenderQuestionService(
     ITenderRepository tenderRepository,
     ICurrentUserService currentUserService,
     ITenderQuestionRepository tenderQuestionRepository,
-    ITenderChangeLogRepository tenderChangeLogRepository) : ITenderQuestionService
+    ITenderChangeLogRepository tenderChangeLogRepository,
+    ITenderChangeNotificationService tenderChangeNotificationService) : ITenderQuestionService
 {
     public async Task<List<TenderQuestion>> GetQuestionsAsync(Guid tenderId, string userId)
     {
@@ -87,7 +88,7 @@ public class TenderQuestionService(
         var oldText = existingQuestion.Text;
         existingQuestion.Text = newText;
 
-        await tenderChangeLogRepository.AddAsync(new TenderChangeLog
+        var change = new TenderChangeLog
         {
             TenderId = tender.Id,
             Type = TenderChangeLogType.QuestionTextAmended,
@@ -98,9 +99,11 @@ public class TenderQuestionService(
             ChangedAtUtc = DateTimeOffset.UtcNow,
             ChangedByUserId = user.Id,
             ChangedByDisplayName = GetDisplayName(user)
-        });
+        };
 
+        await tenderChangeLogRepository.AddAsync(change);
         await tenderChangeLogRepository.SaveChangesAsync();
+        await tenderChangeNotificationService.NotifySubmittedSuppliersAsync(tender, [change]);
 
         return existingQuestion;
     }

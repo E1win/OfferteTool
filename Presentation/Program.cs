@@ -122,6 +122,7 @@ builder.Services.AddScoped<ITenderReviewerService, TenderReviewerService>();
 builder.Services.AddScoped<ITenderReviewService, TenderReviewService>();
 builder.Services.AddScoped<ITenderSubmissionService, TenderSubmissionService>();
 builder.Services.AddScoped<ITenderChangeLogService, TenderChangeLogService>();
+builder.Services.AddScoped<ITenderChangeNotificationService, TenderChangeNotificationService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IOrganisationManagementService, OrganisationManagementService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();

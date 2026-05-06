@@ -17,6 +17,7 @@ public class TenderServiceTests
     private readonly Mock<ITenderRepository> tenderRepository = new();
     private readonly Mock<ICurrentUserService> currentUserService = new();
     private readonly Mock<ITenderChangeLogRepository> tenderChangeLogRepository = new();
+    private readonly Mock<ITenderChangeNotificationService> tenderChangeNotificationService = new();
 
     [Fact]
     public async Task GetAccessibleTendersAsync_ForInkoperWithOrganisation_ReturnsOrganisationTenders()
@@ -438,6 +439,9 @@ public class TenderServiceTests
             && changeLog.OldValue == "Oude beschrijving"
             && changeLog.NewValue == "Nieuwe beschrijving")), Times.Once);
         tenderChangeLogRepository.Verify(repository => repository.SaveChangesAsync(), Times.Once);
+        tenderChangeNotificationService.Verify(service => service.NotifySubmittedSuppliersAsync(
+            existingTender,
+            It.Is<IReadOnlyCollection<TenderChangeLog>>(changes => changes.Count == 2)), Times.Once);
         tenderRepository.Verify(repository => repository.UpdateAsync(), Times.Never);
     }
 
@@ -469,6 +473,9 @@ public class TenderServiceTests
         // Assert
         tenderChangeLogRepository.Verify(repository => repository.AddAsync(It.IsAny<TenderChangeLog>()), Times.Never);
         tenderChangeLogRepository.Verify(repository => repository.SaveChangesAsync(), Times.Never);
+        tenderChangeNotificationService.Verify(service => service.NotifySubmittedSuppliersAsync(
+            It.IsAny<Tender>(),
+            It.IsAny<IReadOnlyCollection<TenderChangeLog>>()), Times.Never);
     }
 
     private TenderService CreateTenderService()
@@ -476,7 +483,8 @@ public class TenderServiceTests
         return new TenderService(
             tenderRepository.Object,
             currentUserService.Object,
-            tenderChangeLogRepository.Object);
+            tenderChangeLogRepository.Object,
+            tenderChangeNotificationService.Object);
     }
 
     private void SetupCurrentUser(string role, Guid? organisationId = null)

@@ -11,7 +11,8 @@ namespace Application.Services;
 public class TenderService(
     ITenderRepository tenderRepository,
     ICurrentUserService currentUserService,
-    ITenderChangeLogRepository tenderChangeLogRepository) : ITenderService
+    ITenderChangeLogRepository tenderChangeLogRepository,
+    ITenderChangeNotificationService tenderChangeNotificationService) : ITenderService
 {
     public async Task<List<Tender>> GetAccessibleTendersAsync(string userId)
     {
@@ -117,11 +118,11 @@ public class TenderService(
 
         ValidatePublishedDetailsAmendment(newTitle, newDescription);
 
-        var hasChanges = false;
+        var changes = new List<TenderChangeLog>();
 
         if (!string.Equals(existingTender.Title, newTitle, StringComparison.Ordinal))
         {
-            await tenderChangeLogRepository.AddAsync(new TenderChangeLog
+            var change = new TenderChangeLog
             {
                 TenderId = existingTender.Id,
                 Type = TenderChangeLogType.TenderTitleAmended,
@@ -132,15 +133,17 @@ public class TenderService(
                 ChangedAtUtc = DateTimeOffset.UtcNow,
                 ChangedByUserId = user.Id,
                 ChangedByDisplayName = GetDisplayName(user)
-            });
+            };
+
+            await tenderChangeLogRepository.AddAsync(change);
+            changes.Add(change);
 
             existingTender.Title = newTitle;
-            hasChanges = true;
         }
 
         if (!string.Equals(existingTender.Description, newDescription, StringComparison.Ordinal))
         {
-            await tenderChangeLogRepository.AddAsync(new TenderChangeLog
+            var change = new TenderChangeLog
             {
                 TenderId = existingTender.Id,
                 Type = TenderChangeLogType.TenderDescriptionAmended,
@@ -151,14 +154,19 @@ public class TenderService(
                 ChangedAtUtc = DateTimeOffset.UtcNow,
                 ChangedByUserId = user.Id,
                 ChangedByDisplayName = GetDisplayName(user)
-            });
+            };
+
+            await tenderChangeLogRepository.AddAsync(change);
+            changes.Add(change);
 
             existingTender.Description = newDescription;
-            hasChanges = true;
         }
 
-        if (hasChanges)
+        if (changes.Count > 0)
+        {
             await tenderChangeLogRepository.SaveChangesAsync();
+            await tenderChangeNotificationService.NotifySubmittedSuppliersAsync(existingTender, changes);
+        }
 
         return existingTender;
     }
