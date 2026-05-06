@@ -1,12 +1,18 @@
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
+using Application.Models.Questionnaire;
 using Domain.Entities;
 using Domain.Entities.TenderQuestions;
+using Domain.Enums;
 using Domain.Exceptions;
 
 namespace Application.Services;
 
-public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentUserService currentUserService, ITenderQuestionRepository tenderQuestionRepository) : ITenderQuestionService
+public class TenderQuestionService(
+    ITenderRepository tenderRepository,
+    ICurrentUserService currentUserService,
+    ITenderQuestionRepository tenderQuestionRepository,
+    ITenderChangeLogRepository tenderChangeLogRepository) : ITenderQuestionService
 {
     public async Task<List<TenderQuestion>> GetQuestionsAsync(Guid tenderId, string userId)
     {
@@ -54,6 +60,47 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
         existingQuestion.Validate();
 
         await tenderQuestionRepository.SaveChangesAsync();
+
+        return existingQuestion;
+    }
+
+    public async Task<TenderQuestion> AmendQuestionTextAsync(Guid tenderId, Guid questionId, QuestionTextAmendment amendment, string userId)
+    {
+        TenderQuestion existingQuestion = await tenderQuestionRepository.GetByIdAsync(questionId)
+            ?? throw new KeyNotFoundException("Vraag niet gevonden.");
+
+        if (existingQuestion.TenderId != tenderId)
+            throw new KeyNotFoundException("Vraag niet gevonden.");
+
+        var (tender, user, role) = await AuthorizePublishedQuestionTextAmendmentAsync(tenderId, userId);
+        var newText = amendment.Text.Trim();
+
+        if (string.IsNullOrWhiteSpace(newText))
+            throw new BusinessRuleViolationException("Vul een vraag in.");
+
+        if (newText.Length > 512)
+            throw new BusinessRuleViolationException("Een vraag mag maximaal 512 tekens bevatten.");
+
+        if (string.Equals(existingQuestion.Text, newText, StringComparison.Ordinal))
+            return existingQuestion;
+
+        var oldText = existingQuestion.Text;
+        existingQuestion.Text = newText;
+
+        await tenderChangeLogRepository.AddAsync(new TenderChangeLog
+        {
+            TenderId = tender.Id,
+            Type = TenderChangeLogType.QuestionTextAmended,
+            FieldName = "Question.Text",
+            OldValue = oldText,
+            NewValue = newText,
+            SupplierVisibleMessage = $"Vraag {existingQuestion.Order + 1} is gewijzigd van \"{oldText}\" naar \"{newText}\".",
+            ChangedAtUtc = DateTimeOffset.UtcNow,
+            ChangedByUserId = user.Id,
+            ChangedByDisplayName = GetDisplayName(user)
+        });
+
+        await tenderChangeLogRepository.SaveChangesAsync();
 
         return existingQuestion;
     }
@@ -129,5 +176,37 @@ public class TenderQuestionService(ITenderRepository tenderRepository, ICurrentU
             throw new BusinessRuleViolationException("Vragen kunnen alleen worden aangepast zolang het offertetraject de status Ontwerp heeft.");
 
         return (tender, user, role);
+    }
+
+    private async Task<(Tender Tender, ApplicationUser User, string Role)> AuthorizePublishedQuestionTextAmendmentAsync(
+        Guid tenderId,
+        string userId)
+    {
+        Tender? tender = await tenderRepository.GetByIdAsync(tenderId);
+
+        if (tender is null)
+            throw new KeyNotFoundException("Dit offertetraject kon niet worden gevonden.");
+
+        var (user, role) = await currentUserService.GetUserWithRoleAsync(userId);
+
+        if (!tender.CanBeManagedBy(user, role))
+            throw new UnauthorizedAccessException("U kunt dit offertetraject niet beheren.");
+
+        if (!tender.CanBeAmended())
+            throw new BusinessRuleViolationException("Vraagteksten kunnen alleen worden aangepast zolang het offertetraject open staat.");
+
+        return (tender, user, role);
+    }
+
+    private static string GetDisplayName(ApplicationUser user)
+    {
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        if (!string.IsNullOrWhiteSpace(fullName))
+            return fullName;
+
+        if (!string.IsNullOrWhiteSpace(user.Email))
+            return user.Email!;
+
+        return user.UserName ?? "Onbekende gebruiker";
     }
 }
