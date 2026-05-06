@@ -29,9 +29,9 @@ public class TenderPageModelBuilder(
             CreateTenderModal = new TenderFormModalViewModel
             {
                 ModalId = "createTenderModal",
-                ModalTitle = "Nieuwe tender aanmaken",
+                ModalTitle = "Nieuw offertetraject aanmaken",
                 SubmitAction = nameof(TenderController.Create),
-                SubmitButtonText = "Tender aanmaken",
+                SubmitButtonText = "Offertetraject aanmaken",
                 ErrorMessage = errorMessage,
                 ShowOnLoad = openCreateTenderModal,
                 Form = createTender ?? new TenderFormViewModel()
@@ -140,7 +140,7 @@ public class TenderPageModelBuilder(
                 ? new TenderFormModalViewModel
                 {
                     ModalId = "editTenderModal",
-                    ModalTitle = "Tender wijzigen",
+                    ModalTitle = "Offertetraject wijzigen",
                     SubmitAction = nameof(TenderController.Edit),
                     SubmitButtonText = "Wijzigingen opslaan",
                     ErrorMessage = errorMessage,
@@ -153,7 +153,7 @@ public class TenderPageModelBuilder(
                 ? new TenderDetailsAmendmentModalViewModel
                 {
                     ModalId = "tenderDetailsAmendmentModal",
-                    ModalTitle = "Gepubliceerde tender wijzigen",
+                    ModalTitle = "Gepubliceerd offertetraject wijzigen",
                     SubmitAction = nameof(TenderController.AmendDetails),
                     SubmitButtonText = "Wijziging vastleggen",
                     ErrorMessage = detailsAmendmentErrorMessage,
@@ -250,7 +250,7 @@ public class TenderPageModelBuilder(
         {
             ModalId = "openTenderModal",
             ModalTitle = "Offertetraject openen",
-            Description = "Weet u zeker dat u dit offertetraject wilt openen? Zodra het traject open staat, kunnen de tendergegevens en vragenlijst niet meer worden gewijzigd.",
+            Description = "Weet u zeker dat u dit offertetraject wilt openen? Zodra het traject open staat, kunnen de gegevens en vragenlijst niet meer worden gewijzigd.",
             SubmitAction = nameof(TenderController.Open),
             SubmitButtonText = "Offertetraject openen",
             TenderId = tender.Id
