@@ -17,10 +17,15 @@ public interface ITenderPageModelBuilder
         TenderFormViewModel? editTender = null,
         bool openEditTenderModal = false,
         string? errorMessage = null,
+        TenderDetailsAmendmentFormViewModel? detailsAmendmentForm = null,
+        bool openDetailsAmendmentModal = false,
+        string? detailsAmendmentErrorMessage = null,
         TenderReviewerAssignmentFormViewModel? reviewerAssignmentForm = null,
         bool openReviewerAssignmentModal = false,
         string? reviewerErrorMessage = null,
         string? actionErrorMessage = null);
+
+    Task<TenderChangeLogPageViewModel> BuildChangeLogAsync(Guid id, string userId);
 
     Task<TenderSubmissionPageViewModel> BuildSubmissionAsync(
         Guid id,

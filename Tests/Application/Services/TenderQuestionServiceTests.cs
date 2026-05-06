@@ -1,6 +1,7 @@
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Application.Services;
+using Application.Models.Questionnaire;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Entities.TenderQuestions;
@@ -17,6 +18,8 @@ public class TenderQuestionServiceTests
     private readonly Mock<ITenderRepository> tenderRepository = new();
     private readonly Mock<ICurrentUserService> currentUserService = new();
     private readonly Mock<ITenderQuestionRepository> tenderQuestionRepository = new();
+    private readonly Mock<ITenderChangeLogRepository> tenderChangeLogRepository = new();
+    private readonly Mock<ITenderChangeNotificationService> tenderChangeNotificationService = new();
 
     [Fact]
     public async Task GetQuestionsAsync_WhenUserHasAccess_ReturnsQuestionsOrderedByOrder()
@@ -123,6 +126,81 @@ public class TenderQuestionServiceTests
     }
 
     [Fact]
+    public async Task AmendQuestionTextAsync_WhenTenderIsOpen_UpdatesTextAndLogsChange()
+    {
+        // Arrange
+        var organisationId = Guid.NewGuid();
+        var tender = CreateTender(organisationId: organisationId, status: TenderStatus.Open);
+        var existingQuestion = CreateTextQuestion(tenderId: tender.Id, order: 1, text: "Oude vraag");
+
+        tenderQuestionRepository
+            .Setup(repository => repository.GetByIdAsync(existingQuestion.Id))
+            .ReturnsAsync(existingQuestion);
+        tenderRepository
+            .Setup(repository => repository.GetByIdAsync(tender.Id))
+            .ReturnsAsync(tender);
+        SetupCurrentUser(Roles.Inkoper, organisationId);
+
+        var tenderQuestionService = CreateTenderQuestionService();
+
+        // Act
+        var result = await tenderQuestionService.AmendQuestionTextAsync(
+            tender.Id,
+            existingQuestion.Id,
+            new QuestionTextAmendment { Text = "Nieuwe vraag" },
+            UserId);
+
+        // Assert
+        Assert.Same(existingQuestion, result);
+        Assert.Equal("Nieuwe vraag", existingQuestion.Text);
+        tenderChangeLogRepository.Verify(repository => repository.AddAsync(It.Is<TenderChangeLog>(changeLog =>
+            changeLog.TenderId == tender.Id
+            && changeLog.Type == TenderChangeLogType.QuestionTextAmended
+            && changeLog.OldValue == "Oude vraag"
+            && changeLog.NewValue == "Nieuwe vraag"
+            && changeLog.SupplierVisibleMessage.Contains("Vraag 2"))), Times.Once);
+        tenderChangeLogRepository.Verify(repository => repository.SaveChangesAsync(), Times.Once);
+        tenderChangeNotificationService.Verify(service => service.NotifySubmittedSuppliersAsync(
+            tender,
+            It.Is<IReadOnlyCollection<TenderChangeLog>>(changes => changes.Count == 1)), Times.Once);
+    }
+
+    [Fact]
+    public async Task AmendQuestionTextAsync_WhenTenderIsNotOpen_ThrowsBusinessRuleViolationException()
+    {
+        // Arrange
+        var organisationId = Guid.NewGuid();
+        var tender = CreateTender(organisationId: organisationId, status: TenderStatus.Design);
+        var existingQuestion = CreateTextQuestion(tenderId: tender.Id, order: 0, text: "Oude vraag");
+
+        tenderQuestionRepository
+            .Setup(repository => repository.GetByIdAsync(existingQuestion.Id))
+            .ReturnsAsync(existingQuestion);
+        tenderRepository
+            .Setup(repository => repository.GetByIdAsync(tender.Id))
+            .ReturnsAsync(tender);
+        SetupCurrentUser(Roles.Inkoper, organisationId);
+
+        var tenderQuestionService = CreateTenderQuestionService();
+
+        // Act
+        await Assert.ThrowsAsync<BusinessRuleViolationException>(() =>
+            tenderQuestionService.AmendQuestionTextAsync(
+                tender.Id,
+                existingQuestion.Id,
+                new QuestionTextAmendment { Text = "Nieuwe vraag" },
+                UserId));
+
+        // Assert
+        Assert.Equal("Oude vraag", existingQuestion.Text);
+        tenderChangeLogRepository.Verify(repository => repository.AddAsync(It.IsAny<TenderChangeLog>()), Times.Never);
+        tenderChangeLogRepository.Verify(repository => repository.SaveChangesAsync(), Times.Never);
+        tenderChangeNotificationService.Verify(service => service.NotifySubmittedSuppliersAsync(
+            It.IsAny<Tender>(),
+            It.IsAny<IReadOnlyCollection<TenderChangeLog>>()), Times.Never);
+    }
+
+    [Fact]
     public async Task ReorderQuestionsAsync_WhenOrderedIdsDoNotMatchQuestions_ThrowsBusinessRuleViolationException()
     {
         // Arrange
@@ -184,7 +262,9 @@ public class TenderQuestionServiceTests
         return new TenderQuestionService(
             tenderRepository.Object,
             currentUserService.Object,
-            tenderQuestionRepository.Object);
+            tenderQuestionRepository.Object,
+            tenderChangeLogRepository.Object,
+            tenderChangeNotificationService.Object);
     }
 
     private void SetupCurrentUser(string role, Guid? organisationId = null)

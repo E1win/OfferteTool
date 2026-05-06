@@ -56,7 +56,7 @@
     </article>
 
     <aside class="col-lg-4" aria-labelledby="tender-sidebar-heading">
-        <h2 id="tender-sidebar-heading" class="visually-hidden">Tenderacties en details</h2>
+        <h2 id="tender-sidebar-heading" class="visually-hidden">Offertetrajectacties en details</h2>
 
         @if (!string.IsNullOrWhiteSpace(Model.ActionErrorMessage))
         {
@@ -233,6 +233,15 @@
             </div>
         }
 
+        <div class="d-grid mb-3">
+            <a asp-controller="Tender"
+               asp-action="Changes"
+               asp-route-id="@Model.Tender.Id"
+               class="btn btn-outline-secondary">
+                Wijzigingslogboek openen
+            </a>
+        </div>
+
         @if (Model.EditTenderModal is not null)
         {
             <div class="d-grid mb-3">
@@ -247,6 +256,22 @@
             </div>
 
             <partial name="_TenderFormModal" for="EditTenderModal" />
+        }
+
+        @if (Model.DetailsAmendmentModal is not null)
+        {
+            <div class="d-grid mb-3">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        aria-controls="@Model.DetailsAmendmentModal.ModalId"
+                        aria-haspopup="dialog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#@Model.DetailsAmendmentModal.ModalId">
+                    Gepubliceerd offertetraject wijzigen
+                </button>
+            </div>
+
+            <partial name="_TenderDetailsAmendmentModal" for="DetailsAmendmentModal" />
         }
 
         @if (Model.ReviewerAssignmentModal is not null)
@@ -269,6 +294,18 @@
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 const modalElement = document.getElementById("@Model.EditTenderModal.ModalId");
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+
+    @if (Model.DetailsAmendmentModal?.ShowOnLoad == true)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const modalElement = document.getElementById("@Model.DetailsAmendmentModal.ModalId");
                 if (modalElement) {
                     bootstrap.Modal.getOrCreateInstance(modalElement).show();
                 }

@@ -106,6 +106,7 @@ builder.Services.AddScoped<ITenderRepository, TenderRepository>();
 builder.Services.AddScoped<ITenderQuestionRepository, TenderQuestionRepository>();
 builder.Services.AddScoped<ITenderSubmissionRepository, TenderSubmissionRepository>();
 builder.Services.AddScoped<ITenderSubmissionReviewRepository, TenderSubmissionReviewRepository>();
+builder.Services.AddScoped<ITenderChangeLogRepository, TenderChangeLogRepository>();
 builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
 builder.Services.AddScoped<IOrganisationRepository, OrganisationRepository>();
 builder.Services.Configure<TenderSubmissionEncryptionOptions>(
@@ -120,6 +121,8 @@ builder.Services.AddScoped<ITenderQuestionService, TenderQuestionService>();
 builder.Services.AddScoped<ITenderReviewerService, TenderReviewerService>();
 builder.Services.AddScoped<ITenderReviewService, TenderReviewService>();
 builder.Services.AddScoped<ITenderSubmissionService, TenderSubmissionService>();
+builder.Services.AddScoped<ITenderChangeLogService, TenderChangeLogService>();
+builder.Services.AddScoped<ITenderChangeNotificationService, TenderChangeNotificationService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IOrganisationManagementService, OrganisationManagementService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();

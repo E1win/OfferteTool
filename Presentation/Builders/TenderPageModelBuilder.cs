@@ -14,7 +14,8 @@ public class TenderPageModelBuilder(
     ITenderService tenderService,
     ITenderQuestionService tenderQuestionService,
     ITenderReviewerService tenderReviewerService,
-    ITenderSubmissionService tenderSubmissionService) : ITenderPageModelBuilder
+    ITenderSubmissionService tenderSubmissionService,
+    ITenderChangeLogService tenderChangeLogService) : ITenderPageModelBuilder
 {
     public async Task<TenderIndexViewModel> BuildIndexAsync(
         string userId,
@@ -28,9 +29,9 @@ public class TenderPageModelBuilder(
             CreateTenderModal = new TenderFormModalViewModel
             {
                 ModalId = "createTenderModal",
-                ModalTitle = "Nieuwe tender aanmaken",
+                ModalTitle = "Nieuw offertetraject aanmaken",
                 SubmitAction = nameof(TenderController.Create),
-                SubmitButtonText = "Tender aanmaken",
+                SubmitButtonText = "Offertetraject aanmaken",
                 ErrorMessage = errorMessage,
                 ShowOnLoad = openCreateTenderModal,
                 Form = createTender ?? new TenderFormViewModel()
@@ -44,6 +45,9 @@ public class TenderPageModelBuilder(
         TenderFormViewModel? editTender = null,
         bool openEditTenderModal = false,
         string? errorMessage = null,
+        TenderDetailsAmendmentFormViewModel? detailsAmendmentForm = null,
+        bool openDetailsAmendmentModal = false,
+        string? detailsAmendmentErrorMessage = null,
         TenderReviewerAssignmentFormViewModel? reviewerAssignmentForm = null,
         bool openReviewerAssignmentModal = false,
         string? reviewerErrorMessage = null,
@@ -53,6 +57,7 @@ public class TenderPageModelBuilder(
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
         var canReviewTender = await tenderReviewerService.CanReviewTenderAsync(id, userId);
         var canEditTender = canManageTender && tender.CanBeEdited();
+        var canAmendPublishedTender = canManageTender && tender.CanBeAmended();
         var canCloseTender = canManageTender && tender.CanBeClosed();
         var canCompleteTender = canManageTender && tender.CanBeCompleted();
         var showSupplierSubmissionSelection = canReviewTender && tender.Status == TenderStatus.Closed;
@@ -122,6 +127,7 @@ public class TenderPageModelBuilder(
             {
                 ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",
                 CanManageQuestions = canEditTender,
+                CanAmendQuestionText = canAmendPublishedTender,
                 AntiforgeryHeaderName = "X-CSRF-TOKEN",
                 QuestionTypes = new QuestionnaireQuestionTypeLookupViewModel
                 {
@@ -134,13 +140,30 @@ public class TenderPageModelBuilder(
                 ? new TenderFormModalViewModel
                 {
                     ModalId = "editTenderModal",
-                    ModalTitle = "Tender wijzigen",
+                    ModalTitle = "Offertetraject wijzigen",
                     SubmitAction = nameof(TenderController.Edit),
                     SubmitButtonText = "Wijzigingen opslaan",
                     ErrorMessage = errorMessage,
                     ShowOnLoad = openEditTenderModal,
                     TenderId = tender.Id,
                     Form = editTender ?? TenderMapper.ToFormViewModel(tender)
+                }
+                : null,
+            DetailsAmendmentModal = canAmendPublishedTender
+                ? new TenderDetailsAmendmentModalViewModel
+                {
+                    ModalId = "tenderDetailsAmendmentModal",
+                    ModalTitle = "Gepubliceerd offertetraject wijzigen",
+                    SubmitAction = nameof(TenderController.AmendDetails),
+                    SubmitButtonText = "Wijziging vastleggen",
+                    ErrorMessage = detailsAmendmentErrorMessage,
+                    ShowOnLoad = openDetailsAmendmentModal,
+                    TenderId = tender.Id,
+                    Form = detailsAmendmentForm ?? new TenderDetailsAmendmentFormViewModel
+                    {
+                        Title = tender.Title,
+                        Description = tender.Description
+                    }
                 }
                 : null
         };
@@ -191,6 +214,33 @@ public class TenderPageModelBuilder(
         };
     }
 
+    public async Task<TenderChangeLogPageViewModel> BuildChangeLogAsync(Guid id, string userId)
+    {
+        var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
+
+        return new TenderChangeLogPageViewModel
+        {
+            Tender = tender,
+            ChangeLogs = await BuildChangeLogsAsync(id, userId)
+        };
+    }
+
+    private async Task<IReadOnlyList<TenderChangeLogViewModel>> BuildChangeLogsAsync(Guid tenderId, string userId)
+    {
+        var changeLogs = await tenderChangeLogService.GetVisibleTenderChangesAsync(tenderId, userId);
+
+        return changeLogs
+            .Select(changeLog => new TenderChangeLogViewModel
+            {
+                ChangedAtUtc = changeLog.ChangedAtUtc,
+                Message = changeLog.SupplierVisibleMessage,
+                OldValue = changeLog.OldValue,
+                NewValue = changeLog.NewValue,
+                ChangedByDisplayName = changeLog.ChangedByDisplayName
+            })
+            .ToList();
+    }
+
     private static ConfirmationModalViewModel? CreateOpenTenderModal(Tender tender, bool canEditTender)
     {
         if (!canEditTender)
@@ -200,7 +250,7 @@ public class TenderPageModelBuilder(
         {
             ModalId = "openTenderModal",
             ModalTitle = "Offertetraject openen",
-            Description = "Weet u zeker dat u dit offertetraject wilt openen? Zodra het traject open staat, kunnen de tendergegevens en vragenlijst niet meer worden gewijzigd.",
+            Description = "Weet u zeker dat u dit offertetraject wilt openen? Zodra het traject open staat, kunnen de gegevens en vragenlijst niet meer worden gewijzigd.",
             SubmitAction = nameof(TenderController.Open),
             SubmitButtonText = "Offertetraject openen",
             TenderId = tender.Id

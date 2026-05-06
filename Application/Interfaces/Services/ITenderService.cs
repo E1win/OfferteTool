@@ -1,3 +1,4 @@
+using Application.Models.Tender;
 using Domain.Entities;
 
 namespace Application.Interfaces.Services;
@@ -9,6 +10,7 @@ public interface ITenderService
     Task<bool> CanManageTenderAsync(Guid tenderId, string userId);
     Task<Tender> CreateTenderAsync(Tender tender, string userId);
     Task<Tender> UpdateTenderAsync(Guid tenderId, Tender updatedTender, string userId);
+    Task<Tender> AmendTenderDetailsAsync(Guid tenderId, TenderDetailsAmendment amendment, string userId);
     Task<Tender> OpenTenderAsync(Guid tenderId, string userId);
     Task<Tender> CloseTenderAsync(Guid tenderId, string userId);
     Task<Tender> CompleteTenderAsync(Guid tenderId, string userId);

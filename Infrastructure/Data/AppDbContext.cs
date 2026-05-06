@@ -19,6 +19,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<TenderAnswer> TenderAnswers => Set<TenderAnswer>();
     public DbSet<TenderSubmissionReview> TenderSubmissionReviews => Set<TenderSubmissionReview>();
     public DbSet<TenderQuestionReview> TenderQuestionReviews => Set<TenderQuestionReview>();
+    public DbSet<TenderChangeLog> TenderChangeLogs => Set<TenderChangeLog>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -38,6 +39,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureTenderSubmissionReview(modelBuilder);
         ConfigureTenderQuestionReview(modelBuilder);
         ConfigureTenderReviewer(modelBuilder);
+        ConfigureTenderChangeLog(modelBuilder);
     }
 
     private static void ConfigureRole(ModelBuilder modelBuilder)
@@ -208,6 +210,19 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Cascade); // Remove reviewer if user is deleted
+        });
+    }
+
+    private static void ConfigureTenderChangeLog(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TenderChangeLog>(e =>
+        {
+            e.HasIndex(changeLog => new { changeLog.TenderId, changeLog.ChangedAtUtc });
+
+            e.HasOne(changeLog => changeLog.Tender)
+                .WithMany(tender => tender.ChangeLogs)
+                .HasForeignKey(changeLog => changeLog.TenderId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

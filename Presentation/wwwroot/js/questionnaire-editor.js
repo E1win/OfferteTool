@@ -17,6 +17,7 @@
         apiBaseUrl: rawBootstrap.apiBaseUrl ?? "",
         antiforgeryHeaderName: rawBootstrap.antiforgeryHeaderName ?? "X-CSRF-TOKEN",
         canManageQuestions: rawBootstrap.canManageQuestions ?? false,
+        canAmendQuestionText: rawBootstrap.canAmendQuestionText ?? false,
         questionTypes: {
             choice: rawBootstrap.questionTypes?.choice ?? "choice",
             text: rawBootstrap.questionTypes?.text ?? "text",
@@ -52,12 +53,13 @@
         options: createEmptyOptions()
     });
 
-    const createQuestionnaireState = (canManageQuestions) => ({
+    const createQuestionnaireState = (canManageQuestions, canAmendQuestionText) => ({
         isLoading: true,
         isSaving: false,
         errorMessage: "",
         errorDetails: [],
         canManageQuestions,
+        canAmendQuestionText,
         questions: []
     });
 
@@ -65,6 +67,7 @@
         isOpen: false,
         mode: "create",
         title: "Vraag toevoegen",
+        description: "Voeg een vraag toe of pas de eigenschappen van een bestaande vraag aan.",
         submitLabel: "Toevoegen",
         errorMessage: "",
         errorDetails: [],
@@ -82,10 +85,13 @@
         target.errorDetails = error.errors ?? [];
     };
 
-    const createDialogStateFromQuestion = (question, questionTypes) => ({
+    const createDialogStateFromQuestion = (question, questionTypes, mode = "edit") => ({
         isOpen: true,
-        mode: "edit",
-        title: "Vraag wijzigen",
+        mode,
+        title: mode === "amendText" ? "Vraagtekst wijzigen" : "Vraag wijzigen",
+        description: mode === "amendText"
+            ? "Pas alleen de tekst van de gepubliceerde vraag aan. Pas op: dit kan gevolgen hebben voor reeds ingediende offertes, alle leveranciers met een ingediende offerte worden hierover geïnformeerd."
+            : "Voeg een vraag toe of pas de eigenschappen van een bestaande vraag aan.",
         submitLabel: "Opslaan",
         errorMessage: "",
         errorDetails: [],
@@ -200,7 +206,7 @@
                 apiBaseUrl: bootstrap.apiBaseUrl,
                 antiforgeryHeaderName: bootstrap.antiforgeryHeaderName,
                 questionTypes: bootstrap.questionTypes,
-                questionnaire: createQuestionnaireState(bootstrap.canManageQuestions),
+                questionnaire: createQuestionnaireState(bootstrap.canManageQuestions, bootstrap.canAmendQuestionText),
                 dialog: createDialogState(bootstrap.questionTypes)
             };
         },
@@ -219,6 +225,9 @@
             },
             openEditDialog(question) {
                 this.dialog = createDialogStateFromQuestion(question, this.questionTypes);
+            },
+            openAmendTextDialog(question) {
+                this.dialog = createDialogStateFromQuestion(question, this.questionTypes, "amendText");
             },
             closeDialog() {
                 this.dialog = createDialogState(this.questionTypes);
@@ -252,6 +261,11 @@
                         : []
                 };
             },
+            toTextAmendmentPayload() {
+                return {
+                    text: this.dialog.form.text
+                };
+            },
             createApiOptions(method, body) {
                 return buildRequestOptions(
                     method,
@@ -281,11 +295,20 @@
 
                 const url = this.dialog.mode === "create"
                     ? `${this.apiBaseUrl}/questions`
-                    : `${this.apiBaseUrl}/questions/${this.dialog.questionId}`;
-                const method = this.dialog.mode === "create" ? "POST" : "PUT";
+                    : this.dialog.mode === "amendText"
+                        ? `${this.apiBaseUrl}/questions/${this.dialog.questionId}/text`
+                        : `${this.apiBaseUrl}/questions/${this.dialog.questionId}`;
+                const method = this.dialog.mode === "create"
+                    ? "POST"
+                    : this.dialog.mode === "amendText"
+                        ? "PATCH"
+                        : "PUT";
+                const payload = this.dialog.mode === "amendText"
+                    ? this.toTextAmendmentPayload()
+                    : this.toPayload();
 
                 try {
-                    await fetchApi(url, this.createApiOptions(method, this.toPayload()));
+                    await fetchApi(url, this.createApiOptions(method, payload));
                     await this.loadQuestions();
                     this.closeDialog();
                 } catch (error) {
