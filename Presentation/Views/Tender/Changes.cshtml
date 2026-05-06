@@ -12,7 +12,7 @@
 
 <section aria-labelledby="tender-changes-heading">
     <header class="mb-4">
-        <h1 id="tender-changes-heading" class="mb-1">Wijzigingen</h1>
+        <h1 id="tender-changes-heading" class="mb-1">Wijzigingslogboek</h1>
         <p class="mb-0 text-body-secondary">@Model.Tender.Title</p>
     </header>
 
@@ -30,6 +30,12 @@
                     <p class="mb-0 small text-body-secondary">
                         @changeLog.ChangedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm") door @changeLog.ChangedByDisplayName
                     </p>
+                    <dl class="mt-3 mb-0">
+                        <dt>Vorige waarde</dt>
+                        <dd class="text-break">@changeLog.OldValue</dd>
+                        <dt>Nieuwe waarde</dt>
+                        <dd class="mb-0 text-break">@changeLog.NewValue</dd>
+                    </dl>
                 </article>
             }
         </div>

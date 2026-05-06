@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models.Tender;
 using Domain.Constants;
 using Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
@@ -59,6 +60,44 @@ public class TenderController(
         catch (BusinessRuleViolationException ex)
         {
             return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(id, UserId, model, true, ex.Message));
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = Roles.Inkoper)]
+    public async Task<IActionResult> AmendDetails(Guid id, [Bind(Prefix = "DetailsAmendmentModal.Form")] TenderDetailsAmendmentFormViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(
+                id,
+                UserId,
+                detailsAmendmentForm: model,
+                openDetailsAmendmentModal: true));
+        }
+
+        try
+        {
+            await tenderService.AmendTenderDetailsAsync(
+                id,
+                new TenderDetailsAmendment
+                {
+                    Title = model.Title,
+                    Description = model.Description
+                },
+                UserId);
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+        catch (BusinessRuleViolationException ex)
+        {
+            return View(nameof(Details), await tenderPageModelBuilder.BuildDetailsAsync(
+                id,
+                UserId,
+                detailsAmendmentForm: model,
+                openDetailsAmendmentModal: true,
+                detailsAmendmentErrorMessage: ex.Message));
         }
     }
 

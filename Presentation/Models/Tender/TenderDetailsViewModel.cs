@@ -16,5 +16,6 @@ public class TenderDetailsViewModel
     public ConfirmationModalViewModel? CompleteTenderModal { get; init; }
     public TenderReviewerAssignmentModalViewModel? ReviewerAssignmentModal { get; init; }
     public TenderFormModalViewModel? EditTenderModal { get; init; }
+    public TenderDetailsAmendmentModalViewModel? DetailsAmendmentModal { get; init; }
     public required QuestionnaireEditorBootstrapViewModel QuestionnaireEditor { get; init; }
 }

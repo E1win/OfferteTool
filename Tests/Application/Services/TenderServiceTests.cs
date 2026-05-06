@@ -16,6 +16,7 @@ public class TenderServiceTests
 
     private readonly Mock<ITenderRepository> tenderRepository = new();
     private readonly Mock<ICurrentUserService> currentUserService = new();
+    private readonly Mock<ITenderChangeLogRepository> tenderChangeLogRepository = new();
 
     [Fact]
     public async Task GetAccessibleTendersAsync_ForInkoperWithOrganisation_ReturnsOrganisationTenders()
@@ -396,9 +397,86 @@ public class TenderServiceTests
         tenderRepository.Verify(repository => repository.UpdateAsync(), Times.Never);
     }
 
+    [Fact]
+    public async Task AmendTenderDetailsAsync_WhenTenderIsOpen_UpdatesTitleDescriptionAndLogsChanges()
+    {
+        // Arrange
+        var organisationId = Guid.NewGuid();
+        var existingTender = CreateTender(
+            organisationId: organisationId,
+            status: TenderStatus.Open,
+            title: "Oude titel",
+            description: "Oude beschrijving");
+
+        tenderRepository
+            .Setup(repository => repository.GetByIdAsync(existingTender.Id))
+            .ReturnsAsync(existingTender);
+        SetupCurrentUser(Roles.Inkoper, organisationId);
+
+        var tenderService = CreateTenderService();
+
+        // Act
+        var result = await tenderService.AmendTenderDetailsAsync(
+            existingTender.Id,
+            new global::Application.Models.Tender.TenderDetailsAmendment
+            {
+                Title = "Nieuwe titel",
+                Description = "Nieuwe beschrijving"
+            },
+            UserId);
+
+        // Assert
+        Assert.Same(existingTender, result);
+        Assert.Equal("Nieuwe titel", existingTender.Title);
+        Assert.Equal("Nieuwe beschrijving", existingTender.Description);
+        tenderChangeLogRepository.Verify(repository => repository.AddAsync(It.Is<TenderChangeLog>(changeLog =>
+            changeLog.Type == TenderChangeLogType.TenderTitleAmended
+            && changeLog.OldValue == "Oude titel"
+            && changeLog.NewValue == "Nieuwe titel")), Times.Once);
+        tenderChangeLogRepository.Verify(repository => repository.AddAsync(It.Is<TenderChangeLog>(changeLog =>
+            changeLog.Type == TenderChangeLogType.TenderDescriptionAmended
+            && changeLog.OldValue == "Oude beschrijving"
+            && changeLog.NewValue == "Nieuwe beschrijving")), Times.Once);
+        tenderChangeLogRepository.Verify(repository => repository.SaveChangesAsync(), Times.Once);
+        tenderRepository.Verify(repository => repository.UpdateAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task AmendTenderDetailsAsync_WhenTenderIsNotOpen_ThrowsBusinessRuleViolationException()
+    {
+        // Arrange
+        var organisationId = Guid.NewGuid();
+        var existingTender = CreateTender(organisationId: organisationId, status: TenderStatus.Design);
+
+        tenderRepository
+            .Setup(repository => repository.GetByIdAsync(existingTender.Id))
+            .ReturnsAsync(existingTender);
+        SetupCurrentUser(Roles.Inkoper, organisationId);
+
+        var tenderService = CreateTenderService();
+
+        // Act
+        await Assert.ThrowsAsync<BusinessRuleViolationException>(() =>
+            tenderService.AmendTenderDetailsAsync(
+                existingTender.Id,
+                new global::Application.Models.Tender.TenderDetailsAmendment
+                {
+                    Title = "Nieuwe titel",
+                    Description = "Nieuwe beschrijving"
+                },
+                UserId));
+
+        // Assert
+        tenderChangeLogRepository.Verify(repository => repository.AddAsync(It.IsAny<TenderChangeLog>()), Times.Never);
+        tenderChangeLogRepository.Verify(repository => repository.SaveChangesAsync(), Times.Never);
+    }
+
     private TenderService CreateTenderService()
     {
-        return new TenderService(tenderRepository.Object, currentUserService.Object);
+        return new TenderService(
+            tenderRepository.Object,
+            currentUserService.Object,
+            tenderChangeLogRepository.Object);
     }
 
     private void SetupCurrentUser(string role, Guid? organisationId = null)

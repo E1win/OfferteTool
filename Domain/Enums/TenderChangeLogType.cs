@@ -2,5 +2,7 @@ namespace Domain.Enums;
 
 public enum TenderChangeLogType
 {
-    QuestionTextAmended
+    QuestionTextAmended,
+    TenderTitleAmended,
+    TenderDescriptionAmended
 }

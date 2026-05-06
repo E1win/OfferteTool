@@ -238,7 +238,7 @@
                asp-action="Changes"
                asp-route-id="@Model.Tender.Id"
                class="btn btn-outline-secondary">
-                Wijzigingen bekijken
+                Wijzigingslogboek openen
             </a>
         </div>
 
@@ -256,6 +256,22 @@
             </div>
 
             <partial name="_TenderFormModal" for="EditTenderModal" />
+        }
+
+        @if (Model.DetailsAmendmentModal is not null)
+        {
+            <div class="d-grid mb-3">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        aria-controls="@Model.DetailsAmendmentModal.ModalId"
+                        aria-haspopup="dialog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#@Model.DetailsAmendmentModal.ModalId">
+                    Gepubliceerde tender wijzigen
+                </button>
+            </div>
+
+            <partial name="_TenderDetailsAmendmentModal" for="DetailsAmendmentModal" />
         }
 
         @if (Model.ReviewerAssignmentModal is not null)
@@ -278,6 +294,18 @@
         <script>
             document.addEventListener("DOMContentLoaded", function () {
                 const modalElement = document.getElementById("@Model.EditTenderModal.ModalId");
+                if (modalElement) {
+                    bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                }
+            });
+        </script>
+    }
+
+    @if (Model.DetailsAmendmentModal?.ShowOnLoad == true)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const modalElement = document.getElementById("@Model.DetailsAmendmentModal.ModalId");
                 if (modalElement) {
                     bootstrap.Modal.getOrCreateInstance(modalElement).show();
                 }

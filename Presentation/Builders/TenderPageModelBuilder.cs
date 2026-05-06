@@ -45,6 +45,9 @@ public class TenderPageModelBuilder(
         TenderFormViewModel? editTender = null,
         bool openEditTenderModal = false,
         string? errorMessage = null,
+        TenderDetailsAmendmentFormViewModel? detailsAmendmentForm = null,
+        bool openDetailsAmendmentModal = false,
+        string? detailsAmendmentErrorMessage = null,
         TenderReviewerAssignmentFormViewModel? reviewerAssignmentForm = null,
         bool openReviewerAssignmentModal = false,
         string? reviewerErrorMessage = null,
@@ -54,7 +57,7 @@ public class TenderPageModelBuilder(
         var tender = await tenderService.GetAccessibleTenderByIdAsync(id, userId);
         var canReviewTender = await tenderReviewerService.CanReviewTenderAsync(id, userId);
         var canEditTender = canManageTender && tender.CanBeEdited();
-        var canAmendQuestionText = canManageTender && tender.CanBeAmended();
+        var canAmendPublishedTender = canManageTender && tender.CanBeAmended();
         var canCloseTender = canManageTender && tender.CanBeClosed();
         var canCompleteTender = canManageTender && tender.CanBeCompleted();
         var showSupplierSubmissionSelection = canReviewTender && tender.Status == TenderStatus.Closed;
@@ -124,7 +127,7 @@ public class TenderPageModelBuilder(
             {
                 ApiBaseUrl = $"/api/tenders/{tender.Id}/questionnaire",
                 CanManageQuestions = canEditTender,
-                CanAmendQuestionText = canAmendQuestionText,
+                CanAmendQuestionText = canAmendPublishedTender,
                 AntiforgeryHeaderName = "X-CSRF-TOKEN",
                 QuestionTypes = new QuestionnaireQuestionTypeLookupViewModel
                 {
@@ -144,6 +147,23 @@ public class TenderPageModelBuilder(
                     ShowOnLoad = openEditTenderModal,
                     TenderId = tender.Id,
                     Form = editTender ?? TenderMapper.ToFormViewModel(tender)
+                }
+                : null,
+            DetailsAmendmentModal = canAmendPublishedTender
+                ? new TenderDetailsAmendmentModalViewModel
+                {
+                    ModalId = "tenderDetailsAmendmentModal",
+                    ModalTitle = "Gepubliceerde tender wijzigen",
+                    SubmitAction = nameof(TenderController.AmendDetails),
+                    SubmitButtonText = "Wijziging vastleggen",
+                    ErrorMessage = detailsAmendmentErrorMessage,
+                    ShowOnLoad = openDetailsAmendmentModal,
+                    TenderId = tender.Id,
+                    Form = detailsAmendmentForm ?? new TenderDetailsAmendmentFormViewModel
+                    {
+                        Title = tender.Title,
+                        Description = tender.Description
+                    }
                 }
                 : null
         };
@@ -214,6 +234,8 @@ public class TenderPageModelBuilder(
             {
                 ChangedAtUtc = changeLog.ChangedAtUtc,
                 Message = changeLog.SupplierVisibleMessage,
+                OldValue = changeLog.OldValue,
+                NewValue = changeLog.NewValue,
                 ChangedByDisplayName = changeLog.ChangedByDisplayName
             })
             .ToList();
