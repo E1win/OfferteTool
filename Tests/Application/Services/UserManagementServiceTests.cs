@@ -177,10 +177,15 @@ public class UserManagementServiceTests
             .ReturnsAsync(client);
 
         ApplicationUser? createdUser = null;
+        string? generatedPassword = null;
         EmailMessage? sentEmail = null;
         userManager
             .Setup(manager => manager.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
-            .Callback<ApplicationUser, string>((user, _) => createdUser = user)
+            .Callback<ApplicationUser, string>((user, password) =>
+            {
+                createdUser = user;
+                generatedPassword = password;
+            })
             .ReturnsAsync(IdentityResult.Success);
         emailSender
             .Setup(sender => sender.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
@@ -209,6 +214,8 @@ public class UserManagementServiceTests
         Assert.True(createdUser.EmailConfirmed);
         Assert.True(createdUser.IsActive);
         Assert.Equal(client.Id, createdUser.OrganisationId);
+        Assert.NotNull(generatedPassword);
+        Assert.Contains(generatedPassword, character => !char.IsLetterOrDigit(character));
         Assert.Equal(createdUser.Id, result.User.Id);
         Assert.Equal(Roles.Inkoper, result.User.Role);
         Assert.NotNull(sentEmail);

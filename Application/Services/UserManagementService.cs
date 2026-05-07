@@ -295,17 +295,19 @@ public class UserManagementService(
         const string uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ";
         const string lowercase = "abcdefghijkmnopqrstuvwxyz";
         const string digits = "23456789";
-        const string allCharacters = uppercase + lowercase + digits;
+        const string specialCharacters = "!#$%&*+-?@";
+        const string allCharacters = uppercase + lowercase + digits + specialCharacters;
 
         var requiredCharacters = new[]
         {
             GetRandomCharacter(uppercase),
             GetRandomCharacter(lowercase),
-            GetRandomCharacter(digits)
+            GetRandomCharacter(digits),
+            GetRandomCharacter(specialCharacters)
         };
 
         var passwordCharacters = requiredCharacters
-            .Concat(Enumerable.Range(0, 13).Select(_ => GetRandomCharacter(allCharacters)))
+            .Concat(Enumerable.Range(0, 12).Select(_ => GetRandomCharacter(allCharacters)))
             .OrderBy(_ => RandomNumberGenerator.GetInt32(int.MaxValue))
             .ToArray();
 
