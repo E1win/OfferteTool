@@ -56,7 +56,7 @@ public class OrganisationManagementService(
 
         await organisationRepository.AddAsync(organisation);
 
-        await securityAuditService.LogAsync(new SecurityAuditEvent
+        await securityAuditService.TryLogAsync(new SecurityAuditEvent
         {
             EventType = SecurityAuditEventType.OrganisationCreated,
             Outcome = SecurityAuditOutcome.Success,
@@ -100,7 +100,7 @@ public class OrganisationManagementService(
 
         await organisationRepository.SaveChangesAsync();
 
-        await securityAuditService.LogAsync(new SecurityAuditEvent
+        await securityAuditService.TryLogAsync(new SecurityAuditEvent
         {
             EventType = SecurityAuditEventType.OrganisationUpdated,
             Outcome = SecurityAuditOutcome.Success,
@@ -153,7 +153,7 @@ public class OrganisationManagementService(
         string actorUserId,
         IReadOnlyCollection<ApplicationUser> deactivatedUsers)
     {
-        await securityAuditService.LogAsync(new SecurityAuditEvent
+        await securityAuditService.TryLogAsync(new SecurityAuditEvent
         {
             EventType = SecurityAuditEventType.OrganisationDeactivated,
             Outcome = SecurityAuditOutcome.Success,
@@ -167,7 +167,7 @@ public class OrganisationManagementService(
 
         foreach (var user in deactivatedUsers)
         {
-            await securityAuditService.LogAsync(new SecurityAuditEvent
+            await securityAuditService.TryLogAsync(new SecurityAuditEvent
             {
                 EventType = SecurityAuditEventType.UserDisabled,
                 Outcome = SecurityAuditOutcome.Success,

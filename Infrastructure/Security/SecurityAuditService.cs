@@ -3,10 +3,13 @@ using Application.Interfaces.Services;
 using Application.Models.SecurityAudit;
 using Domain.Entities;
 using Infrastructure.Data;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Security;
 
-public class SecurityAuditService(AppDbContext dbContext) : ISecurityAuditService
+public class SecurityAuditService(
+    AppDbContext dbContext,
+    ILogger<SecurityAuditService> logger) : ISecurityAuditService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -14,7 +17,26 @@ public class SecurityAuditService(AppDbContext dbContext) : ISecurityAuditServic
     {
         ArgumentNullException.ThrowIfNull(auditEvent);
 
-        var log = new SecurityAuditLog
+        await dbContext.SecurityAuditLogs.AddAsync(CreateLog(auditEvent), cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task TryLogAsync(
+        SecurityAuditEvent auditEvent,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await LogAsync(auditEvent, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Security audit logging failed for event type {EventType}.", auditEvent.EventType);
+        }
+    }
+
+    private static SecurityAuditLog CreateLog(SecurityAuditEvent auditEvent) =>
+        new()
         {
             Id = Guid.NewGuid(),
             OccurredAtUtc = DateTimeOffset.UtcNow,
@@ -29,10 +51,6 @@ public class SecurityAuditService(AppDbContext dbContext) : ISecurityAuditServic
             TraceId = Truncate(auditEvent.TraceId, 128),
             DetailsJson = SerializeDetails(auditEvent.Details)
         };
-
-        await dbContext.SecurityAuditLogs.AddAsync(log, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-    }
 
     private static string? SerializeDetails(IReadOnlyDictionary<string, string> details)
     {

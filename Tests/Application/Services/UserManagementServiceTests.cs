@@ -68,6 +68,11 @@ public class UserManagementServiceTests
         securityAuditService
             .Setup(service => service.LogAsync(It.IsAny<SecurityAuditEvent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+        securityAuditService
+            .Setup(service => service.TryLogAsync(
+                It.IsAny<SecurityAuditEvent>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
     }
 
     [Fact]
@@ -227,7 +232,7 @@ public class UserManagementServiceTests
         Assert.Equal("nieuw@example.com", sentEmail.To);
         Assert.Contains("Wachtwoord:", sentEmail.TextBody);
         userManager.Verify(manager => manager.AddToRoleAsync(createdUser, Roles.Inkoper), Times.Once);
-        securityAuditService.Verify(service => service.LogAsync(
+        securityAuditService.Verify(service => service.TryLogAsync(
             It.Is<SecurityAuditEvent>(auditEvent =>
                 auditEvent.EventType == SecurityAuditEventType.UserCreated
                 && auditEvent.Outcome == SecurityAuditOutcome.Success
@@ -437,14 +442,14 @@ public class UserManagementServiceTests
         // Assert
         Assert.False(user.IsActive);
         userManager.Verify(manager => manager.UpdateAsync(user), Times.Once);
-        securityAuditService.Verify(service => service.LogAsync(
+        securityAuditService.Verify(service => service.TryLogAsync(
             It.Is<SecurityAuditEvent>(auditEvent =>
                 auditEvent.EventType == SecurityAuditEventType.UserUpdated
                 && auditEvent.TargetUserId == user.Id
                 && auditEvent.Details["oldIsActive"] == bool.TrueString
                 && auditEvent.Details["newIsActive"] == bool.FalseString),
             It.IsAny<CancellationToken>()), Times.Once);
-        securityAuditService.Verify(service => service.LogAsync(
+        securityAuditService.Verify(service => service.TryLogAsync(
             It.Is<SecurityAuditEvent>(auditEvent =>
                 auditEvent.EventType == SecurityAuditEventType.UserDisabled
                 && auditEvent.Outcome == SecurityAuditOutcome.Success

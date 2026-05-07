@@ -96,7 +96,9 @@ public class UserManagementService(
         var roleResult = await userManager.AddToRoleAsync(user, request.Role);
         EnsureIdentitySucceeded(roleResult, "De rol kon niet aan de gebruiker worden gekoppeld.");
 
-        await securityAuditService.LogAsync(new SecurityAuditEvent
+        await emailSender.SendAsync(CreateAccountCreatedEmail(user, password));
+
+        await securityAuditService.TryLogAsync(new SecurityAuditEvent
         {
             EventType = SecurityAuditEventType.UserCreated,
             Outcome = SecurityAuditOutcome.Success,
@@ -109,8 +111,6 @@ public class UserManagementService(
                 ["isActive"] = user.IsActive.ToString()
             }
         });
-
-        await emailSender.SendAsync(CreateAccountCreatedEmail(user, password));
 
         return new CreateUserResult
         {
@@ -156,7 +156,7 @@ public class UserManagementService(
             EnsureIdentitySucceeded(addResult, "De nieuwe rol kon niet worden gekoppeld.");
         }
 
-        await securityAuditService.LogAsync(new SecurityAuditEvent
+        await securityAuditService.TryLogAsync(new SecurityAuditEvent
         {
             EventType = SecurityAuditEventType.UserUpdated,
             Outcome = SecurityAuditOutcome.Success,
@@ -173,10 +173,9 @@ public class UserManagementService(
             }
         });
 
-        // Create another log for when user gets disabled, to enable searching for specific event.
         if (wasActive && !user.IsActive)
         {
-            await securityAuditService.LogAsync(new SecurityAuditEvent
+            await securityAuditService.TryLogAsync(new SecurityAuditEvent
             {
                 EventType = SecurityAuditEventType.UserDisabled,
                 Outcome = SecurityAuditOutcome.Success,

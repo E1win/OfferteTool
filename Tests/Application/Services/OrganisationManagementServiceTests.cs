@@ -39,6 +39,11 @@ public class OrganisationManagementServiceTests
         securityAuditService
             .Setup(service => service.LogAsync(It.IsAny<SecurityAuditEvent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+        securityAuditService
+            .Setup(service => service.TryLogAsync(
+                It.IsAny<SecurityAuditEvent>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
     }
 
     [Fact]
@@ -92,7 +97,7 @@ public class OrganisationManagementServiceTests
             && organisation.KvkNumber == "12345678"
             && organisation.OrganisationType == OrganisationType.Supplier
             && organisation.IsActive)), Times.Once);
-        securityAuditService.Verify(service => service.LogAsync(
+        securityAuditService.Verify(service => service.TryLogAsync(
             It.Is<SecurityAuditEvent>(auditEvent =>
                 auditEvent.EventType == SecurityAuditEventType.OrganisationCreated
                 && auditEvent.Outcome == SecurityAuditOutcome.Success
@@ -126,7 +131,7 @@ public class OrganisationManagementServiceTests
         Assert.False(organisation.IsActive);
         Assert.All(linkedUsers, user => Assert.False(user.IsActive));
         organisationRepository.Verify(repository => repository.SaveChangesAsync(), Times.Once);
-        securityAuditService.Verify(service => service.LogAsync(
+        securityAuditService.Verify(service => service.TryLogAsync(
             It.Is<SecurityAuditEvent>(auditEvent =>
                 auditEvent.EventType == SecurityAuditEventType.OrganisationDeactivated
                 && auditEvent.TargetOrganisationId == organisation.Id),

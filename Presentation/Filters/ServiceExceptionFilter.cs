@@ -14,7 +14,8 @@ namespace Presentation.Filters;
 /// Business validation exceptions should be handled by controllers for
 /// context-specific MVC error messages, but can be mapped generically for API endpoints.
 /// </summary>
-public class ServiceExceptionFilter(ISecurityAuditService securityAuditService) : IAsyncExceptionFilter
+public class ServiceExceptionFilter(
+    ISecurityAuditService securityAuditService) : IAsyncExceptionFilter
 {
     public async Task OnExceptionAsync(ExceptionContext context)
     {
@@ -66,7 +67,7 @@ public class ServiceExceptionFilter(ISecurityAuditService securityAuditService) 
     {
         var httpContext = context.HttpContext;
 
-        await securityAuditService.LogAsync(new SecurityAuditEvent
+        await securityAuditService.TryLogAsync(new SecurityAuditEvent
         {
             EventType = SecurityAuditEventType.AccessDenied,
             Outcome = SecurityAuditOutcome.Denied,

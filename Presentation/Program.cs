@@ -75,7 +75,7 @@ builder.Services.ConfigureApplicationCookie(options =>
             return;
         }
 
-        await LogAccessDeniedAsync(context.HttpContext, SecurityAuditOutcome.Denied);
+        await TryLogAccessDeniedAsync(context.HttpContext, SecurityAuditOutcome.Denied);
 
         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
         context.Response.ContentType = "application/json";
@@ -91,12 +91,12 @@ builder.Services.ConfigureApplicationCookie(options =>
     {
         if (!context.Request.Path.StartsWithSegments("/api"))
         {
-            await LogAccessDeniedAsync(context.HttpContext, SecurityAuditOutcome.Denied);
+            await TryLogAccessDeniedAsync(context.HttpContext, SecurityAuditOutcome.Denied);
             context.Response.Redirect(context.RedirectUri);
             return;
         }
 
-        await LogAccessDeniedAsync(context.HttpContext, SecurityAuditOutcome.Denied);
+        await TryLogAccessDeniedAsync(context.HttpContext, SecurityAuditOutcome.Denied);
 
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         context.Response.ContentType = "application/json";
@@ -338,22 +338,33 @@ app.MapRazorPages()
 
 app.Run();
 
-static async Task LogAccessDeniedAsync(HttpContext httpContext, SecurityAuditOutcome outcome)
+static async Task TryLogAccessDeniedAsync(HttpContext httpContext, SecurityAuditOutcome outcome)
 {
-    var securityAuditService = httpContext.RequestServices.GetRequiredService<ISecurityAuditService>();
+    var logger = httpContext.RequestServices
+        .GetService<ILoggerFactory>()
+        ?.CreateLogger("SecurityAudit");
 
-    await securityAuditService.LogAsync(new SecurityAuditEvent
+    try
     {
-        EventType = SecurityAuditEventType.AccessDenied,
-        Outcome = outcome,
-        ActorUserId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier),
-        IpAddress = httpContext.Connection.RemoteIpAddress?.ToString(),
-        UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
-        TraceId = httpContext.TraceIdentifier,
-        Details = new Dictionary<string, string>
+        var securityAuditService = httpContext.RequestServices.GetRequiredService<ISecurityAuditService>();
+
+        await securityAuditService.TryLogAsync(new SecurityAuditEvent
         {
-            ["method"] = httpContext.Request.Method,
-            ["path"] = httpContext.Request.Path.Value ?? string.Empty
-        }
-    });
+            EventType = SecurityAuditEventType.AccessDenied,
+            Outcome = outcome,
+            ActorUserId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier),
+            IpAddress = httpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
+            TraceId = httpContext.TraceIdentifier,
+            Details = new Dictionary<string, string>
+            {
+                ["method"] = httpContext.Request.Method,
+                ["path"] = httpContext.Request.Path.Value ?? string.Empty
+            }
+        });
+    }
+    catch (Exception ex)
+    {
+        logger?.LogError(ex, "Security audit service could not be resolved while handling access denied.");
+    }
 }

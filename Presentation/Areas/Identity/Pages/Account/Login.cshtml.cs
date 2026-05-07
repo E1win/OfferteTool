@@ -88,7 +88,7 @@ public class LoginModel(
         SecurityAuditOutcome outcome,
         ApplicationUser? user = null)
     {
-        await securityAuditService.LogAsync(new SecurityAuditEvent
+        await securityAuditService.TryLogAsync(new SecurityAuditEvent
         {
             EventType = eventType,
             Outcome = outcome,
