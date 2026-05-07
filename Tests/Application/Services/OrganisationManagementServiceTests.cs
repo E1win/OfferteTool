@@ -1,4 +1,6 @@
 using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
+using Application.Models.SecurityAudit;
 using Application.Models.OrganisationManagement;
 using Application.Services;
 using Domain.Constants;
@@ -16,6 +18,7 @@ public class OrganisationManagementServiceTests
 
     private readonly Mock<IApplicationUserRepository> applicationUserRepository = new();
     private readonly Mock<IOrganisationRepository> organisationRepository = new();
+    private readonly Mock<ISecurityAuditService> securityAuditService = new();
     private readonly Mock<UserManager<ApplicationUser>> userManager = new(
         Mock.Of<IUserStore<ApplicationUser>>(),
         null!,
@@ -33,6 +36,9 @@ public class OrganisationManagementServiceTests
         userManager
             .Setup(manager => manager.GetRolesAsync(It.IsAny<ApplicationUser>()))
             .Returns((ApplicationUser user) => Task.FromResult(GetRolesFor(user)));
+        securityAuditService
+            .Setup(service => service.LogAsync(It.IsAny<SecurityAuditEvent>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
     }
 
     [Fact]
@@ -86,6 +92,13 @@ public class OrganisationManagementServiceTests
             && organisation.KvkNumber == "12345678"
             && organisation.OrganisationType == OrganisationType.Supplier
             && organisation.IsActive)), Times.Once);
+        securityAuditService.Verify(service => service.LogAsync(
+            It.Is<SecurityAuditEvent>(auditEvent =>
+                auditEvent.EventType == SecurityAuditEventType.OrganisationCreated
+                && auditEvent.Outcome == SecurityAuditOutcome.Success
+                && auditEvent.ActorUserId == ActorUserId
+                && auditEvent.TargetOrganisationId == result.Id),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -113,6 +126,11 @@ public class OrganisationManagementServiceTests
         Assert.False(organisation.IsActive);
         Assert.All(linkedUsers, user => Assert.False(user.IsActive));
         organisationRepository.Verify(repository => repository.SaveChangesAsync(), Times.Once);
+        securityAuditService.Verify(service => service.LogAsync(
+            It.Is<SecurityAuditEvent>(auditEvent =>
+                auditEvent.EventType == SecurityAuditEventType.OrganisationDeactivated
+                && auditEvent.TargetOrganisationId == organisation.Id),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -155,6 +173,7 @@ public class OrganisationManagementServiceTests
         return new OrganisationManagementService(
             applicationUserRepository.Object,
             organisationRepository.Object,
+            securityAuditService.Object,
             userManager.Object);
     }
 

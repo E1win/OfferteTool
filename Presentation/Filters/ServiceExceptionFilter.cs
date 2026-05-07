@@ -1,7 +1,11 @@
+using Application.Interfaces.Services;
+using Application.Models.SecurityAudit;
+using Domain.Enums;
 using Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Presentation.Models.Api;
+using System.Security.Claims;
 
 namespace Presentation.Filters;
 
@@ -10,9 +14,9 @@ namespace Presentation.Filters;
 /// Business validation exceptions should be handled by controllers for
 /// context-specific MVC error messages, but can be mapped generically for API endpoints.
 /// </summary>
-public class ServiceExceptionFilter : IExceptionFilter
+public class ServiceExceptionFilter(ISecurityAuditService securityAuditService) : IAsyncExceptionFilter
 {
-    public void OnException(ExceptionContext context)
+    public async Task OnExceptionAsync(ExceptionContext context)
     {
         var isApiController = context.HttpContext.Request.Path.StartsWithSegments("/api");
 
@@ -51,7 +55,30 @@ public class ServiceExceptionFilter : IExceptionFilter
             _ => null
         };
 
+        if (context.Exception is UnauthorizedAccessException)
+            await LogAccessDeniedAsync(context);
+
         if (context.Result != null)
             context.ExceptionHandled = true;
+    }
+
+    private async Task LogAccessDeniedAsync(ExceptionContext context)
+    {
+        var httpContext = context.HttpContext;
+
+        await securityAuditService.LogAsync(new SecurityAuditEvent
+        {
+            EventType = SecurityAuditEventType.AccessDenied,
+            Outcome = SecurityAuditOutcome.Denied,
+            ActorUserId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier),
+            IpAddress = httpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
+            TraceId = httpContext.TraceIdentifier,
+            Details = new Dictionary<string, string>
+            {
+                ["method"] = httpContext.Request.Method,
+                ["path"] = httpContext.Request.Path.Value ?? string.Empty
+            }
+        });
     }
 }

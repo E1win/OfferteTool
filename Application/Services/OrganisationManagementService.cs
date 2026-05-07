@@ -1,6 +1,7 @@
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Application.Models.OrganisationManagement;
+using Application.Models.SecurityAudit;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Enums;
@@ -12,6 +13,7 @@ namespace Application.Services;
 public class OrganisationManagementService(
     IApplicationUserRepository applicationUserRepository,
     IOrganisationRepository organisationRepository,
+    ISecurityAuditService securityAuditService,
     UserManager<ApplicationUser> userManager) : IOrganisationManagementService
 {
     public async Task<List<ManagedOrganisation>> GetOrganisationsAsync(OrganisationManagementQuery query)
@@ -54,6 +56,19 @@ public class OrganisationManagementService(
 
         await organisationRepository.AddAsync(organisation);
 
+        await securityAuditService.LogAsync(new SecurityAuditEvent
+        {
+            EventType = SecurityAuditEventType.OrganisationCreated,
+            Outcome = SecurityAuditOutcome.Success,
+            ActorUserId = actorUserId,
+            TargetOrganisationId = organisation.Id,
+            Details = new Dictionary<string, string>
+            {
+                ["organisationType"] = organisation.OrganisationType.ToString(),
+                ["isActive"] = organisation.IsActive.ToString()
+            }
+        });
+
         return MapToManagedOrganisation(organisation);
     }
 
@@ -64,20 +79,46 @@ public class OrganisationManagementService(
 
         var organisation = await organisationRepository.GetByIdAsync(request.Id)
             ?? throw new BusinessRuleViolationException("De organisatie bestaat niet.");
+        var name = NormalizeName(request.Name);
         var kvkNumber = NormalizeKvkNumber(request.KvkNumber);
+        var oldOrganisationType = organisation.OrganisationType;
+        var oldIsActive = organisation.IsActive;
+        var nameChanged = !string.Equals(organisation.Name, name, StringComparison.Ordinal);
+        var kvkNumberChanged = !string.Equals(organisation.KvkNumber, kvkNumber, StringComparison.Ordinal);
 
         await EnsureKvkNumberIsUniqueAsync(kvkNumber, organisation.Id);
 
-        organisation.Name = NormalizeName(request.Name);
+        organisation.Name = name;
         organisation.KvkNumber = kvkNumber;
         organisation.OrganisationType = request.OrganisationType;
 
+        List<ApplicationUser> deactivatedUsers = [];
         if (!request.IsActive)
-            await DeactivateOrganisationAndUsersAsync(organisation);
+            deactivatedUsers = await DeactivateOrganisationAndUsersAsync(organisation);
         else
             organisation.IsActive = true;
 
         await organisationRepository.SaveChangesAsync();
+
+        await securityAuditService.LogAsync(new SecurityAuditEvent
+        {
+            EventType = SecurityAuditEventType.OrganisationUpdated,
+            Outcome = SecurityAuditOutcome.Success,
+            ActorUserId = actorUserId,
+            TargetOrganisationId = organisation.Id,
+            Details = new Dictionary<string, string>
+            {
+                ["nameChanged"] = nameChanged.ToString(),
+                ["kvkNumberChanged"] = kvkNumberChanged.ToString(),
+                ["oldOrganisationType"] = oldOrganisationType.ToString(),
+                ["newOrganisationType"] = organisation.OrganisationType.ToString(),
+                ["oldIsActive"] = oldIsActive.ToString(),
+                ["newIsActive"] = organisation.IsActive.ToString()
+            }
+        });
+
+        if (oldIsActive && !organisation.IsActive)
+            await LogOrganisationDeactivationAsync(organisation, actorUserId, deactivatedUsers);
 
         return MapToManagedOrganisation(organisation);
     }
@@ -89,11 +130,13 @@ public class OrganisationManagementService(
         var organisation = await organisationRepository.GetByIdAsync(organisationId)
             ?? throw new BusinessRuleViolationException("De organisatie bestaat niet.");
 
-        await DeactivateOrganisationAndUsersAsync(organisation);
+        var deactivatedUsers = await DeactivateOrganisationAndUsersAsync(organisation);
         await organisationRepository.SaveChangesAsync();
+
+        await LogOrganisationDeactivationAsync(organisation, actorUserId, deactivatedUsers);
     }
 
-    private async Task DeactivateOrganisationAndUsersAsync(Organisation organisation)
+    private async Task<List<ApplicationUser>> DeactivateOrganisationAndUsersAsync(Organisation organisation)
     {
         organisation.IsActive = false;
 
@@ -101,6 +144,42 @@ public class OrganisationManagementService(
 
         foreach (var user in linkedUsers)
             user.IsActive = false;
+
+        return linkedUsers;
+    }
+
+    private async Task LogOrganisationDeactivationAsync(
+        Organisation organisation,
+        string actorUserId,
+        IReadOnlyCollection<ApplicationUser> deactivatedUsers)
+    {
+        await securityAuditService.LogAsync(new SecurityAuditEvent
+        {
+            EventType = SecurityAuditEventType.OrganisationDeactivated,
+            Outcome = SecurityAuditOutcome.Success,
+            ActorUserId = actorUserId,
+            TargetOrganisationId = organisation.Id,
+            Details = new Dictionary<string, string>
+            {
+                ["deactivatedUserCount"] = deactivatedUsers.Count.ToString()
+            }
+        });
+
+        foreach (var user in deactivatedUsers)
+        {
+            await securityAuditService.LogAsync(new SecurityAuditEvent
+            {
+                EventType = SecurityAuditEventType.UserDisabled,
+                Outcome = SecurityAuditOutcome.Success,
+                ActorUserId = actorUserId,
+                TargetUserId = user.Id,
+                TargetOrganisationId = organisation.Id,
+                Details = new Dictionary<string, string>
+                {
+                    ["reason"] = "OrganisationDeactivated"
+                }
+            });
+        }
     }
 
     private async Task EnsureActorIsBeheerderAsync(string actorUserId)

@@ -2,9 +2,11 @@ using System.Security.Cryptography;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Application.Models.Email;
+using Application.Models.SecurityAudit;
 using Application.Models.UserManagement;
 using Domain.Constants;
 using Domain.Entities;
+using Domain.Enums;
 using Domain.Exceptions;
 using Microsoft.AspNetCore.Identity;
 
@@ -14,6 +16,7 @@ public class UserManagementService(
     IApplicationUserRepository applicationUserRepository,
     IOrganisationRepository organisationRepository,
     IEmailSender emailSender,
+    ISecurityAuditService securityAuditService,
     UserManager<ApplicationUser> userManager) : IUserManagementService
 {
     private static readonly string[] ManageableRoles =
@@ -93,6 +96,20 @@ public class UserManagementService(
         var roleResult = await userManager.AddToRoleAsync(user, request.Role);
         EnsureIdentitySucceeded(roleResult, "De rol kon niet aan de gebruiker worden gekoppeld.");
 
+        await securityAuditService.LogAsync(new SecurityAuditEvent
+        {
+            EventType = SecurityAuditEventType.UserCreated,
+            Outcome = SecurityAuditOutcome.Success,
+            ActorUserId = actorUserId,
+            TargetUserId = user.Id,
+            TargetOrganisationId = user.OrganisationId,
+            Details = new Dictionary<string, string>
+            {
+                ["role"] = request.Role,
+                ["isActive"] = user.IsActive.ToString()
+            }
+        });
+
         await emailSender.SendAsync(CreateAccountCreatedEmail(user, password));
 
         return new CreateUserResult
@@ -109,6 +126,7 @@ public class UserManagementService(
         var user = await applicationUserRepository.GetByIdAsync(request.UserId)
             ?? throw new BusinessRuleViolationException("De gebruiker bestaat niet.");
         var currentRole = await GetSingleRoleAsync(user);
+        var wasActive = user.IsActive;
 
         if (user.Id == actorUserId && !request.IsActive)
             throw new BusinessRuleViolationException("U kunt uw eigen account niet uitschakelen.");
@@ -138,6 +156,40 @@ public class UserManagementService(
             EnsureIdentitySucceeded(addResult, "De nieuwe rol kon niet worden gekoppeld.");
         }
 
+        await securityAuditService.LogAsync(new SecurityAuditEvent
+        {
+            EventType = SecurityAuditEventType.UserUpdated,
+            Outcome = SecurityAuditOutcome.Success,
+            ActorUserId = actorUserId,
+            TargetUserId = user.Id,
+            TargetOrganisationId = user.OrganisationId,
+            Details = new Dictionary<string, string>
+            {
+                ["emailChanged"] = emailChanged.ToString(),
+                ["oldIsActive"] = wasActive.ToString(),
+                ["newIsActive"] = user.IsActive.ToString(),
+                ["oldRole"] = currentRole,
+                ["newRole"] = request.Role
+            }
+        });
+
+        // Create another log for when user gets disabled, to enable searching for specific event.
+        if (wasActive && !user.IsActive)
+        {
+            await securityAuditService.LogAsync(new SecurityAuditEvent
+            {
+                EventType = SecurityAuditEventType.UserDisabled,
+                Outcome = SecurityAuditOutcome.Success,
+                ActorUserId = actorUserId,
+                TargetUserId = user.Id,
+                TargetOrganisationId = user.OrganisationId,
+                Details = new Dictionary<string, string>
+                {
+                    ["role"] = request.Role
+                }
+            });
+        }
+
         return await MapToManagedUserAsync(user);
     }
 
@@ -150,24 +202,6 @@ public class UserManagementService(
         EnsureIdentitySucceeded(userNameResult, "De gebruikersnaam kon niet worden bijgewerkt.");
 
         user.EmailConfirmed = true;
-    }
-
-    public async Task DisableUserAsync(string userId, string actorUserId)
-    {
-        await EnsureActorIsBeheerderAsync(actorUserId);
-
-        if (userId == actorUserId)
-            throw new BusinessRuleViolationException("U kunt uw eigen account niet uitschakelen.");
-
-        var user = await applicationUserRepository.GetByIdAsync(userId)
-            ?? throw new BusinessRuleViolationException("De gebruiker bestaat niet.");
-        var currentRole = await GetSingleRoleAsync(user);
-
-        await EnsureBeheerderCanBeChangedAsync(user, currentRole, currentRole, isActive: false);
-
-        user.IsActive = false;
-        var result = await userManager.UpdateAsync(user);
-        EnsureIdentitySucceeded(result, "De gebruiker kon niet worden uitgeschakeld.");
     }
 
     private async Task EnsureActorIsBeheerderAsync(string actorUserId)

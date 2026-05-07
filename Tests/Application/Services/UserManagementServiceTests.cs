@@ -1,6 +1,7 @@
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Application.Models.Email;
+using Application.Models.SecurityAudit;
 using Application.Models.UserManagement;
 using Application.Services;
 using Domain.Constants;
@@ -19,6 +20,7 @@ public class UserManagementServiceTests
     private readonly Mock<IApplicationUserRepository> applicationUserRepository = new();
     private readonly Mock<IOrganisationRepository> organisationRepository = new();
     private readonly Mock<IEmailSender> emailSender = new();
+    private readonly Mock<ISecurityAuditService> securityAuditService = new();
     private readonly Mock<UserManager<ApplicationUser>> userManager = new(
         Mock.Of<IUserStore<ApplicationUser>>(),
         null!,
@@ -63,6 +65,9 @@ public class UserManagementServiceTests
         userManager
             .Setup(manager => manager.GetUsersInRoleAsync(Roles.Beheerder))
             .ReturnsAsync([]);
+        securityAuditService
+            .Setup(service => service.LogAsync(It.IsAny<SecurityAuditEvent>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
     }
 
     [Fact]
@@ -222,6 +227,14 @@ public class UserManagementServiceTests
         Assert.Equal("nieuw@example.com", sentEmail.To);
         Assert.Contains("Wachtwoord:", sentEmail.TextBody);
         userManager.Verify(manager => manager.AddToRoleAsync(createdUser, Roles.Inkoper), Times.Once);
+        securityAuditService.Verify(service => service.LogAsync(
+            It.Is<SecurityAuditEvent>(auditEvent =>
+                auditEvent.EventType == SecurityAuditEventType.UserCreated
+                && auditEvent.Outcome == SecurityAuditOutcome.Success
+                && auditEvent.ActorUserId == ActorUserId
+                && auditEvent.TargetUserId == createdUser.Id
+                && auditEvent.Details.Values.All(value => generatedPassword == null || !value.Contains(generatedPassword))),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -369,42 +382,77 @@ public class UserManagementServiceTests
     }
 
     [Fact]
-    public async Task DisableUserAsync_WhenUserIsActor_ThrowsBusinessRuleViolationException()
+    public async Task UpdateUserAsync_WhenUserIsActorAndInactiveRequested_ThrowsBusinessRuleViolationException()
     {
         // Arrange
         SetupActiveBeheerderActor();
         var service = CreateService();
+        var request = new UpdateUserRequest
+        {
+            UserId = ActorUserId,
+            Email = "actor@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            Role = Roles.Beheerder,
+            IsActive = false
+        };
 
         // Act
-        await Assert.ThrowsAsync<BusinessRuleViolationException>(() => service.DisableUserAsync(ActorUserId, ActorUserId));
+        await Assert.ThrowsAsync<BusinessRuleViolationException>(() => service.UpdateUserAsync(request, ActorUserId));
 
         // Assert
         userManager.Verify(manager => manager.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Never);
     }
 
     [Fact]
-    public async Task DisableUserAsync_WhenValid_SetsIsActiveFalseAndUpdatesIdentityUser()
+    public async Task UpdateUserAsync_WhenActiveUserIsDeactivated_LogsUserDisabled()
     {
         // Arrange
-        var user = CreateUser("user-1", "user@example.com");
+        var client = CreateOrganisation("Gemeente Utrecht", OrganisationType.Client);
+        var user = CreateUser("user-1", "user@example.com", organisation: client);
 
         SetupActiveBeheerderActor();
-        SetupRole(user, Roles.Beheerder);
+        SetupRole(user, Roles.Inkoper);
         applicationUserRepository
             .Setup(repository => repository.GetByIdAsync(user.Id))
             .ReturnsAsync(user);
-        userManager
-            .Setup(manager => manager.GetUsersInRoleAsync(Roles.Beheerder))
-            .ReturnsAsync([CreateUser("other-beheerder", "other@example.com"), user]);
+        organisationRepository
+            .Setup(repository => repository.GetByIdAsync(client.Id))
+            .ReturnsAsync(client);
 
         var service = CreateService();
+        var request = new UpdateUserRequest
+        {
+            UserId = user.Id,
+            Email = user.Email!,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Role = Roles.Inkoper,
+            IsActive = false
+        };
 
         // Act
-        await service.DisableUserAsync(user.Id, ActorUserId);
+        await service.UpdateUserAsync(request, ActorUserId);
 
         // Assert
         Assert.False(user.IsActive);
         userManager.Verify(manager => manager.UpdateAsync(user), Times.Once);
+        securityAuditService.Verify(service => service.LogAsync(
+            It.Is<SecurityAuditEvent>(auditEvent =>
+                auditEvent.EventType == SecurityAuditEventType.UserUpdated
+                && auditEvent.TargetUserId == user.Id
+                && auditEvent.Details["oldIsActive"] == bool.TrueString
+                && auditEvent.Details["newIsActive"] == bool.FalseString),
+            It.IsAny<CancellationToken>()), Times.Once);
+        securityAuditService.Verify(service => service.LogAsync(
+            It.Is<SecurityAuditEvent>(auditEvent =>
+                auditEvent.EventType == SecurityAuditEventType.UserDisabled
+                && auditEvent.Outcome == SecurityAuditOutcome.Success
+                && auditEvent.ActorUserId == ActorUserId
+                && auditEvent.TargetUserId == user.Id
+                && auditEvent.TargetOrganisationId == client.Id
+                && auditEvent.Details["role"] == Roles.Inkoper),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private UserManagementService CreateService()
@@ -413,6 +461,7 @@ public class UserManagementServiceTests
             applicationUserRepository.Object,
             organisationRepository.Object,
             emailSender.Object,
+            securityAuditService.Object,
             userManager.Object);
     }
 
