@@ -35,7 +35,10 @@ public class SecurityAuditService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Security audit logging failed for event type {EventType}.", auditEvent.EventType);
+            logger.LogError(
+                ex,
+                "Security audit logging failed for event type {EventType}.",
+                auditEvent is null ? "Unknown" : auditEvent.EventType);
         }
     }
 
