@@ -11,6 +11,10 @@ public class SecurityAuditService(
     AppDbContext dbContext,
     ILogger<SecurityAuditService> logger) : ISecurityAuditService
 {
+    private const int MaxDetailsEntries = 20;
+    private const int MaxDetailsJsonLength = 4096;
+    private const int MaxDetailsKeyLength = 128;
+    private const int MaxDetailsValueLength = 512;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public async Task LogAsync(SecurityAuditEvent auditEvent, CancellationToken cancellationToken = default)
@@ -57,13 +61,29 @@ public class SecurityAuditService(
         if (details.Count == 0)
             return null;
 
-        var safeDetails = details
-            .Where(detail => !string.IsNullOrWhiteSpace(detail.Key))
-            .ToDictionary(
-                detail => Truncate(detail.Key, 128)!,
-                detail => Truncate(detail.Value, 512) ?? string.Empty);
+        var safeDetails = new Dictionary<string, string>();
 
-        return Truncate(JsonSerializer.Serialize(safeDetails, JsonOptions), 4096);
+        foreach (var detail in details.Where(detail => !string.IsNullOrWhiteSpace(detail.Key)).Take(MaxDetailsEntries))
+        {
+            var key = Truncate(detail.Key, MaxDetailsKeyLength)!;
+
+            if (safeDetails.ContainsKey(key))
+                continue;
+
+            safeDetails[key] = Truncate(detail.Value, MaxDetailsValueLength) ?? string.Empty;
+
+            // Keep the stored value valid JSON by removing the last entry
+            // instead of truncating the serialized JSON document.
+            if (JsonSerializer.Serialize(safeDetails, JsonOptions).Length <= MaxDetailsJsonLength)
+                continue;
+
+            safeDetails.Remove(key);
+            continue;
+        }
+
+        return safeDetails.Count == 0
+            ? null
+            : JsonSerializer.Serialize(safeDetails, JsonOptions);
     }
 
     private static string? Truncate(string? value, int maxLength)
