@@ -17,21 +17,19 @@ public class SecurityAuditService(
     private const int MaxDetailsValueLength = 512;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public async Task LogAsync(SecurityAuditEvent auditEvent, CancellationToken cancellationToken = default)
+    public async Task LogAsync(SecurityAuditEvent auditEvent)
     {
         ArgumentNullException.ThrowIfNull(auditEvent);
 
-        await dbContext.SecurityAuditLogs.AddAsync(CreateLog(auditEvent), cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.SecurityAuditLogs.AddAsync(CreateLog(auditEvent));
+        await dbContext.SaveChangesAsync();
     }
 
-    public async Task TryLogAsync(
-        SecurityAuditEvent auditEvent,
-        CancellationToken cancellationToken = default)
+    public async Task TryLogAsync(SecurityAuditEvent auditEvent)
     {
         try
         {
-            await LogAsync(auditEvent, cancellationToken);
+            await LogAsync(auditEvent);
         }
         catch (Exception ex)
         {

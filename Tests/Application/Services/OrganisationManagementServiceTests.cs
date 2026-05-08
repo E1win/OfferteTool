@@ -37,12 +37,10 @@ public class OrganisationManagementServiceTests
             .Setup(manager => manager.GetRolesAsync(It.IsAny<ApplicationUser>()))
             .Returns((ApplicationUser user) => Task.FromResult(GetRolesFor(user)));
         securityAuditService
-            .Setup(service => service.LogAsync(It.IsAny<SecurityAuditEvent>(), It.IsAny<CancellationToken>()))
+            .Setup(service => service.LogAsync(It.IsAny<SecurityAuditEvent>()))
             .Returns(Task.CompletedTask);
         securityAuditService
-            .Setup(service => service.TryLogAsync(
-                It.IsAny<SecurityAuditEvent>(),
-                It.IsAny<CancellationToken>()))
+            .Setup(service => service.TryLogAsync(It.IsAny<SecurityAuditEvent>()))
             .Returns(Task.CompletedTask);
     }
 
@@ -102,8 +100,7 @@ public class OrganisationManagementServiceTests
                 auditEvent.EventType == SecurityAuditEventType.OrganisationCreated
                 && auditEvent.Outcome == SecurityAuditOutcome.Success
                 && auditEvent.ActorUserId == ActorUserId
-                && auditEvent.TargetOrganisationId == result.Id),
-            It.IsAny<CancellationToken>()), Times.Once);
+                && auditEvent.TargetOrganisationId == result.Id)), Times.Once);
     }
 
     [Fact]
@@ -134,8 +131,7 @@ public class OrganisationManagementServiceTests
         securityAuditService.Verify(service => service.TryLogAsync(
             It.Is<SecurityAuditEvent>(auditEvent =>
                 auditEvent.EventType == SecurityAuditEventType.OrganisationDeactivated
-                && auditEvent.TargetOrganisationId == organisation.Id),
-            It.IsAny<CancellationToken>()), Times.Once);
+                && auditEvent.TargetOrganisationId == organisation.Id)), Times.Once);
     }
 
     [Fact]
