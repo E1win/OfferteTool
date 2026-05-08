@@ -20,6 +20,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<TenderSubmissionReview> TenderSubmissionReviews => Set<TenderSubmissionReview>();
     public DbSet<TenderQuestionReview> TenderQuestionReviews => Set<TenderQuestionReview>();
     public DbSet<TenderChangeLog> TenderChangeLogs => Set<TenderChangeLog>();
+    public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -40,6 +41,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureTenderQuestionReview(modelBuilder);
         ConfigureTenderReviewer(modelBuilder);
         ConfigureTenderChangeLog(modelBuilder);
+        ConfigureSecurityAuditLog(modelBuilder);
     }
 
     private static void ConfigureRole(ModelBuilder modelBuilder)
@@ -223,6 +225,17 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany(tender => tender.ChangeLogs)
                 .HasForeignKey(changeLog => changeLog.TenderId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureSecurityAuditLog(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<SecurityAuditLog>(e =>
+        {
+            e.HasIndex(log => new { log.EventType, log.OccurredAtUtc });
+            e.HasIndex(log => new { log.ActorUserId, log.OccurredAtUtc });
+            e.HasIndex(log => new { log.TargetUserId, log.OccurredAtUtc });
+            e.HasIndex(log => new { log.TargetOrganisationId, log.OccurredAtUtc });
         });
     }
 }

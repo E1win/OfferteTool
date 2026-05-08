@@ -9,5 +9,4 @@ public interface IUserManagementService
     Task<UserManagementFormOptions> GetFormOptionsAsync();
     Task<CreateUserResult> CreateUserAsync(CreateUserRequest request, string actorUserId);
     Task<ManagedUser> UpdateUserAsync(UpdateUserRequest request, string actorUserId);
-    Task DisableUserAsync(string userId, string actorUserId);
 }

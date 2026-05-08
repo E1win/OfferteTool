@@ -1,7 +1,9 @@
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
+using Application.Models.SecurityAudit;
 using Application.Services;
 using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Data;
 using Infrastructure.Configuration;
 using Infrastructure.Email;
@@ -65,17 +67,19 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
 
     // Return JSON responses for API requests instead of redirecting to login or access denied pages
-    options.Events.OnRedirectToLogin = context =>
+    options.Events.OnRedirectToLogin = async context =>
     {
         if (!context.Request.Path.StartsWithSegments("/api"))
         {
             context.Response.Redirect(context.RedirectUri);
-            return Task.CompletedTask;
+            return;
         }
+
+        await TryLogAccessDeniedAsync(context.HttpContext, SecurityAuditOutcome.Denied);
 
         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
         context.Response.ContentType = "application/json";
-        return context.Response.WriteAsJsonAsync(new ApiResponse<object?>
+        await context.Response.WriteAsJsonAsync(new ApiResponse<object?>
         {
             Data = null,
             Message = "Uw sessie is verlopen. Meld u opnieuw aan en probeer het daarna nog eens.",
@@ -83,17 +87,20 @@ builder.Services.ConfigureApplicationCookie(options =>
         });
     };
 
-    options.Events.OnRedirectToAccessDenied = context =>
+    options.Events.OnRedirectToAccessDenied = async context =>
     {
         if (!context.Request.Path.StartsWithSegments("/api"))
         {
+            await TryLogAccessDeniedAsync(context.HttpContext, SecurityAuditOutcome.Denied);
             context.Response.Redirect(context.RedirectUri);
-            return Task.CompletedTask;
+            return;
         }
+
+        await TryLogAccessDeniedAsync(context.HttpContext, SecurityAuditOutcome.Denied);
 
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         context.Response.ContentType = "application/json";
-        return context.Response.WriteAsJsonAsync(new ApiResponse<object?>
+        await context.Response.WriteAsJsonAsync(new ApiResponse<object?>
         {
             Data = null,
             Message = "U heeft geen toestemming om deze actie uit te voeren.",
@@ -123,6 +130,7 @@ builder.Services.AddScoped<ITenderReviewService, TenderReviewService>();
 builder.Services.AddScoped<ITenderSubmissionService, TenderSubmissionService>();
 builder.Services.AddScoped<ITenderChangeLogService, TenderChangeLogService>();
 builder.Services.AddScoped<ITenderChangeNotificationService, TenderChangeNotificationService>();
+builder.Services.AddScoped<ISecurityAuditService, SecurityAuditService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IOrganisationManagementService, OrganisationManagementService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
@@ -329,3 +337,34 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 app.Run();
+
+static async Task TryLogAccessDeniedAsync(HttpContext httpContext, SecurityAuditOutcome outcome)
+{
+    var logger = httpContext.RequestServices
+        .GetService<ILoggerFactory>()
+        ?.CreateLogger("SecurityAudit");
+
+    try
+    {
+        var securityAuditService = httpContext.RequestServices.GetRequiredService<ISecurityAuditService>();
+
+        await securityAuditService.TryLogAsync(new SecurityAuditEvent
+        {
+            EventType = SecurityAuditEventType.AccessDenied,
+            Outcome = outcome,
+            ActorUserId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier),
+            IpAddress = httpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = httpContext.Request.Headers.UserAgent.ToString(),
+            TraceId = httpContext.TraceIdentifier,
+            Details = new Dictionary<string, string>
+            {
+                ["method"] = httpContext.Request.Method,
+                ["path"] = httpContext.Request.Path.Value ?? string.Empty
+            }
+        });
+    }
+    catch (Exception ex)
+    {
+        logger?.LogError(ex, "Security audit service could not be resolved while handling access denied.");
+    }
+}
