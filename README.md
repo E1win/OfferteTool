@@ -16,6 +16,8 @@ Pull requests op de main-, develop- en release-branches worden pas geaccepteerd 
 
 ## Mitigatie van bedreigingen
 
+Bedreiging #5 is het risico dat beveiligingsgevoelige acties achteraf niet goed te herleiden zijn, waardoor een gebruiker bijvoorbeeld kan ontkennen dat hij een actie heeft uitgevoerd. Hiervoor is security audit logging toegevoegd. Dit loopt via de ISecurityAuditService, zie regel 5 t/m 8 van ISecurityAuditService.cs. In Login.cshtml.cs worden loginpogingen en lockouts gelogd, en in ServiceExceptionFilter wordt geweigerde toegang gelogd. De audit events worden uiteindelijk door SecurityAuditService opgeslagen in de SecurityAuditLogs tabel in de database.
+
 Bedreiging #6 is het risico op ongeautoriseerde toegang van gebruikers tot gevoelige informatie. Hiervoor is Defense In Depth toegepast in de applicatie door in verschillende lagen de gegevens te beschermen. Zo zie je bij Tenders bijvoorbeeld dat alleen ingelogde gebruikers toegang hebben tot offertetraject pagina's bij regel 12 van de TenderController (via de AuthenticatedControllerBase), daarnaast zie je in het domein object Tender op regel 51 dat de controle over wie de Tender kan beheren bij het domein object zelf zit. Dat wordt op bijvoorbeeld regel 101 van de TenderService gebruikt.
 
 Bedreiging #18 is het risico op overbelasting van het systeem. Hiervoor heb ik ratelimiting toegevoegd in Program.cs. Kwetsbare endpoints, zoals die van het inloggen en toevoegen van offertetrajecten, krijgen een lager limiet. Zie ter illustratie regel 136 van Program.cs
