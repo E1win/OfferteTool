@@ -55,6 +55,11 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 });
 
+builder.Services.Configure<PasswordHasherOptions>(options =>
+{
+    options.IterationCount = 600_000;
+});
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     // Set expiration to 4 hours with sliding expiration, so users won't be logged out in the middle of filling out a tender form

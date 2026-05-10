@@ -66,12 +66,10 @@ public class UserManagementServiceTests
             .Setup(manager => manager.GetUsersInRoleAsync(Roles.Beheerder))
             .ReturnsAsync([]);
         securityAuditService
-            .Setup(service => service.LogAsync(It.IsAny<SecurityAuditEvent>(), It.IsAny<CancellationToken>()))
+            .Setup(service => service.LogAsync(It.IsAny<SecurityAuditEvent>()))
             .Returns(Task.CompletedTask);
         securityAuditService
-            .Setup(service => service.TryLogAsync(
-                It.IsAny<SecurityAuditEvent>(),
-                It.IsAny<CancellationToken>()))
+            .Setup(service => service.TryLogAsync(It.IsAny<SecurityAuditEvent>()))
             .Returns(Task.CompletedTask);
     }
 
@@ -238,8 +236,7 @@ public class UserManagementServiceTests
                 && auditEvent.Outcome == SecurityAuditOutcome.Success
                 && auditEvent.ActorUserId == ActorUserId
                 && auditEvent.TargetUserId == createdUser.Id
-                && auditEvent.Details.Values.All(value => generatedPassword == null || !value.Contains(generatedPassword))),
-            It.IsAny<CancellationToken>()), Times.Once);
+                && auditEvent.Details.Values.All(value => generatedPassword == null || !value.Contains(generatedPassword)))), Times.Once);
     }
 
     [Fact]
@@ -447,8 +444,7 @@ public class UserManagementServiceTests
                 auditEvent.EventType == SecurityAuditEventType.UserUpdated
                 && auditEvent.TargetUserId == user.Id
                 && auditEvent.Details["oldIsActive"] == bool.TrueString
-                && auditEvent.Details["newIsActive"] == bool.FalseString),
-            It.IsAny<CancellationToken>()), Times.Once);
+                && auditEvent.Details["newIsActive"] == bool.FalseString)), Times.Once);
         securityAuditService.Verify(service => service.TryLogAsync(
             It.Is<SecurityAuditEvent>(auditEvent =>
                 auditEvent.EventType == SecurityAuditEventType.UserDisabled
@@ -456,8 +452,7 @@ public class UserManagementServiceTests
                 && auditEvent.ActorUserId == ActorUserId
                 && auditEvent.TargetUserId == user.Id
                 && auditEvent.TargetOrganisationId == client.Id
-                && auditEvent.Details["role"] == Roles.Inkoper),
-            It.IsAny<CancellationToken>()), Times.Once);
+                && auditEvent.Details["role"] == Roles.Inkoper)), Times.Once);
     }
 
     private UserManagementService CreateService()
