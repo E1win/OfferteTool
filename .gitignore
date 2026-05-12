@@ -121,6 +121,9 @@ ipch/
 # Visual Studio Trace Files
 *.e2e
 
+# Don't ignore end-to-end test project
+!Tests.E2E/
+
 # TFS 2012 Local Workspace
 $tf/
 
