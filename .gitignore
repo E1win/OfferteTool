@@ -125,10 +125,7 @@ ipch/
 !Tests.E2E/
 
 # Local environment configuration
-.env
-.env.local
-.env.*.local
-.env.e2e.local
+Presentation/appsettings.E2E.json
 
 # TFS 2012 Local Workspace
 $tf/

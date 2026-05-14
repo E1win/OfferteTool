@@ -23,6 +23,11 @@ using Presentation.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (builder.Environment.IsEnvironment("E2E"))
+{
+    builder.WebHost.UseStaticWebAssets();
+}
+
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("De applicatie is niet goed geconfigureerd.");
 builder.Services.AddDbContext<AppDbContext>(options =>
