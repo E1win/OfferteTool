@@ -35,4 +35,9 @@ public sealed class TenderOverviewPage
 
         await createTenderModal.GetByRole(AriaRole.Button, new() { Name = "Offertetraject aanmaken" }).ClickAsync();
     }
+
+    public async Task OpenTenderDetailsAsync(string title)
+    {
+        await page.GetByRole(AriaRole.Link, new() { Name = title, Exact = true }).ClickAsync();
+    }
 }

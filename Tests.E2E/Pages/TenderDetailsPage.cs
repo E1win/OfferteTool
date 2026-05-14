@@ -36,6 +36,12 @@ public sealed class TenderDetailsPage
         await openTenderModal.WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
         await openTenderModal.GetByRole(AriaRole.Button, new() { Name = "Offertetraject openen", Exact = true }).ClickAsync();
+        await ExpectStatusAsync("Open");
+    }
+
+    public async Task GoToSubmissionFormAsync()
+    {
+        await page.GetByRole(AriaRole.Link, new() { Name = "Offerte indienen" }).ClickAsync();
     }
 
     public async Task ExpectStatusAsync(string status)

@@ -20,4 +20,11 @@ public sealed class LoginPage
         await page.GetByLabel("Wachtwoord", new() { Exact = true }).FillAsync(user.Password);
         await page.GetByRole(AriaRole.Button, new() { Name = "Inloggen" }).ClickAsync();
     }
+
+    public async Task LogoutAsync()
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Logout" }).ClickAsync();
+        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Login" }))
+            .ToBeVisibleAsync();
+    }
 }
