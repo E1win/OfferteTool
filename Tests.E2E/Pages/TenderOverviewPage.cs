@@ -20,18 +20,19 @@ public sealed class TenderOverviewPage
     public async Task CreateTenderAsync(TenderDraft tender)
     {
         await page.GetByRole(AriaRole.Button, new() { Name = "Nieuw offertetraject" }).ClickAsync();
-        await page.GetByRole(AriaRole.Dialog, new() { Name = "Nieuw offertetraject aanmaken" }).WaitForAsync();
+        var createTenderModal = page.Locator("#createTenderModal");
+        await createTenderModal.WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
-        await page.GetByLabel("Titel", new() { Exact = true }).FillAsync(tender.Title);
-        await page.GetByLabel("Beschrijving", new() { Exact = true }).FillAsync(tender.Description);
-        await page.GetByLabel("Einddatum", new() { Exact = true }).FillAsync(tender.EndDate.ToString("yyyy-MM-dd"));
+        await createTenderModal.GetByLabel("Titel", new() { Exact = true }).FillAsync(tender.Title);
+        await createTenderModal.GetByLabel("Beschrijving", new() { Exact = true }).FillAsync(tender.Description);
+        await createTenderModal.GetByLabel("Einddatum", new() { Exact = true }).FillAsync(tender.EndDate.ToString("yyyy-MM-dd"));
 
-        var publicCheckbox = page.GetByLabel("Openbaar", new() { Exact = true });
+        var publicCheckbox = createTenderModal.GetByLabel("Openbaar", new() { Exact = true });
         if (await publicCheckbox.IsCheckedAsync() != tender.IsPublic)
         {
             await publicCheckbox.SetCheckedAsync(tender.IsPublic);
         }
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Offertetraject aanmaken" }).ClickAsync();
+        await createTenderModal.GetByRole(AriaRole.Button, new() { Name = "Offertetraject aanmaken" }).ClickAsync();
     }
 }
