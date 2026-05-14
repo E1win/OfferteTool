@@ -68,7 +68,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 
     // Set secure cookie settings
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = builder.Environment.IsEnvironment("E2E")
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax;
 
     // Return JSON responses for API requests instead of redirecting to login or access denied pages
@@ -282,7 +284,10 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("E2E"))
+{
+    app.UseHttpsRedirection();
+}
 app.UseRouting();
 
 app.Use(async (context, next) =>

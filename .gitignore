@@ -124,6 +124,12 @@ ipch/
 # Don't ignore end-to-end test project
 !Tests.E2E/
 
+# Local environment configuration
+.env
+.env.local
+.env.*.local
+.env.e2e.local
+
 # TFS 2012 Local Workspace
 $tf/
 
