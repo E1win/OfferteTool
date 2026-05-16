@@ -1,9 +1,11 @@
 using Tests.E2E;
 using Tests.E2E.Pages;
+using Tests.E2E.Fixtures;
 using Tests.E2E.TestData;
 
 namespace Tests.E2E.Specs.Tenders;
 
+[Collection(E2ECollection.Name)]
 public class TenderComparisonTests : BasePageTest
 {
     private const string ReviewerName = "Pieter Bakker (beoordelaar@test.nl)";

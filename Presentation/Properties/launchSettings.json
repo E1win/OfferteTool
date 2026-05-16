@@ -22,7 +22,7 @@
     "e2e": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "launchBrowser": true,
+      "launchBrowser": false,
       "applicationUrl": "https://localhost:7018",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "E2E"
