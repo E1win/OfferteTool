@@ -50,6 +50,17 @@ public sealed class TenderDetailsPage
         await ExpectStatusAsync("Gesloten");
     }
 
+    public async Task CompleteTenderAsync()
+    {
+        await page.GetByRole(AriaRole.Button, new() { Name = "Offertetraject afronden" }).ClickAsync();
+
+        var completeTenderModal = page.Locator("#completeTenderModal");
+        await completeTenderModal.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+
+        await completeTenderModal.GetByRole(AriaRole.Button, new() { Name = "Offertetraject afronden", Exact = true }).ClickAsync();
+        await ExpectStatusAsync("Afgerond");
+    }
+
     public async Task AssignReviewerAsync(string reviewerName)
     {
         await page.GetByRole(AriaRole.Button, new() { Name = "Beoordelaars wijzigen" }).ClickAsync();
@@ -73,6 +84,11 @@ public sealed class TenderDetailsPage
     public async Task GoToReviewFormAsync(string supplierName)
     {
         await page.GetByRole(AriaRole.Link, new() { Name = supplierName, Exact = true }).ClickAsync();
+    }
+
+    public async Task GoToComparisonDashboardAsync()
+    {
+        await page.GetByRole(AriaRole.Link, new() { Name = "Open vergelijkingsdashboard" }).ClickAsync();
     }
 
     public async Task ExpectStatusAsync(string status)
