@@ -269,6 +269,12 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
+if (app.Environment.IsEnvironment("E2E"))
+{
+    await ResetE2EDatabaseAsync(app.Services);
+    await DbSeeder.SeedDevelopmentDataAsync(app.Services);
+}
+
 // Seed development data
 if (app.Environment.IsDevelopment())
 {
@@ -333,7 +339,10 @@ app.Use(async (context, next) =>
 });
 
 app.UseAuthentication();
-app.UseRateLimiter();
+if (!app.Environment.IsEnvironment("E2E"))
+{
+    app.UseRateLimiter();
+}
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -377,4 +386,21 @@ static async Task TryLogAccessDeniedAsync(HttpContext httpContext, SecurityAudit
     {
         logger?.LogError(ex, "Security audit service could not be resolved while handling access denied.");
     }
+}
+
+static async Task ResetE2EDatabaseAsync(IServiceProvider services)
+{
+    using var scope = services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var databaseName = dbContext.Database.GetDbConnection().Database;
+
+    if (string.IsNullOrWhiteSpace(databaseName)
+        || !databaseName.Contains("E2E", StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException(
+            $"E2E database reset is geblokkeerd omdat de database '{databaseName}' niet duidelijk een E2E database is.");
+    }
+
+    await dbContext.Database.EnsureDeletedAsync();
+    await dbContext.Database.MigrateAsync();
 }

@@ -15,10 +15,14 @@ public sealed class OfferteToolAppFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        if (await IsReadyAsync())
-            return;
-
         var root = FindSolutionRoot();
+
+        if (await IsReadyAsync())
+        {
+            throw new InvalidOperationException(
+                $"{BaseUrl} is al in gebruik. Stop de handmatig gestarte E2E app, zodat de fixture de database kan resetten en de app zelf met de E2E environment kan starten.");
+        }
+
         var presentationProject = Path.Combine(root, "Presentation", "Presentation.csproj");
 
         var startInfo = new ProcessStartInfo
@@ -36,7 +40,6 @@ public sealed class OfferteToolAppFixture : IAsyncLifetime
         startInfo.ArgumentList.Add(presentationProject);
         startInfo.ArgumentList.Add("--launch-profile");
         startInfo.ArgumentList.Add("e2e");
-        startInfo.ArgumentList.Add("--no-build");
         startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "E2E";
         startInfo.Environment["DOTNET_ENVIRONMENT"] = "E2E";
 
@@ -48,7 +51,15 @@ public sealed class OfferteToolAppFixture : IAsyncLifetime
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        await WaitUntilReadyAsync();
+        try
+        {
+            await WaitUntilReadyAsync();
+        }
+        catch
+        {
+            await StopProcessAsync();
+            throw;
+        }
     }
 
     public async Task DisposeAsync()
@@ -56,18 +67,7 @@ public sealed class OfferteToolAppFixture : IAsyncLifetime
         if (process is null)
             return;
 
-        try
-        {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-                await process.WaitForExitAsync();
-            }
-        }
-        finally
-        {
-            process.Dispose();
-        }
+        await StopProcessAsync();
     }
 
     private async Task WaitUntilReadyAsync()
@@ -105,6 +105,10 @@ public sealed class OfferteToolAppFixture : IAsyncLifetime
         {
             return false;
         }
+        catch (SocketException)
+        {
+            return false;
+        }
     }
 
     private void ThrowIfProcessExited()
@@ -114,6 +118,26 @@ public sealed class OfferteToolAppFixture : IAsyncLifetime
 
         throw new InvalidOperationException(
             $"De E2E app stopte voordat hij bereikbaar werd. Exit code: {process.ExitCode}.{Environment.NewLine}{GetRecentOutput()}");
+    }
+
+    private async Task StopProcessAsync()
+    {
+        if (process is null)
+            return;
+
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync();
+            }
+        }
+        finally
+        {
+            process.Dispose();
+            process = null;
+        }
     }
 
     private static string FindSolutionRoot()

@@ -19,6 +19,9 @@ public sealed class LoginPage
         await page.GetByLabel("E-mailadres", new() { Exact = true }).FillAsync(user.Email);
         await page.GetByLabel("Wachtwoord", new() { Exact = true }).FillAsync(user.Password);
         await page.GetByRole(AriaRole.Button, new() { Name = "Inloggen" }).ClickAsync();
+
+        await Assertions.Expect(page.GetByRole(AriaRole.Button, new() { Name = "Logout" }))
+            .ToBeVisibleAsync();
     }
 
     public async Task LogoutAsync()
