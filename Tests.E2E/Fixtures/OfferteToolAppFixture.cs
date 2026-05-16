@@ -40,6 +40,7 @@ public sealed class OfferteToolAppFixture : IAsyncLifetime
         startInfo.ArgumentList.Add(presentationProject);
         startInfo.ArgumentList.Add("--launch-profile");
         startInfo.ArgumentList.Add("e2e");
+        startInfo.ArgumentList.Add("--no-build");
         startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "E2E";
         startInfo.Environment["DOTNET_ENVIRONMENT"] = "E2E";
 
