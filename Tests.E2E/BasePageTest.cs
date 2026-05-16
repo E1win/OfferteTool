@@ -10,6 +10,7 @@ public class BasePageTest : PageTest
         return new BrowserNewContextOptions
         {
             BaseURL = "https://localhost:7018",
+            IgnoreHTTPSErrors = true,
             ViewportSize = new()
             {
                 Width = 1920,
