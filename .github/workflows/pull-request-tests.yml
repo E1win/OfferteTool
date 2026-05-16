@@ -1,4 +1,4 @@
-name: Pull Request Unit Tests
+name: Pull Request Tests
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - release/**
 
 jobs:
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,10 +21,61 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore dependencies
-        run: dotnet restore Tests/Tests.csproj
+        run: dotnet restore Tests.Unit/Tests.Unit.csproj
 
       - name: Build tests
-        run: dotnet build Tests/Tests.csproj --configuration Release --no-restore
+        run: dotnet build Tests.Unit/Tests.Unit.csproj --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test Tests/Tests.csproj --configuration Release --no-build
+        run: dotnet test Tests.Unit/Tests.Unit.csproj --configuration Release --no-build
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: OfferteTool_E2E
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d OfferteTool_E2E"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ASPNETCORE_ENVIRONMENT: E2E
+      DOTNET_ENVIRONMENT: E2E
+      ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=OfferteTool_E2E;Username=postgres;Password=postgres
+      TenderSubmissionEncryption__Key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Create E2E appsettings
+        run: cp Presentation/appsettings.E2E.example.json Presentation/appsettings.E2E.json
+
+      - name: Create HTTPS development certificate
+        run: dotnet dev-certs https
+
+      - name: Restore E2E tests
+        run: dotnet restore Tests.E2E/Tests.E2E.csproj
+
+      - name: Build E2E tests
+        run: dotnet build Tests.E2E/Tests.E2E.csproj --no-restore
+
+      - name: Install Playwright browsers
+        run: pwsh Tests.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run E2E tests
+        run: dotnet test Tests.E2E/Tests.E2E.csproj --no-build
