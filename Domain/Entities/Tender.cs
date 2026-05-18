@@ -26,6 +26,7 @@ public class Tender
     public List<TenderQuestion> Questions { get; set; } = [];
     public List<TenderSubmission> Submissions { get; set; } = [];
     public List<TenderReviewer> Reviewers { get; set; } = [];
+    public List<TenderInvitation> Invitations { get; set; } = [];
     public List<TenderChangeLog> ChangeLogs { get; set; } = [];
 
     public void ValidateDates()

@@ -16,6 +16,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<TenderQuestion> TenderQuestions => Set<TenderQuestion>();
     public DbSet<TenderQuestionOption> TenderQuestionOptions => Set<TenderQuestionOption>();
     public DbSet<TenderSubmission> TenderSubmissions => Set<TenderSubmission>();
+    public DbSet<TenderInvitation> TenderInvitations => Set<TenderInvitation>();
     public DbSet<TenderAnswer> TenderAnswers => Set<TenderAnswer>();
     public DbSet<TenderSubmissionReview> TenderSubmissionReviews => Set<TenderSubmissionReview>();
     public DbSet<TenderQuestionReview> TenderQuestionReviews => Set<TenderQuestionReview>();
@@ -36,6 +37,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureTenderQuestion(modelBuilder);
         ConfigureTenderQuestionOption(modelBuilder);
         ConfigureTenderSubmission(modelBuilder);
+        ConfigureTenderInvitation(modelBuilder);
         ConfigureTenderAnswer(modelBuilder);
         ConfigureTenderSubmissionReview(modelBuilder);
         ConfigureTenderQuestionReview(modelBuilder);
@@ -72,6 +74,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                .WithOne(r => r.Tender)
                .HasForeignKey(r => r.TenderId)
                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasMany(t => t.Invitations)
+                .WithOne(i => i.Tender)
+                .HasForeignKey(i => i.TenderId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
@@ -123,6 +130,25 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             // One submission per supplier per tender
             e.HasIndex(s => new { s.TenderId, s.SupplierId })
                 .IsUnique();
+        });
+    }
+
+    private static void ConfigureTenderInvitation(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TenderInvitation>(e =>
+        {
+            e.HasIndex(i => new { i.TenderId, i.SupplierOrganisationId })
+                .IsUnique();
+
+            e.HasOne(i => i.SupplierOrganisation)
+                .WithMany()
+                .HasForeignKey(i => i.SupplierOrganisationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(i => i.InvitedByUser)
+                .WithMany()
+                .HasForeignKey(i => i.InvitedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 
