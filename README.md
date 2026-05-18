@@ -2,6 +2,81 @@
 
 ASP.NET webapplicatie ter ondersteuning van het offertetraject-proces
 
+## Setup gids
+
+### Benodigdheden
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- PostgreSQL
+- Entity Framework Core CLI:
+
+```powershell
+dotnet tool install --global dotnet-ef
+```
+
+Als `dotnet-ef` al geinstalleerd is, werk deze dan bij naar een versie die past bij .NET 10:
+
+```powershell
+dotnet tool update --global dotnet-ef
+```
+
+### Stappen
+
+1. Clone de repository en ga naar de projectmap:
+
+```powershell
+git clone <repository-url>
+cd OfferteTool
+```
+
+2. Zorg dat PostgreSQL lokaal draait. De database zelf wordt aangemaakt wanneer je de migrations toepast.
+
+3. Configureer lokale secrets voor de `Presentation` applicatie. Vervang de connection string waar nodig door je eigen PostgreSQL gegevens:
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=OfferteTool;Username=postgres;Password=postgres" --project Presentation
+dotnet user-secrets set "TenderSubmissionEncryption:Algorithm" "AES-256-GCM" --project Presentation
+```
+
+Maak daarna een lokale encryptiesleutel aan en sla die op als user secret:
+
+```powershell
+$encryptionKey = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+dotnet user-secrets set "TenderSubmissionEncryption:Key" $encryptionKey --project Presentation
+```
+
+4. Configureer SMTP instellingen als je e-mailfunctionaliteit lokaal wilt testen:
+
+```powershell
+dotnet user-secrets set "SmtpEmail:Host" "localhost" --project Presentation
+dotnet user-secrets set "SmtpEmail:Port" "2525" --project Presentation
+dotnet user-secrets set "SmtpEmail:UserName" "<smtp-gebruiker>" --project Presentation
+dotnet user-secrets set "SmtpEmail:Password" "<smtp-wachtwoord>" --project Presentation
+dotnet user-secrets set "SmtpEmail:EnableSsl" "false" --project Presentation
+dotnet user-secrets set "SmtpEmail:FromAddress" "noreply@example.local" --project Presentation
+dotnet user-secrets set "SmtpEmail:FromName" "OfferteTool" --project Presentation
+```
+
+5. Herstel packages en pas de database migrations toe. Als de database uit de connection string nog niet bestaat, wordt deze hierbij aangemaakt:
+
+```powershell
+dotnet restore
+dotnet ef database update --project Infrastructure --startup-project Presentation
+```
+
+6. Start de applicatie:
+
+```powershell
+dotnet run --project Presentation --launch-profile https
+```
+
+De applicatie is daarna beschikbaar op `https://localhost:7018` en `http://localhost:5204`. Bij het starten in de Development omgeving worden testgegevens toegevoegd. Je kunt inloggen met onder andere:
+
+- `beheerder@test.nl` / `Password123!`
+- `inkoper@test.nl` / `Password123!`
+- `beoordelaar@test.nl` / `Password123!`
+- `leverancier@test.nl` / `Password123!`
+
 ## Versiebeheer methodiek
 In deze repository wordt de Gitflow branching strategie gebruikt. Hiervoor worden de onderstaande branches gebruikt:
 
