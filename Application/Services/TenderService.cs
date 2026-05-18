@@ -25,7 +25,7 @@ public class TenderService(
             Roles.Beoordelaar
                 => await tenderRepository.GetClosedByReviewerAsync(user.Id),
             Roles.Leverancier
-                => await tenderRepository.GetPublicOpenAsync(),
+                => await tenderRepository.GetOpenForSupplierAsync(user.OrganisationId),
             _ => []
         };
     }

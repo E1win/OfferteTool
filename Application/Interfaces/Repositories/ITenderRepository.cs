@@ -10,7 +10,7 @@ public interface ITenderRepository
     Task<Tender?> GetByIdWithComparisonDataAsync(Guid id);
     Task<List<Tender>> GetByOrganisationAsync(Guid organisationId);
     Task<List<Tender>> GetClosedByReviewerAsync(string reviewerUserId);
-    Task<List<Tender>> GetPublicOpenAsync();
+    Task<List<Tender>> GetOpenForSupplierAsync(Guid? supplierOrganisationId);
     Task<Tender> AddAsync(Tender tender);
     Task UpdateAsync();
 }

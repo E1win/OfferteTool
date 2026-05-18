@@ -45,7 +45,7 @@ public class Tender
             Roles.Beoordelaar
                 => CanReview(user),
             Roles.Leverancier
-                => IsPublic && Status == TenderStatus.Open,
+                => Status == TenderStatus.Open && (IsPublic || IsInvitedSupplier(user)),
             _ => false
         };
 
@@ -71,6 +71,14 @@ public class Tender
     public bool HasReviewer(string userId) =>
         !string.IsNullOrWhiteSpace(userId)
         && Reviewers.Any(reviewer => reviewer.UserId == userId);
+
+    public bool HasInvitationForSupplier(Guid supplierOrganisationId) =>
+        supplierOrganisationId != Guid.Empty
+        && Invitations.Any(invitation => invitation.SupplierOrganisationId == supplierOrganisationId);
+
+    private bool IsInvitedSupplier(ApplicationUser user) =>
+        user.OrganisationId is not null
+        && HasInvitationForSupplier(user.OrganisationId.Value);
 
     public bool CanReview(ApplicationUser user)
     {
