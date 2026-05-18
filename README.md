@@ -2,6 +2,123 @@
 
 ASP.NET webapplicatie ter ondersteuning van het offertetraject-proces
 
+## Setup gids
+
+### Benodigdheden
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- PostgreSQL
+- Entity Framework Core CLI:
+
+```powershell
+dotnet tool install --global dotnet-ef
+```
+
+Als `dotnet-ef` al geinstalleerd is, werk deze dan bij naar een versie die past bij .NET 10:
+
+```powershell
+dotnet tool update --global dotnet-ef
+```
+
+### Stappen
+
+1. Clone de repository en ga naar de projectmap:
+
+```powershell
+git clone <repository-url>
+cd OfferteTool
+```
+
+2. Zorg dat PostgreSQL lokaal draait. De database zelf wordt aangemaakt wanneer je de migrations toepast.
+
+3. Configureer lokale secrets voor de `Presentation` applicatie. Vervang de connection string waar nodig door je eigen PostgreSQL gegevens:
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=OfferteTool;Username=postgres;Password=postgres" --project Presentation
+dotnet user-secrets set "TenderSubmissionEncryption:Algorithm" "AES-256-GCM" --project Presentation
+```
+
+Maak daarna een lokale encryptiesleutel aan en sla die op als user secret:
+
+```powershell
+$encryptionKey = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+dotnet user-secrets set "TenderSubmissionEncryption:Key" $encryptionKey --project Presentation
+```
+
+4. Configureer SMTP instellingen als je e-mailfunctionaliteit lokaal wilt testen:
+
+```powershell
+dotnet user-secrets set "SmtpEmail:Host" "localhost" --project Presentation
+dotnet user-secrets set "SmtpEmail:Port" "2525" --project Presentation
+dotnet user-secrets set "SmtpEmail:UserName" "<smtp-gebruiker>" --project Presentation
+dotnet user-secrets set "SmtpEmail:Password" "<smtp-wachtwoord>" --project Presentation
+dotnet user-secrets set "SmtpEmail:EnableSsl" "false" --project Presentation
+dotnet user-secrets set "SmtpEmail:FromAddress" "noreply@example.local" --project Presentation
+dotnet user-secrets set "SmtpEmail:FromName" "OfferteTool" --project Presentation
+```
+
+5. Herstel packages en pas de database migrations toe. Als de database uit de connection string nog niet bestaat, wordt deze hierbij aangemaakt:
+
+```powershell
+dotnet restore
+dotnet ef database update --project Infrastructure --startup-project Presentation
+```
+
+6. Start de applicatie:
+
+```powershell
+dotnet run --project Presentation --launch-profile https
+```
+
+De applicatie is daarna beschikbaar op `https://localhost:7018` en `http://localhost:5204`. Bij het starten in de Development omgeving worden testgegevens toegevoegd. Je kunt inloggen met onder andere:
+
+- `beheerder@test.nl` / `Password123!`
+- `inkoper@test.nl` / `Password123!`
+- `beoordelaar@test.nl` / `Password123!`
+- `leverancier@test.nl` / `Password123!`
+
+## Tests uitvoeren
+
+### Unit tests
+
+De unit tests hebben geen lokale database nodig. Voer ze uit met:
+
+```powershell
+dotnet test Tests.Unit\Tests.Unit.csproj
+```
+
+### E2E tests
+
+De E2E tests gebruiken Playwright en starten de applicatie zelf met de `e2e` launch profile op `https://localhost:7018`. Start de applicatie dus niet handmatig voordat je de E2E tests draait; de test fixture stopt met een foutmelding als poort `7018` al in gebruik is.
+
+1. Maak een E2E configuratiebestand aan op basis van het voorbeeld:
+
+```powershell
+Copy-Item Presentation\appsettings.E2E.example.json Presentation\appsettings.E2E.json
+```
+
+2. Controleer in `Presentation\appsettings.E2E.json` of de PostgreSQL connection string klopt. Gebruik een aparte database waarvan de naam `E2E` bevat, bijvoorbeeld `OfferteTool_E2E`. De E2E startup verwijdert en migreert deze database opnieuw bij het starten.
+
+3. Bouw het E2E testproject. Dit is nodig omdat het Playwright installatiescript in de build output wordt geplaatst en de E2E fixture de applicatie daarna met `--no-build` start.
+
+```powershell
+dotnet build Tests.E2E\Tests.E2E.csproj
+```
+
+4. Installeer de Playwright browsers:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Tests.E2E\bin\Debug\net10.0\playwright.ps1 install
+```
+
+5. Voer de E2E tests uit:
+
+```powershell
+dotnet test Tests.E2E\Tests.E2E.csproj --settings Tests.E2E\playwright.runsettings
+```
+
+Met de meegeleverde runsettings draait Playwright in Chromium met een zichtbaar browservenster. Zonder runsettings kan Playwright headless draaien, afhankelijk van de standaardinstellingen.
+
 ## Versiebeheer methodiek
 In deze repository wordt de Gitflow branching strategie gebruikt. Hiervoor worden de onderstaande branches gebruikt:
 
